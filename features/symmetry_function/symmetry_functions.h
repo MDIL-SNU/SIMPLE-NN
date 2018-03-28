@@ -3,4 +3,21 @@
  This code is used for both Python and LAMMPS code
  */
 
-#include ""
+static inline double pow_int(const double &x, const double n) {
+    double res,tmp;
+
+    if (x == 0.0) return 0.0;
+    int nn = (n > 0) ? n : -n;
+    tmp = x;
+
+    for (res = 1.0; nn != 0; nn >>= 1, tmp *= tmp)
+        if (nn & 1) res *= tmp;
+
+    return (n > 0) ? res : 1.0/res;
+}
+
+double sigm(double, double &);
+double cutf(double);
+double dcutf(double, double);
+double G2(double, double *, double *, double &);
+double G4(double, double, double, double, double *, double *, double *);
