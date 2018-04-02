@@ -1,2 +1,2 @@
-# SNAPP
-SNAPP(SNU Neural network Atomic Potential Package))
+# SPINN
+SPINN(SNU Package for Interatomic Neural Network potential)
