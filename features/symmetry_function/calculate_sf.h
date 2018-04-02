@@ -5,8 +5,7 @@
  */
 
 #include <math.h>
-#include "mpi.h"
-#include "symmetry_function.h"
+//#include "mpi.h"
+#include "symmetry_functions.h"
 
-extern "C" void calculate_sf(double **, double **, double **, double **);
-double** getNeighbors(double **);
+extern "C" void calculate_sf(double **, double **, double *, double **, int, int, double**, double**);
