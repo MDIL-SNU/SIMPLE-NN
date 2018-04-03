@@ -1,4 +1,6 @@
-#from mpi4py import MPI
+from __future__ import print_function
+import os
+from mpi4py import MPI
 import numpy as np
 from six.moves import cPickle as pickle
 from ase import io
@@ -26,7 +28,8 @@ def feature_generator(structure_list, param_list):
     # TODO: library read using ffi    
     ffi = FFI()
     ffi.cdef("""void calculate_sf(double **, double **, double *, double **, int, int);""") # need to change
-    lib = ffi.dlopen("./libsymf.so")
+    #lib = ffi.dlopen("libsymf.so")
+    lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libsymf.so"))
 
     #params = _read_params(param_list)
     params = np.array([[3.0, 3.0]])
@@ -42,7 +45,7 @@ def feature_generator(structure_list, param_list):
         atom_num = len(atoms.positions)
         param_num = len(params)
 
-        print atom_num, param_num
+        print("{}, {}".format(atom_num, param_num))
 
         #res = dict()
         #res['x'] = np.zeros([atom_num, param_num]).astype(np.float64)

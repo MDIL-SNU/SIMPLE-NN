@@ -1,4 +1,4 @@
-//#include <mpi.h>
+#include <mpi.h>
 #include <math.h>
 #include "calculate_sf.h"
 
