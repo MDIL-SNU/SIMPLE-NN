@@ -2,7 +2,7 @@
 #include <math.h>
 #include "calculate_sf.h"
 
-extern "C" void calculate_sf(double** cell, double** coords, double* atom_i, double** params, int natoms, int nsyms, double** symf, double** dsymf) {
+extern "C" void calculate_sf(double** cell, double** coords, double* atom_i, double** params, int natoms, int nsyms) { //, double** symf, double** dsymf) {
     // originally, dsymf is 4D array
     // coords are fractional coordinates of atoms
 

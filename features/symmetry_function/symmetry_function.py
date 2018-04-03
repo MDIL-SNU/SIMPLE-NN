@@ -1,52 +1,68 @@
-from mpi4py import MPI
+#from mpi4py import MPI
+import numpy as np
 from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
 
-def _gen_2Darray_for_ffi(arr):
+def _gen_2Darray_for_ffi(arr, ffi):
     shape = arr.shape
     arr_p = ffi.new("double *[%d]" % shape[0])
     for i in range(shape[0]):
         arr_p[i] = ffi.cast("double *", arr[i].ctypes.data)
     return arr_p
 
+def _read_params(filename):
+    params = list()
+    with open(filename, 'r') as fil:
+        for line in fil:
+            params += map(float, line.split())
+
+    params = np.array(params)
+    return params
+
 def feature_generator(structure_list, param_list):
     # get directory info for each structures and parameter list of symmetry functions
-    
+
+    # TODO: library read using ffi    
     ffi = FFI()
+    ffi.cdef("""void calculate_sf(double **, double **, double *, double **, int, int);""") # need to change
+    lib = ffi.dlopen("./libsymf.so")
 
-    with open(param_list, 'r') as fil:
-        params = None
+    #params = _read_params(param_list)
+    params = np.array([[3.0, 3.0]])
+    params_p = _gen_2Darray_for_ffi(params, ffi)
 
-    params_p = _gen_2Darray_for_ffi(params)
-
-    # TODO: library read using ffi
+    structure_list = ['CONTCAR']
 
     for item in structure_list:
         
-        atoms = io.read()
-        posi_p = _gen_2Darray_for_ffi(atoms.positions)
-        cell_p = _gen_2Darray_for_ffi(atoms.cell)
+        atoms = io.read(item)
+        posi_p = _gen_2Darray_for_ffi(atoms.positions, ffi)
+        cell_p = _gen_2Darray_for_ffi(atoms.cell, ffi)
         atom_num = len(atoms.positions)
         param_num = len(params)
 
-        res = dict()
-        res['x'] = np.zeros([atom_num, param_num]).astype(np.float64)
-        res['dx'] = np.zeros([atom_num, atom_num, param_num, 3]).astype(np.float64)
-        res['params'] = params
+        print atom_num, param_num
 
-        x_p = _gen_2Darray_for_ffi(res['x'])
-        dx_p = _gen_2Darray_for_ffi(res['dx']) # TODO: change the dimension of res['dx']
+        #res = dict()
+        #res['x'] = np.zeros([atom_num, param_num]).astype(np.float64)
+        #res['dx'] = np.zeros([atom_num, atom_num, param_num, 3]).astype(np.float64)
+        #res['params'] = params
 
-        feature_dict = calculate_feature(item)
+        #x_p = _gen_2Darray_for_ffi(res['x'])
+        #dx_p = _gen_2Darray_for_ffi(res['dx']) # TODO: change the dimension of res['dx']
+
+        #feature_dict = calculate_feature(item)
 
 
 
 
-        pickle.dump(feature_dict, _name_, pickle.HIGHST_PROTOCOL)  # TODO: directory setting?
+        #pickle.dump(feature_dict, _name_, pickle.HIGHST_PROTOCOL)  # TODO: directory setting?
+
+
     return 0
 
-
+"""
 def calculate_feature(structure):
     comm = MPI.COMM_WORLD
     atoms = io.read(structure)  # TODO: add structure file information
@@ -56,3 +72,7 @@ def calculate_feature(structure):
     # TODO: make c extension
 
     return feature_dict
+"""
+
+if __name__ == "__main__":
+    feature_generator('as', 'as')
