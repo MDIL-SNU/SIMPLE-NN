@@ -34,22 +34,25 @@ def feature_generator(structure_list, param_list):
     lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libsymf.so"))
 
     # FIXME: add test param_list to check the symmetry funciton calculation
+    # parameter list
+    # [symmetry function types, atom type 1, atom type 2, cutoff, parameter 1, 2, ...]
     #params = _read_params(param_list)
-    params = np.array([[3.0, 3.0]])
+    params = np.array([[5.0, 3.0]])
     params_p = _gen_2Darray_for_ffi(params, ffi)
 
+    # FIXME: take directory list and CONTCAR/XDATCAR info
     structure_list = [os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/CONTCAR")]
 
     for item in structure_list:
         atoms = io.read(item)
         
-        cart_p = _gen_2Darray_for_ffi(atoms.positions, ffi)
+        cart_p  = _gen_2Darray_for_ffi(atoms.positions, ffi)
         scale_p = _gen_2Darray_for_ffi(atoms.get_scaled_positions(), ffi)
-        cell_p = _gen_2Darray_for_ffi(atoms.cell, ffi)
+        cell_p  = _gen_2Darray_for_ffi(atoms.cell, ffi)
         
         atom_i = np.array(atoms.get_chemical_symbols())
         for j,jtem in enumerate(set(atom_i)):
-            atom_i[atom_i==jtem] = j
+            atom_i[atom_i==jtem] = j # FIXME: index starting number 0 or 1?
         atom_i = atom_i.astype(np.int)
         atom_i_p = ffi.cast("int *", atom_i.ctypes.data)
 
@@ -90,4 +93,5 @@ def calculate_feature(structure):
 """
 
 if __name__ == "__main__":
+    # for test
     feature_generator('as', 'as')
