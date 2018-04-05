@@ -8,4 +8,4 @@
 //#include "mpi.h"
 #include "symmetry_functions.h"
 
-extern "C" void calculate_sf(double **, double **, double **, int *, double **, int, int); //, double**, double**);
+extern "C" void calculate_sf(double **, double **, double **, int *, int**, double **, int, int, double**, double**);
