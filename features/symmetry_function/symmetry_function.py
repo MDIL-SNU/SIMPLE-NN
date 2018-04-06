@@ -8,7 +8,7 @@ from cffi import FFI
 
 def _gen_2Darray_for_ffi(arr, ffi, dtype=np.float64, cdata="double"):
     # double precision with C style order
-    arr = np.asarray(arr, dtype=dtype, order='C') 
+    #arr = np.asarray(arr, dtype=dtype, order='C') 
     shape = arr.shape
     arr_p = ffi.new(cdata + " *[%d]" % shape[0])
     for i in range(shape[0]):
@@ -39,7 +39,9 @@ def feature_generator(structure_list, param_list):
     # FIXME: add test param_list to check the symmetry funciton calculation
     # parameter list
     # [symmetry function types, atom type 1, atom type 2, cutoff, parameter 1, 2, ...]
-    params_i, params_d = _read_params(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/inp_fsymf"))
+    params_i, params_d = _read_params(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/inp_fsymf_Ni2Si"))
+    params_i = np.asarray(params_i, dtype=np.int, order='C')
+    params_d = np.asarray(params_d, dtype=np.float64, order='C')
     #params = np.array([[5.0, 3.0]])
     params_ip = _gen_2Darray_for_ffi(params_i, ffi, np.int, "int")
     print(params_ip[0], params_ip[1])
@@ -47,7 +49,7 @@ def feature_generator(structure_list, param_list):
     params = np.concatenate([params_i, params_d], axis=1)
 
     # FIXME: take directory list and CONTCAR/XDATCAR info
-    structure_list = [os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/CONTCAR")]
+    structure_list = [os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/CONTCAR_Ni2Si")]
 
     for item in structure_list:
         atoms = io.read(item)
@@ -64,6 +66,7 @@ def feature_generator(structure_list, param_list):
 
         atom_num = len(atoms.positions)
         param_num = len(params_i)
+        print(atom_num, param_num)
 
         print("== check for C extension code ==\n")
 
@@ -75,13 +78,20 @@ def feature_generator(structure_list, param_list):
         x_p = _gen_2Darray_for_ffi(res['x'], ffi, np.float64)
         dx_p = _gen_2Darray_for_ffi(res['dx'], ffi, np.float64) # TODO: change the dimension of res['dx']
 
+        print(params_i, params_d)
+
         lib.calculate_sf(cell_p, cart_p, scale_p, atom_i_p, params_ip, params_dp, atom_num, param_num, x_p, dx_p)
 
         #feature_dict = calculate_feature(item)
+        #print(res['x'][0])
+        #print(list(res['dx'][1]))
+
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/structure1.pickle"), "rb") as fil:
+            refdat = pickle.load(fil, encoding='latin1')
+
+        print(refdat['sym']['Si'][0])
         print(res['x'][0])
-        print(list(res['dx'][1]))
-
-
+        print(refdat['sym']['Si'] - res['x'][:4])
 
         #pickle.dump(feature_dict, _name_, pickle.HIGHST_PROTOCOL)  # TODO: directory setting?
 
