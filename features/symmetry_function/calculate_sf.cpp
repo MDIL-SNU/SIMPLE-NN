@@ -3,9 +3,10 @@
 #include <stdio.h>
 #include "calculate_sf.h"
 
-extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* atom_i, 
-                             int** params_i, double** params_d, int natoms, int nsyms,
-                             int* cal_atoms, double** symf, double** dsymf) {
+extern "C" void calculate_sf(double** cell, double** cart, double** scale,
+                             int* atom_i, int natoms, int* cal_atoms, int cal_num,
+                             int** params_i, double** params_d, int nsyms,
+                             double** symf, double** dsymf) {
     // cell: cell info of structure
     // cart: cartesian coordinates of atoms
     // scale: fractional coordinates of atoms
@@ -89,7 +90,9 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
         neigh_check_bins *= 2*bin_range[i];
     }
 
-    for (int i=0; i < natoms; ++i) {
+    //for (int i=0; i < natoms; ++i) {
+    for (int ii=0; ii < cal_num; ++ii) {
+        int i=cal_atoms[ii];
         // calculate neighbor atoms
         double* nei_list_d = new double[max_atoms_bin * 4 * neigh_check_bins];
         int*    nei_list_i = new int[max_atoms_bin * 2 * neigh_check_bins];
@@ -151,18 +154,18 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
                     precal[0] = cutf(rRij / params_d[s][0]);
                     precal[1] = dcutf(rRij, params_d[s][0]);
 
-                    symf[i][s] += G2(rRij, precal, params_d[s], dradtmp); // FIXME: index
+                    symf[ii][s] += G2(rRij, precal, params_d[s], dradtmp); // FIXME: index
                     tmpd[0] = dradtmp*vecij[0];
                     tmpd[1] = dradtmp*vecij[1];
                     tmpd[2] = dradtmp*vecij[2];
 
-                    dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0];
-                    dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1];
-                    dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2];
+                    dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0];
+                    dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1];
+                    dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2];
 
-                    dsymf[i][s*natoms*3 + i*3]     -= tmpd[0];
-                    dsymf[i][s*natoms*3 + i*3 + 1] -= tmpd[1];
-                    dsymf[i][s*natoms*3 + i*3 + 2] -= tmpd[2];
+                    dsymf[ii][s*natoms*3 + i*3]     -= tmpd[0];
+                    dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1];
+                    dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2];
                 }
                 else continue;
             }
@@ -203,7 +206,7 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
                         precal[4] = cutf(rRjk / params_d[s][0]);
                         precal[5] = dcutf(rRjk, params_d[s][0]);
 
-                        symf[i][s] += G4(rRij, rRik, rRjk, powtwo[s], precal, params_d[s], dangtmp);
+                        symf[ii][s] += G4(rRij, rRik, rRjk, powtwo[s], precal, params_d[s], dangtmp);
 
                         tmpd[0] = dangtmp[0]*vecij[0];
                         tmpd[1] = dangtmp[0]*vecij[1];
@@ -215,17 +218,17 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
                         tmpd[7] = dangtmp[2]*vecjk[1];
                         tmpd[8] = dangtmp[2]*vecjk[2];
 
-                        dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0] - tmpd[6];
-                        dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1] - tmpd[7];
-                        dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2] - tmpd[8];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0] - tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1] - tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2] - tmpd[8];
 
-                        dsymf[i][s*natoms*3 + nei_list_i[k*2 + 1]*3]     += tmpd[3] + tmpd[6];
-                        dsymf[i][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1] += tmpd[4] + tmpd[7];
-                        dsymf[i][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2] += tmpd[5] + tmpd[8];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]     += tmpd[3] + tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1] += tmpd[4] + tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2] += tmpd[5] + tmpd[8];
 
-                        dsymf[i][s*natoms*3 + i*3]     -= tmpd[0] + tmpd[3];
-                        dsymf[i][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
-                        dsymf[i][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
+                        dsymf[ii][s*natoms*3 + i*3]     -= tmpd[0] + tmpd[3];
+                        dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
+                        dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
                     }
                     else continue;
                 }

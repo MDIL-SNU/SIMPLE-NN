@@ -36,7 +36,10 @@ def feature_generator(structure_list, param_list):
     rank = comm.Get_rank()
        
     ffi = FFI()
-    ffi.cdef("""void calculate_sf(double **, double **, double **, int *, int **, double **, int, int, int *, double **, double **);""")
+    ffi.cdef("""void calculate_sf(double **, double **, double **,
+                                  int *, int, int*, int,
+                                  int**, double **, int, 
+                                  double**, double**);""")
     lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libsymf.so"))
 
     # parameter list
@@ -81,29 +84,37 @@ def feature_generator(structure_list, param_list):
             end += 1
 
         cal_atoms = np.asarray(range(begin, end), dtype=np.int, order='C')
+        cal_num = len(cal_atoms)
         cal_atoms_p = ffi.cast("int *", cal_atoms.ctypes.data)
 
+        x = np.zeros([cal_num, param_num], dtype=np.float64, order='C')
+        dx = np.zeros([cal_num, atom_num * param_num * 3], dtype=np.float64, order='C')
+
+        x_p = _gen_2Darray_for_ffi(x, ffi, np.float64)
+        dx_p = _gen_2Darray_for_ffi(dx, ffi, np.float64) # TODO: change the dimension of res['dx']
+
+        lib.calculate_sf(cell_p, cart_p, scale_p, atom_i_p, atom_num, cal_atoms_p, cal_num, params_ip, params_dp, param_num, x_p, dx_p)
+        comm.barrier()
+
         res = dict()
-        res['x'] = np.zeros([atom_num, param_num], dtype=np.float64, order='C')
-        res['dx'] = np.zeros([atom_num, atom_num * param_num * 3], dtype=np.float64, order='C')
+        res['x'] = np.array(comm.gather(x, root=0))
+        res['dx'] = np.array(comm.gather(dx, root=0))
         res['params'] = params
 
-        x_p = _gen_2Darray_for_ffi(res['x'], ffi, np.float64)
-        dx_p = _gen_2Darray_for_ffi(res['dx'], ffi, np.float64) # TODO: change the dimension of res['dx']
+        if rank == 0:
+            res['x'] = res['x'].reshape([atom_num, param_num])
+            res['dx'] = res['dx'].reshape([atom_num, param_num, atom_num, 3])
 
-        lib.calculate_sf(cell_p, cart_p, scale_p, atom_i_p, params_ip, params_dp, atom_num, param_num, cal_atoms_p, x_p, dx_p)
+            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/structure1.pickle"), "rb") as fil:
+                refdat = pickle.load(fil, encoding='latin1')
 
-        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/structure1.pickle"), "rb") as fil:
-            refdat = pickle.load(fil, encoding='latin1')
-
-        dx_cal = res['dx'][:4].reshape([4, 70, 12, 3])
-        dx_ref = refdat['dsym']['Si']
+            dx_cal = res['dx'][:4]
+            dx_ref = refdat['dsym']['Si']
         #print(refdat['sym']['Si'][0])
         #print(res['dx'][0])
-        print(np.sum((dx_cal - dx_ref) < 1e-13))
+            print(np.sum((dx_cal - dx_ref) < 1e-13))
 
-        #pickle.dump(feature_dict, _name_, pickle.HIGHST_PROTOCOL)  # TODO: directory setting?
-
+            #pickle.dump(feature_dict, _name_, pickle.HIGHST_PROTOCOL)  # TODO: directory setting?
 
     return 0
 
