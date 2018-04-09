@@ -5,9 +5,7 @@
 
 extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* atom_i, 
                              int** params_i, double** params_d, int natoms, int nsyms,
-                             double** symf, double** dsymf) {
-    // TODO: add the part for calculating symmetry function
-    // TODO: add the part for parallelization
+                             int* cal_atoms, double** symf, double** dsymf) {
     // cell: cell info of structure
     // cart: cartesian coordinates of atoms
     // scale: fractional coordinates of atoms
@@ -26,26 +24,18 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
     int total_bins, max_atoms_bin, bin_num, neigh_check_bins, nneigh;
     int bin_range[3], nbins[3], cell_shift[3], max_bin[3], min_bin[3], pbc_bin[3];
     int bin_i[natoms][4];
-    double vol, tmp, cutoff, cutoff_sq, dradtmp, rRij, rRik, rRjk;
+    double vol, tmp, cutoff, dradtmp, rRij, rRik, rRjk;
     double plane_d[3], total_shift[3], precal[11], tmpd[9], dangtmp[3];
     double vecij[3], vecik[3], vecjk[3], deljk[3];
     double cross[3][3], reci[3][3], powtwo[nsyms];
     
-    printf("start function %d\n", nsyms);
-    
+    cutoff = 0.0;
     for (int s=0; s < nsyms; ++s) {
-        printf("%f %f %f %f\n", params_d[s][0], params_d[s][1], params_d[s][2], params_d[s][3]);
         if (cutoff < params_d[s][0])
             cutoff = params_d[s][0];
         powtwo[s] = pow_int(2, 1.-params_d[s][2]);
-        printf("test %d\n", s);
     }
 
-    cutoff_sq = cutoff*cutoff;
-    printf("cutoff: %f\n", cutoff);
-    printf("Cell info:\n  %f %f %f\n  %f %f %f\n  %f %f %f\n", cell[0][0], cell[0][1], cell[0][2],
-                                                               cell[1][0], cell[1][1], cell[1][2],
-                                                               cell[2][0], cell[2][1], cell[2][2]);
     total_bins = 1;
 
     // calculate the distance between cell plane
@@ -70,9 +60,6 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
         nbins[i] = ceil(plane_d[i]/cutoff);
         total_bins *= nbins[i];
     }
-    printf("plane distance: %f %f %f\n", plane_d[0], plane_d[1], plane_d[2]);
-    printf("# of bins: %d %d %d\n", nbins[0], nbins[1], nbins[2]);
-    printf("total bins: %d\n", total_bins);
 
     int *atoms_bin = new int[total_bins];
     for (int i=0; i<total_bins; ++i)
@@ -93,8 +80,6 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
             max_atoms_bin = atoms_bin[i];
     }
 
-    printf("max_atoms_bin: %d\n", max_atoms_bin);
-
     delete[] atoms_bin;
 
     // # of bins in each direction
@@ -103,11 +88,9 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
         bin_range[i] = ceil(cutoff * nbins[i] / plane_d[i]);
         neigh_check_bins *= 2*bin_range[i];
     }
-    //printf("%d %d %d\n", bin_range[0], bin_range[1], bin_range[2]);
 
     for (int i=0; i < natoms; ++i) {
         // calculate neighbor atoms
-        //printf("atom %d\n", i+1);
         double* nei_list_d = new double[max_atoms_bin * 4 * neigh_check_bins];
         int*    nei_list_i = new int[max_atoms_bin * 2 * neigh_check_bins];
         nneigh = 0;
@@ -144,9 +127,6 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
                         tmp = sqrt(total_shift[0]*total_shift[0] + total_shift[1]*total_shift[1] + total_shift[2]*total_shift[2]);
                         
                         if (tmp < cutoff) {
-                            //printf("  %f %f %f | %f %f %f | %d %d %d | %f %f %f | %f\n", cart[i][0], cart[i][1], cart[i][2], 
-                            //        cart[j][0], cart[j][1], cart[j][2], cell_shift[0], cell_shift[1], cell_shift[2], 
-                            //        total_shift[0], total_shift[1], total_shift[2], tmp);
                             for (int a=0; a < 3; ++a) 
                                 nei_list_d[nneigh*4 + a] = total_shift[a];
                             nei_list_d[nneigh*4 + 3] = tmp;
@@ -161,7 +141,6 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
 
         for (int j=0; j < nneigh; ++j) {
             // calculate radial symmetry function
-
             rRij = nei_list_d[j*4 + 3];
             vecij[0] =  nei_list_d[j*4]     / rRij;
             vecij[1] =  nei_list_d[j*4 + 1] / rRij;
@@ -169,24 +148,21 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
 
             for (int s=0; s < nsyms; ++s) {
                 if ((params_i[s][0] == 2) && (params_i[s][1] == nei_list_i[j*2])) { // FIXME:
-                    //printf("inside radi symfunc loop\n");
                     precal[0] = cutf(rRij / params_d[s][0]);
                     precal[1] = dcutf(rRij, params_d[s][0]);
 
                     symf[i][s] += G2(rRij, precal, params_d[s], dradtmp); // FIXME: index
-                    //printf("%f ", dradtmp);
                     tmpd[0] = dradtmp*vecij[0];
                     tmpd[1] = dradtmp*vecij[1];
                     tmpd[2] = dradtmp*vecij[2];
 
-                    // TODO: check the index
                     dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0];
                     dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1];
                     dsymf[i][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2];
 
-                    dsymf[i][s*natoms*3 + nei_list_i[i*2 + 1]*3]     -= tmpd[0];
-                    dsymf[i][s*natoms*3 + nei_list_i[i*2 + 1]*3 + 1] -= tmpd[1];
-                    dsymf[i][s*natoms*3 + nei_list_i[i*2 + 1]*3 + 2] -= tmpd[2];
+                    dsymf[i][s*natoms*3 + i*3]     -= tmpd[0];
+                    dsymf[i][s*natoms*3 + i*3 + 1] -= tmpd[1];
+                    dsymf[i][s*natoms*3 + i*3 + 2] -= tmpd[2];
                 }
                 else continue;
             }
@@ -219,7 +195,6 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
                     if ((params_i[s][0] == 4) && 
                         ((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) || 
                         ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2]))  ) { // FIXME:
-                        symf[i][s] += G4(rRij, rRik, rRjk, powtwo[s], precal, params_d[s], dangtmp);
 
                         precal[0] = cutf(rRij / params_d[s][0]);
                         precal[1] = dcutf(rRij, params_d[s][0]);
@@ -227,6 +202,8 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
                         precal[3] = dcutf(rRik, params_d[s][0]);
                         precal[4] = cutf(rRjk / params_d[s][0]);
                         precal[5] = dcutf(rRjk, params_d[s][0]);
+
+                        symf[i][s] += G4(rRij, rRik, rRjk, powtwo[s], precal, params_d[s], dangtmp);
 
                         tmpd[0] = dangtmp[0]*vecij[0];
                         tmpd[1] = dangtmp[0]*vecij[1];
@@ -246,17 +223,17 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
                         dsymf[i][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1] += tmpd[4] + tmpd[7];
                         dsymf[i][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2] += tmpd[5] + tmpd[8];
 
-                        dsymf[i][s*natoms*3 + nei_list_i[i*6 + 5]*3]     -= tmpd[0] + tmpd[3];
-                        dsymf[i][s*natoms*3 + nei_list_i[i*6 + 5]*3 + 1] -= tmpd[1] + tmpd[4];
-                        dsymf[i][s*natoms*3 + nei_list_i[i*6 + 5]*3 + 2] -= tmpd[2] + tmpd[5];
+                        dsymf[i][s*natoms*3 + i*3]     -= tmpd[0] + tmpd[3];
+                        dsymf[i][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
+                        dsymf[i][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
                     }
                     else continue;
                 }
             }
         }
-        //printf("test %f\n", dsymf[0][0]);
+        
         delete[] nei_list_d;
         delete[] nei_list_i;
     }
-
+    
 }

@@ -6,7 +6,7 @@
 static inline double pow_int(const double &x, const double n) {
     double res,tmp;
 
-    if (x == 0.0) return 0.0;
+    if (x == 0.0) return 0.0; // FIXME: abs(x) < epsilon
     int nn = (n > 0) ? n : -n;
     tmp = x;
 
