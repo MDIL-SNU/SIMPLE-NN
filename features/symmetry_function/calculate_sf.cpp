@@ -30,10 +30,8 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
     double plane_d[3], total_shift[3], precal[11], tmpd[9], dangtmp[3];
     double vecij[3], vecik[3], vecjk[3], deljk[3];
     double cross[3][3], reci[3][3], powtwo[nsyms];
-    //double symf[natoms][nsyms];
-    //double dsymf[natoms*natoms][nsyms*3]; // tmp setting
+    
     printf("start function %d\n", nsyms);
-    cutoff = 7.0;
     
     for (int s=0; s < nsyms; ++s) {
         printf("%f %f %f %f\n", params_d[s][0], params_d[s][1], params_d[s][2], params_d[s][3]);
@@ -161,7 +159,7 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
             }
         }
 
-        for (int j=0; j < nneigh-1; ++j) {
+        for (int j=0; j < nneigh; ++j) {
             // calculate radial symmetry function
 
             rRij = nei_list_d[j*4 + 3];
@@ -193,7 +191,7 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale, int* 
                 else continue;
             }
 
-            for (int k=j; k < nneigh; ++k) {
+            for (int k=j+1; k < nneigh; ++k) {
                 // calculate angular symmetry function
                 rRik = nei_list_d[k*4 + 3];
                 vecik[0] = nei_list_d[k*4]     / rRik;
