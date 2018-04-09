@@ -3,6 +3,7 @@ from __future__ import division
 import os
 from mpi4py import MPI
 import numpy as np
+import six
 from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
@@ -106,7 +107,10 @@ def feature_generator(structure_list, param_list):
             res['dx'] = res['dx'].reshape([atom_num, param_num, atom_num, 3])
 
             with open(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/structure1.pickle"), "rb") as fil:
-                refdat = pickle.load(fil, encoding='latin1')
+                if six.PY2:
+                    refdat = pickle.load(fil)
+                elif six.PY3:
+                    refdat = pickle.load(fil, encoding='latin1')
 
             dx_cal = res['dx'][:4]
             dx_ref = refdat['dsym']['Si']
