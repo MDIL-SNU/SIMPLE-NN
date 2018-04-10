@@ -30,13 +30,35 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
     double vecij[3], vecik[3], vecjk[3], deljk[3];
     double cross[3][3], reci[3][3], powtwo[nsyms];
     
+    printf("Input check\n");
+    printf(" Cell info\n");
+    for (int i=0; i<3; ++i)
+        printf("  %f  %f  %f\n", cell[i][0], cell[i][1], cell[i][2]);
+    printf(" Cartesian coordinate info\n");
+    for (int i=0; i<natoms; ++i)
+        printf("  %f  %f  %f\n", cart[i][0], cart[i][1], cart[i][2]);
+    printf(" Fractional coordinate info\n");
+    for (int i=0; i<natoms; ++i)
+        printf("  %f  %f  %f\n", scale[i][0], scale[i][1], scale[i][2]);
+    printf(" Atom type info\n");
+    for (int i=0; i<natoms; ++i)
+        printf("  atom %d: %d\n", i+1, atom_i[i]);
+    printf(" Calculating atom info\n");
+    for (int i=0; i<cal_num; ++i)
+        printf("  %dth atom in this process: atom %d\n", i+1, cal_atoms[i]);
+    printf(" Symmetry function parameter info\n");
+    for (int i=0; i<nsyms; ++i) {
+        printf("  %d %d %d %f %f %f %f\n", params_i[i][0], params_i[i][1], params_i[i][2],
+                params_d[i][0], params_d[i][1], params_d[i][2], params_d[i][3]);
+    }
+
     cutoff = 0.0;
     for (int s=0; s < nsyms; ++s) {
         if (cutoff < params_d[s][0])
             cutoff = params_d[s][0];
         powtwo[s] = pow_int(2, 1.-params_d[s][2]);
     }
-
+    printf("cutoff %f\n", cutoff);
     total_bins = 1;
 
     // calculate the distance between cell plane

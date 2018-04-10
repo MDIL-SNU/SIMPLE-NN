@@ -31,7 +31,6 @@ def _read_params(filename):
 def feature_generator(structure_list, param_list):
     # get directory info for each structures and parameter list of symmetry functions
 
-    # TODO: parallelize using mpi4py
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
     rank = comm.Get_rank()
