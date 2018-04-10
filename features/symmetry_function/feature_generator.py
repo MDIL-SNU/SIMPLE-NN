@@ -63,12 +63,13 @@ def feature_generator(structure_list, param_list):
 
     for item in structures:
         # FIXME: add another input type
-        if item[1] == 'CONTCAR':
-            snapshots = [io.read(item[0])]
-        elif item[1] == 'XDATCAR':
-            index_str = '{}:{}:{}'.format(item[2], item[3], item[4])
-            snapshots = io.read(item[0], index=index_str)
-        
+        # TODO: modulization. currently, we suppose that the input file is VASP based.
+        if len(item) == 1:
+            index_str = '-1:'
+        else:
+            index_str = item[1]
+        snapshots = io.read(item[0], index=index_str, force_consistent=True)
+
         for atoms in snapshots:
             cart = np.copy(atoms.positions, order='C')
             scale = np.copy(atoms.get_scaled_positions(), order='C')
@@ -80,8 +81,11 @@ def feature_generator(structure_list, param_list):
         
             symbols = np.array(atoms.get_chemical_symbols())
             atom_i = np.zeros([len(symbols)], dtype=np.int32, order='C')
+            type_num = dict()
             for j,jtem in enumerate(atom_list):
-                atom_i[symbols==jtem] = j+1
+                tmp = symbols==jtem
+                atom_i[tmp] = j+1
+                type_num[jtem] = np.sum(tmp)
             atom_i_p = ffi.cast("int *", atom_i.ctypes.data)
 
             atom_num = len(atoms.positions)
@@ -110,11 +114,14 @@ def feature_generator(structure_list, param_list):
             res = dict()
             res['x'] = np.array(comm.gather(x, root=0))
             res['dx'] = np.array(comm.gather(dx, root=0))
-            res['params'] = params
 
             if rank == 0:
                 res['x'] = np.concatenate(res['x'], axis=0).reshape([atom_num, param_num])
                 res['dx'] = np.concatenate(res['dx'], axis=0).reshape([atom_num, param_num, atom_num, 3])
+                res['E'] = atoms.get_total_energy()
+                res['F'] = atoms.get_forces()
+                res['N'] = type_num
+                res['params'] = params
                 # FIXME: change the data structure
 
                 # FIXME: for test
