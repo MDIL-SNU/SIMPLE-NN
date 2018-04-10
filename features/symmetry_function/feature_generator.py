@@ -113,8 +113,8 @@ def feature_generator(structure_list, param_list):
             res['params'] = params
 
             if rank == 0:
-                res['x'] = res['x'].reshape([atom_num, param_num])
-                res['dx'] = res['dx'].reshape([atom_num, param_num, atom_num, 3])
+                res['x'] = np.concatenate(res['x'], axis=0).reshape([atom_num, param_num])
+                res['dx'] = np.concatenate(res['dx'], axis=0).reshape([atom_num, param_num, atom_num, 3])
                 # FIXME: change the data structure
 
                 # FIXME: for test
