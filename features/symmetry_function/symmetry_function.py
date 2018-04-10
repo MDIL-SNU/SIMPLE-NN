@@ -8,7 +8,7 @@ from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
 
-def _gen_2Darray_for_ffi(arr, ffi, dtype=np.float64, cdata="double"):
+def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
     shape = arr.shape
     arr_p = ffi.new(cdata + " *[%d]" % shape[0])
@@ -45,11 +45,11 @@ def feature_generator(structure_list, param_list):
     # parameter list
     # [symmetry function types, atom type 1, atom type 2, cutoff, parameter 1, 2, ...]
     params_i, params_d, atom_list = _read_params(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/inp_fsymf_Ni2Si"))
-    params_i = np.asarray(params_i, dtype=np.int, order='C')
+    params_i = np.asarray(params_i, dtype=np.int32, order='C')
     params_d = np.asarray(params_d, dtype=np.float64, order='C')
 
-    params_ip = _gen_2Darray_for_ffi(params_i, ffi, np.int, "int")
-    params_dp = _gen_2Darray_for_ffi(params_d, ffi, np.float64)
+    params_ip = _gen_2Darray_for_ffi(params_i, ffi, "int")
+    params_dp = _gen_2Darray_for_ffi(params_d, ffi)
     params = np.concatenate([params_i, params_d], axis=1)
 
     # FIXME: take directory list and CONTCAR/XDATCAR info
@@ -67,7 +67,7 @@ def feature_generator(structure_list, param_list):
         cell_p  = _gen_2Darray_for_ffi(cell, ffi)
         
         symbols = np.array(atoms.get_chemical_symbols())
-        atom_i = np.zeros([len(symbols)], dtype=np.int, order='C')
+        atom_i = np.zeros([len(symbols)], dtype=np.int32, order='C')
         for j,jtem in enumerate(atom_list):
             atom_i[symbols==jtem] = j+1
         atom_i_p = ffi.cast("int *", atom_i.ctypes.data)
@@ -83,15 +83,15 @@ def feature_generator(structure_list, param_list):
         if r > rank:
             end += 1
 
-        cal_atoms = np.asarray(range(begin, end), dtype=np.int, order='C')
+        cal_atoms = np.asarray(range(begin, end), dtype=np.int32, order='C')
         cal_num = len(cal_atoms)
         cal_atoms_p = ffi.cast("int *", cal_atoms.ctypes.data)
 
         x = np.zeros([cal_num, param_num], dtype=np.float64, order='C')
         dx = np.zeros([cal_num, atom_num * param_num * 3], dtype=np.float64, order='C')
 
-        x_p = _gen_2Darray_for_ffi(x, ffi, np.float64)
-        dx_p = _gen_2Darray_for_ffi(dx, ffi, np.float64) # TODO: change the dimension of res['dx']
+        x_p = _gen_2Darray_for_ffi(x, ffi)
+        dx_p = _gen_2Darray_for_ffi(dx, ffi)
 
         lib.calculate_sf(cell_p, cart_p, scale_p, atom_i_p, atom_num, cal_atoms_p, cal_num, params_ip, params_dp, param_num, x_p, dx_p)
         comm.barrier()
