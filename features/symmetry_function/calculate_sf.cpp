@@ -29,7 +29,8 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
     double plane_d[3], total_shift[3], precal[11], tmpd[9], dangtmp[3];
     double vecij[3], vecik[3], vecjk[3], deljk[3];
     double cross[3][3], reci[3][3], powtwo[nsyms];
-    
+
+    /* FIXME: input test
     printf("Input check\n");
     printf(" Cell info\n");
     for (int i=0; i<3; ++i)
@@ -51,6 +52,7 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
         printf("  %d %d %d %f %f %f %f\n", params_i[i][0], params_i[i][1], params_i[i][2],
                 params_d[i][0], params_d[i][1], params_d[i][2], params_d[i][3]);
     }
+    */
 
     cutoff = 0.0;
     for (int s=0; s < nsyms; ++s) {
@@ -58,7 +60,7 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
             cutoff = params_d[s][0];
         powtwo[s] = pow_int(2, 1.-params_d[s][2]);
     }
-    printf("cutoff %f\n", cutoff);
+    
     total_bins = 1;
 
     // calculate the distance between cell plane
