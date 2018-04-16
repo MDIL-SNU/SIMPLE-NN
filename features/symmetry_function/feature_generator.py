@@ -8,6 +8,7 @@ from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
 
+# TODO: Different atom can get different symmetry function parameter
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
     shape = arr.shape
@@ -46,7 +47,7 @@ def feature_generator(structure_list, param_list):
     # [symmetry function types, atom type 1, atom type 2, cutoff, parameter 1, 2, ...]
     #params_i, params_d, atom_list = _read_params(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/inp_fsymf_Ni2Si"))
     params_i, params_d, atom_list = _read_params(param_list)
-    params_i = np.asarray(params_i, dtype=np.int32, order='C')
+    params_i = np.asarray(params_i, dtype=np.intc, order='C')
     params_d = np.asarray(params_d, dtype=np.float64, order='C')
 
     params_ip = _gen_2Darray_for_ffi(params_i, ffi, "int")
@@ -80,7 +81,7 @@ def feature_generator(structure_list, param_list):
             cell_p  = _gen_2Darray_for_ffi(cell, ffi)
         
             symbols = np.array(atoms.get_chemical_symbols())
-            atom_i = np.zeros([len(symbols)], dtype=np.int32, order='C')
+            atom_i = np.zeros([len(symbols)], dtype=np.intc, order='C')
             type_num = dict()
             for j,jtem in enumerate(atom_list):
                 tmp = symbols==jtem
@@ -98,7 +99,7 @@ def feature_generator(structure_list, param_list):
             if r > rank:
                 end += 1
 
-            cal_atoms = np.asarray(range(begin, end), dtype=np.int32, order='C')
+            cal_atoms = np.asarray(range(begin, end), dtype=np.intc, order='C')
             cal_num = len(cal_atoms)
             cal_atoms_p = ffi.cast("int *", cal_atoms.ctypes.data)
 
