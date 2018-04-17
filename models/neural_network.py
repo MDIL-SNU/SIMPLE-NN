@@ -76,9 +76,13 @@ def _make_optimizer(loss, method='Adam', lossscale=1., **kwargs):
 
     return optim
 
-"""
-def run():
-    models, ys, dys = _make_model()
+
+def run(sess, inputs):
+    inputs = dict()
+    for item in atom_types:
+        inputs = tf.placeholder(tf.float64, [None, ])
+
+    models, ys, dys = _make_model(atom_types, inputs, )
     energy, force = _calc_output()
     e_loss, f_loss = _get_loss()
     optim = _make_optimizer()
@@ -86,4 +90,4 @@ def run():
 
 
     return 0
-    """
+    
