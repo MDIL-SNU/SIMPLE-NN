@@ -78,16 +78,15 @@ def _make_optimizer(loss, method='Adam', lossscale=1., **kwargs):
 
 
 def run(sess, inputs):
-    inputs = dict()
+    # FIXME: change the code that compatable for other part
+    atom_types = inputs['atom_types']
     for item in atom_types:
-        inputs = tf.placeholder(tf.float64, [None, ])
+        xs = tf.placeholder(tf.float64, [None, inputs['inp_size'][item]])
 
-    models, ys, dys = _make_model(atom_types, inputs, )
-    energy, force = _calc_output()
-    e_loss, f_loss = _get_loss()
-    optim = _make_optimizer()
-
-
+    models, ys, dys = _make_model(atom_types, xs, inputs['nodes'], tf.float64, calc_deriv=True)
+    energy, force = _calc_output(atom_types, ys, inputs['segid'])
+    e_loss, f_loss = _get_loss(inputs['E'], energy, inputs['atnum'])
+    optim = _make_optimizer(e_loss + f_loss)
 
     return 0
     
