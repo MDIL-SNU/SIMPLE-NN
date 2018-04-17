@@ -7,7 +7,7 @@ Neural network model with symmetry function as a descriptor
 
 # TODO: complete the code
 # TODO: add the part for selecting the memory device(CPU or GPU)
-def _make_model(inputs, atom_types, inp_sizes, hlayers, hnodes, dtype, calc_deriv=False):
+def _make_model(atom_types, inputs, nodes, dtype, calc_deriv=False):
     # FIXME: simplify the input parameters
     # FIXME: add the part for regularization (use kwargs?)
     models = dict()
@@ -15,12 +15,13 @@ def _make_model(inputs, atom_types, inp_sizes, hlayers, hnodes, dtype, calc_deri
     dys = dict()
 
     for item in atom_types:
+        nlayers = len(nodes[item])
         model = tf.keras.models.Sequential()
-        model.add(tf.keras.layers.Dense(hnodes[item][0], activation='sigmoid', \
-                                        input_dim=inp_sizes[item], dtype=dtype))
-        for i in range(1, hlayers[item]):
-           model.add(tf.keras.layers.Dense(hnodes[item][i], activation='sigmoid', dtype=dtype))
-        model.add(tf.keras.layers.Dense(1, activation='sigmoid', dtype=dtype))
+        model.add(tf.keras.layers.Dense(nodes[item][1], activation='sigmoid', \
+                                        input_dim=nodes[item][0], dtype=dtype))
+        for i in range(2, nlayers):
+           model.add(tf.keras.layers.Dense(nodes[item][i], activation='sigmoid', dtype=dtype))
+        model.add(tf.keras.layers.Dense(1, activation='linear', dtype=dtype))
 
         models[item] = model
         ys[item] = models[item](inputs[item])
@@ -65,3 +66,24 @@ def _get_loss(ref_energy, calced_energy, atom_num, \
         f_loss = tf.reduce_mean(f_loss) * force_coeff
 
     return e_loss, f_loss
+
+def _make_optimizer(loss, method='Adam', lossscale=1., **kwargs):
+    if method == 'L-BFGS-B':
+        optim = tf.contrib.opt.ScipyOptimizerInterface(lossscale*loss, method=method, options=kwargs)
+    elif method == 'Adam':
+        learning_rate = tf.train.exponential_decay(**kwargs)
+        optim = tf.train.AdamOptimizer(learning_rate=learning_rate, name='Adam').minimize(loss*lossscale)
+
+    return optim
+
+"""
+def run():
+    models, ys, dys = _make_model()
+    energy, force = _calc_output()
+    e_loss, f_loss = _get_loss()
+    optim = _make_optimizer()
+
+
+
+    return 0
+    """
