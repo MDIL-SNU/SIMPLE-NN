@@ -5,8 +5,32 @@ import numpy as np
 Neural network model with symmetry function as a descriptor
 """
 
+
+
 # TODO: complete the code
 # TODO: add the part for selecting the memory device(CPU or GPU)
+class Neural_network(object):
+    def __init__(self):
+        self.parent = None
+        self.default_inputs = {'neural_network':
+                                  {
+                                      'method': 'Adam',
+                                      'total_epoch': 10000,
+                                      'loss_scale': 1.,
+                                      'learning_rate': {},
+                                      'data_list': '+./train_dir'
+                                  }
+                              }
+
+    def _make_filelist(self):
+        # TODO: check tf.data
+        #self.filelist = 
+        return 0
+
+    #def _get_batch(self):
+
+    #def _make_model(self):
+
 def _make_model(atom_types, inputs, nodes, dtype, calc_deriv=False):
     # FIXME: simplify the input parameters
     # FIXME: add the part for regularization (use kwargs?)
@@ -76,8 +100,7 @@ def _make_optimizer(loss, method='Adam', lossscale=1., **kwargs):
 
     return optim
 
-
-def run(sess, inputs):
+def run(inputs):
     # FIXME: change the code that compatable for other part
     atom_types = inputs['atom_types']
     for item in atom_types:
