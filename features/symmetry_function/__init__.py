@@ -112,10 +112,10 @@ class Symmetry_function(object):
                 res = dict()
                 res['x'] = dict()
                 res['dx'] = dict()
-                res['F'] = dict()
                 res['params'] = dict()
                 res['N'] = type_num
                 res['E'] = atoms.get_total_energy()
+                res['F'] = atoms.get_forces()
 
                 for j,jtem in enumerate(self.parent.inputs['atom_types']):
                     q = type_num[jtem] // size
@@ -149,7 +149,6 @@ class Symmetry_function(object):
                         res['x'][jtem] = np.concatenate(res['x'][jtem], axis=0).reshape([type_num[jtem], params_set[jtem]['num']])
                         res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
                                             reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
-                        res['F'][jtem] = atoms.get_forces()[type_idx[jtem]]
                         res['params'][jtem] = params_set[jtem]['total']
                     # FIXME: change the data structure
 

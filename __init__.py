@@ -1,14 +1,18 @@
-# import 
+import yaml 
+
+# TODO: logging
 
 class simple_nn(object):
     def __init__(self, inputs, descriptor, model):
+        # inputs: filename which contains YAML style input parameters
+        # descriptor, model
         self.inputs = dict()
         self.descriptor = descriptor
         self.model = model
 
         self.inputs.update(self.descriptor.default_inputs)
         self.inputs.update(self.model.default_inputs)
-        self.inputs.update(inputs)
+        self.inputs.update(yaml.load(open(inputs)))
 
         if not 'atom_types' in self.inputs:
             raise KeyError
@@ -30,7 +34,6 @@ class simple_nn(object):
     @descriptor.setter
     def descriptor(self, descriptor):
         descriptor.parent = self
-        descriptor.inputs = self.inputs
         self._descriptor = descriptor
 
     @property
@@ -40,12 +43,17 @@ class simple_nn(object):
     @model.setter
     def model(self, model):
         model.parent = self
-        model.inputs = self.inputs
         self._model = model
 
 
     #def log(self, message):
     #    self._log.write(message)
+    def generate_descriptor(self):
+        self.descriptor.generate()
 
     def train(self):
-        return 0
+        self.model.train()
+
+    def run(self):
+        self.generate_descriptor()
+        self.train()
