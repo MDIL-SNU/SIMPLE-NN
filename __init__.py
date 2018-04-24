@@ -35,6 +35,7 @@ class simple_nn(object):
     def descriptor(self, descriptor):
         descriptor.parent = self
         self._descriptor = descriptor
+        self._descriptor.inputs = self.inputs['neural_network']
 
     @property
     def model(self):
@@ -48,12 +49,15 @@ class simple_nn(object):
 
     #def log(self, message):
     #    self._log.write(message)
-    def generate_descriptor(self):
+
+    def _make_itemlist_from_file(self, filelist):
+        self.filelist = list()
+        for item in filelist:
+            with open(item, 'r') as fil:
+                for line in fil:
+                    self.filelist.append(line.strip())
+    
+
+    def run(self, user_optimizer=None):
         self.descriptor.generate()
-
-    def train(self):
-        self.model.train()
-
-    def run(self):
-        self.generate_descriptor()
-        self.train()
+        self.model.train(user_optimizer=user_optimizer)

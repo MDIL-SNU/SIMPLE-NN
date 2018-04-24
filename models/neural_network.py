@@ -20,19 +20,23 @@ def pickle_load(filename):
 class Neural_network(object):
     def __init__(self):
         self.parent = None
+        # TODO: default input setting
         self.default_inputs = {'neural_network':
                                   {
                                       'method': 'Adam',
                                       'total_epoch': 10000,
+                                      'batch_size': 64,
                                       'loss_scale': 1.,
+                                      'continue': False,
+                                      'data': ['./train_dir'],
                                       'learning_rate': {},
-                                      'data_list': ['+./train_dir']
                                   }
                               }
+        self.inputs = dict()
 
-    def _make_filelist(self, filelist):
+    def _make_fileiter(self):
         # TODO: check tf.data
-        #self.filelist = 
+        self.parent._make_filelist(self.inputs['data']) 
         class iterfile(object):
             def __init__(self, filelist):
                 self.items = filelist
@@ -57,14 +61,13 @@ class Neural_network(object):
                 def __next__(self):
                     return self._next()
 
-        self.filelist = iterfile(filelist)
+        self.filelist = iterfile(self.parent.filelist)
 
     def _get_batch(self, batch_size, initial=False):
-        # FIXME: change the batch dict keys to the keys in feed_dict
         self.batch = {'x': dict(),
                       'dx': dict(),
-                      'E': list(),
-                      'F': list(),
+                      '_E': list(),
+                      '_F': list(),
                       'N': dict(),
                       'seg_id': dict()
                       }
@@ -78,8 +81,8 @@ class Neural_network(object):
             loaded_fil = pickle_load(item)
 
             # TODO: add parameter check part
-            self.batch['E'].append(loaded_fil['E'])
-            self.batch['F'].append(loaded_fil['F'])
+            self.batch['_E'].append(loaded_fil['E'])
+            self.batch['_F'].append(loaded_fil['F'])
             for jtem in self.parent.inputs['atom_types']:
                 self.batch['x'][jtem].append(loaded_fil['x'][jtem])
                 self.batch['dx'][jtem].append(loaded_fil['dx'][jtem])
@@ -88,12 +91,12 @@ class Neural_network(object):
             if i+2 > batch_size:
                 break
 
-        self.batch['E'] = np.array(self.batch['E'], dtype=np.float64)
-        self.batch['F'] = np.concatenate(self.batch['F']).astype(np.float64)
+        self.batch['_E'] = np.array(self.batch['_E'], dtype=np.float64)
+        self.batch['_F'] = np.concatenate(self.batch['_F']).astype(np.float64)
 
-        atom_num_per_structure = np.sum(list(self.batch['N'].values()), axis=0)
-        max_atom_num = np.max(atom_num_per_structure)
-        total_atom_num = np.sum(atom_num_per_structure)
+        self.batch['tot_num'] = np.sum(list(self.batch['N'].values()), axis=0)
+        max_atom_num = np.max(self.batch['tot_num'])
+        #total_atom_num = np.sum(atom_num_per_structure)
 
         if initial:
             self.inp_size = dict()
@@ -108,7 +111,7 @@ class Neural_network(object):
                 if self.inp_size[item] != self.batch['x'][item].shape[1]:
                     raise ValueError
 
-            tmp_dx = np.zeros([total_atom_num, self.inp_size[item],\
+            tmp_dx = np.zeros([np.sum(self.batch['N'][item]), self.inp_size[item],\
                                max_atom_num, 3], dtype=np.float64)
 
             tmp_idx = 0
@@ -123,8 +126,8 @@ class Neural_network(object):
             
             # TODO: scale
 
-        self.batch['dypart'] = \
-            np.concatenate([[1]*item + [0]*(total_atom_num - item) for item in atom_num_per_structure])
+        self.batch['partition'] = \
+            np.concatenate([[1]*item + [0]*(max_atom_num - item) for item in self.batch['tot_num']])
         
 
     def _set_scale_parameter(self, scale_file, gdf_file=None):
@@ -132,7 +135,7 @@ class Neural_network(object):
         # TODO: add the check code for valid scale file
         self.gdf = pickle_load(gdf_file)
 
-    def _make_model(self, inputs, calc_deriv=False):
+    def _make_model(self, calc_deriv=False):
         self.models = dict()
         self.ys = dict()
         self.dys = dict()
@@ -150,75 +153,123 @@ class Neural_network(object):
             model.add(tf.keras.layers.Dense(1, activation='linear', dtype=dtype))
 
             self.models[item] = model
-            self.ys[item] = self.models[item](inputs[item])
+            self.ys[item] = self.models[item](self.x[item])
 
             if calc_deriv:
-                self.dys[item] = tf.gradients(self.ys[item], inputs[item])[0]
+                self.dys[item] = tf.gradients(self.ys[item], self.x[item])[0]
             else:
                 self.dys[item] = None
 
 
-    def _calc_output(self):
-        return 0
+    def _calc_output(self, calc_force=False):
+        self.E = self.F = 0
 
-def _calc_output(atom_types, ys, segsum_ids, \
-                 calc_force=False, dys=None, dsyms=None, partition_id=None):
-    energy = force = 0
-    
-    for item in atom_types:
-        energy += tf.segment_sum(ys[item], segsum_ids[item])
+        for item in self.parent.inputs['atom_types']:
+            self.E += tf.segment_sum(self.ys[item], self.batch['seg_id'][item])
+
+            if calc_force:
+                tmp_force = self.batch['dx'][item] * \
+                            tf.expand_dims(\
+                                tf.expand_dims(self.dys[item], axis=2),
+                                axis=3)
+                tmp_force = tf.reduce_sum(\
+                                tf.segment_sum(tmp_force, self.batch['seg_id'][item]),
+                                axis=1)
+                self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
+                                                   self.batch['partition'], 2)[0]
+
+    def _get_loss(self, calc_force=False, force_coeff=0.03, use_gdf=False, gdf_values=None):
+        self.e_loss = tf.reduce_mean(tf.square(self.E - self._E) / self.tot_num)
+        self.total_loss = self.e_loss
 
         if calc_force:
-            tmp_force = dsyms[item] * \
-                        tf.expand_dims(\
-                            tf.expand_dims(dys[item], axis=2), 
-                            axis=3)
-            tmp_force = tf.reduce_sum(\
-                            tf.segment_sum(tmp_force, segsum_ids[item]),
-                            axis=1)
-            force -= tf.dynamic_partition(tf.reshape(tmp_force, [-1, 3]), \
-                                          partition_id, 2)[0]
+            self.f_loss = tf.square(self.F - self._F)
+            if use_gdf:
+                self.f_loss *= gdf_values
+            self.f_loss = tf.reduce_mean(self.f_loss) * force_coeff
+        
+            self.total_loss += self.f_loss
 
-    return energy, force
+    def _make_optimizer(self, user_optimizer=None):
+        if self.inputs['method'] == 'L-BFGS-B':
+            self.optim = tf.contrib.opt.ScipyOptimizerInterface(self.inputs['lossscale']*self.total_loss, 
+                                                                method=self.inputs['method'], 
+                                                                options=self.inputs['optimizer'])
+        elif self.inputs['method'] == 'Adam':
+            # FIXME: learning_rate kwargs
+            self.learning_rate = tf.train.exponential_decay(**self.inputs['learning_rate'])
+            self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rate, 
+                                                name='Adam', **self.inputs['optimizer'])
+            self.optim = self.optim.minimize(self.total_loss*self.inputs['lossscale'])
+        else:
+            if user_optimizer != None:
+                self.optim = user_optimizer.minimize(self.total_loss*self.inputs['lossscale'])
+            else:
+                raise ValueError
 
-def _get_loss(ref_energy, calced_energy, atom_num, \
-              calc_force=False, ref_force=None, calced_force=None, force_coeff=0.03, \
-              use_gdf=False, gdf_values=None):
+    def _make_feed_dict(self):
+        self.fdict = {
+            self._E: self.batch['_E'],
+            self._F: self.batch['_F'],
+            self.tot_num: self.batch['tot_num'],
+            self.partition: self.batch['partition']
+        }
 
-    e_loss = tf.reduce_mean(tf.square(calced_energy - ref_energy) / atom_num)
+        for item in self.parent.inputs['atom_types']:
+            self.fdict[self.x[item]] = self.batch['x'][item]
+            self.fdict[self.dx[item]] = self.batch['dx'][item]
+            self.fdict[self.seg_id[item]] = self.batch['seg_id'][item] 
 
-    if calc_force:
-        f_loss = tf.square(calced_force - ref_force)
-        if use_gdf:
-            f_loss *= gdf_values
-        f_loss = tf.reduce_mean(f_loss) * force_coeff
+    def run(self, user_optimizer=None):
+        # FIXME: change the code that compatable for other part
 
-    return e_loss, f_loss
+        # read data?
+        # preprocessing: scale, GDF...
 
-def _make_optimizer(loss, method='Adam', lossscale=1., **kwargs):
-    if method == 'L-BFGS-B':
-        optim = tf.contrib.opt.ScipyOptimizerInterface(lossscale*loss, method=method, options=kwargs)
-    elif method == 'Adam':
-        learning_rate = tf.train.exponential_decay(**kwargs)
-        optim = tf.train.AdamOptimizer(learning_rate=learning_rate, name='Adam').minimize(loss*lossscale)
+        self._make_fileiter() # TODO: need to change
+        self._get_batch(1, initial=True)
 
-    return optim
+        # Generate placeholder
+        self._E = tf.placeholder(tf.float64, [None])
+        self._F = tf.placeholder(tf.float64, [None, 3])
+        self.tot_num = tf.placeholder(tf.float64, [None])
+        self.partition = tf.placeholder(tf.int32, [None])
+        self.seg_id = dict()
+        self.x = dict()
+        self.dx = dict()
+        for item in self.parent.inputs['atom_types']:
+            self.x[item] = tf.placeholder(tf.float64, [None, self.inp_size[item]])
+            self.dx[item] = tf.placeholder(tf.float64, [None, self.inp_size[item], None, 3])
+            self.seg_id[item] = tf.placeholder(tf.int32, [None])
 
-def run(inputs):
-    # FIXME: change the code that compatable for other part
-    atom_types = inputs['atom_types']
+        self._make_model()
+        self._calc_output()
+        self._get_loss()
+        self._make_optimizer(user_optimizer=user_optimizer)
 
-    # read data?
-    # preprocessing: scale, GDF...
+        # TODO: tf.Session setting
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        #config.gpu_options.per_process_gpu_memory_fraction = 0.45
+        with tf.Session(config=config) as sess:
+            # Load or initialize the variables
+            saver = tf.train.Saver()
+            if self.inputs['continue']:
+                saver.restore(sess, './SAVER')
+            else:
+                sess.run(tf.global_variables_initializer())
 
-    # Generate placeholder
-    for item in atom_types:
-        xs = tf.placeholder(tf.float64, [None, inputs['inp_size'][item]])
+            if self.inputs['method'] == 'L-BFGS-B':
+                raise ValueError
+            elif self.inputs['method'] == 'Adam':
+                for epoch in range(self.inputs['total_epoch']):
+                    self._get_batch(self.inputs['batch_size'])
+                    self._make_feed_dict()
+                    self.optim.run(feed_dict=self.fdict)
 
-    models, ys, dys = _make_model(atom_types, xs, inputs['nodes'], tf.float64, calc_deriv=True)
-    energy, force = _calc_output(atom_types, ys, inputs['segid'])
-    e_loss, f_loss = _get_loss(inputs['E'], energy, inputs['atnum'])
-    optim = _make_optimizer(e_loss + f_loss)
+                    if epoch % 1000 == 0:
+                        print("aa") # FIXME: logging
+                            
 
-    return 0
+        return 0
     

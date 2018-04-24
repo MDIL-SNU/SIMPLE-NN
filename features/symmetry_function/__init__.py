@@ -36,7 +36,7 @@ class Symmetry_function(object):
         self.parent = None
         self.default_inputs = {'symmetry_function': 
                                   {
-                                      'structures': list(),
+                                      'structures': ['./str_list'],
                                       'params': dict()
                                   }
                               }
