@@ -1,23 +1,51 @@
 import yaml 
+import collections
 
 # TODO: logging
 
+def deep_update(source, overrides):
+    """
+    Update a nested dictionary or similar mapping.
+    Modify ``source`` in place.
+    """
+    for key in overrides.keys():
+        if isinstance(source, collections.Mapping):
+            if isinstance(overrides[key], collections.Mapping) and overrides[key]:
+                returned = deep_update(source.get(key, {}), overrides[key])
+                source[key] = returned
+            # Need list append?
+            else:
+                source[key] = overrides[key]
+        else:
+            source = {key: overrides[key]}
+    return source
+
 class simple_nn(object):
-    def __init__(self, inputs, descriptor, model):
+    def __init__(self, inputs, descriptor=None, model=None):
         # inputs: filename which contains YAML style input parameters
         # descriptor, model
         self.inputs = dict()
-        self.descriptor = descriptor
-        self.model = model
+        if descriptor != None:
+            self.descriptor = descriptor
+            self.inputs = deep_update(self.inputs, self.descriptor.default_inputs)
 
-        self.inputs.update(self.descriptor.default_inputs)
-        self.inputs.update(self.model.default_inputs)
-        self.inputs.update(yaml.load(open(inputs)))
+        if model != None:
+            self.model = model
+            self.inputs = deep_update(self.inputs, self.model.default_inputs)
+
+        self.inputs = deep_update(self.inputs, yaml.load(open(inputs)))
 
         if not 'atom_types' in self.inputs:
             raise KeyError
         
-        #self.log
+        self.logfile = open('LOG', 'wb', 0)
+
+    def _log_header(self):
+        self.logfile.write("SIMPLE_NN\n")
+
+    def update_inputs(self):
+        # TODO: update not only main dictionary but also subdictionary
+        return 0
 
     @property
     def inputs(self):

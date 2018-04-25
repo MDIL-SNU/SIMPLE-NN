@@ -21,6 +21,7 @@ class Neural_network(object):
     def __init__(self):
         self.parent = None
         # TODO: default input setting
+        # TODO: update subdictionary using one function
         self.default_inputs = {'neural_network':
                                   {
                                       'method': 'Adam',
