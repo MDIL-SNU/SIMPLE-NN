@@ -22,8 +22,10 @@ def deep_update(source, overrides):
 
 class simple_nn(object):
     def __init__(self, inputs, descriptor=None, model=None):
-        # inputs: filename which contains YAML style input parameters
-        # descriptor, model
+        """
+        inputs: filename which contains YAML style input parameters
+        descriptor, model
+        """
         self.inputs = dict()
         if descriptor != None:
             self.descriptor = descriptor
@@ -38,14 +40,11 @@ class simple_nn(object):
         if not 'atom_types' in self.inputs:
             raise KeyError
         
-        self.logfile = open('LOG', 'wb', 0)
+        self.logfile = open('LOG', 'w', 10)
 
     def _log_header(self):
+        # TODO: make the log header (low priority)
         self.logfile.write("SIMPLE_NN\n")
-
-    def update_inputs(self):
-        # TODO: update not only main dictionary but also subdictionary
-        return 0
 
     @property
     def inputs(self):
@@ -77,14 +76,6 @@ class simple_nn(object):
 
     #def log(self, message):
     #    self._log.write(message)
-
-    def _make_itemlist_from_file(self, filelist):
-        self.filelist = list()
-        for item in filelist:
-            with open(item, 'r') as fil:
-                for line in fil:
-                    self.filelist.append(line.strip())
-    
 
     def run(self, user_optimizer=None):
         self.descriptor.generate()

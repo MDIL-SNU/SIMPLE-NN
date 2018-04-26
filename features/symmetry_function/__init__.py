@@ -42,6 +42,7 @@ class Symmetry_function(object):
                               }
 
     def generate(self):
+        self.inputs = self.parent.inputs['symmetry_function']
 
         comm = MPI.COMM_WORLD
         size = comm.Get_size()
@@ -54,23 +55,22 @@ class Symmetry_function(object):
                                       double**, double**);""")
         lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libsymf.so"))
 
-        # Get structure list to calculate    
+        if rank == 0:
+            train_dir = open('./train_dir', 'w')
+
+        # Get structure list to calculate
+        # TODO: change this part to self.parent._make_filelist_from_file  
         structures = list()
-        for item in self.parent.inputs['symmetry_function']['structures']:
-            if item[0] == '+':
-                tmp_list = list()
-                with open(item[1:], 'r') as fil:
-                    for line in fil:
-                        tmp_list.append(line.strip().split())
-                structures += tmp_list
-            else:
-                structures.append(item.split())
+        for item in self.inputs['structures']:
+            with open(item[1:], 'r') as fil:
+                for line in fil:
+                    structures.append(line.strip().split())
 
         # Get parameter list for each atom types
         params_set = dict()
         for item in self.parent.inputs['atom_types']:
             params_set[item]['i'], params_set[item]['d'] = \
-                _read_params(self.parent.inputs['symmetry_functions']['params'][item])
+                _read_params(self.inputs['params'][item])
             params_set[item]['ip'] = _gen_2Darray_for_ffi(params_set[item]['i'], ffi, "int")
             params_set[item]['dp'] = _gen_2Darray_for_ffi(params_set[item]['d'], ffi)
             params_set[item]['total'] = np.concatenate((params_set[item]['i'], params_set[item]['d']), axis=1)
@@ -79,11 +79,21 @@ class Symmetry_function(object):
         for item in structures:
             # FIXME: add another input type
             # TODO: modulization. currently, we suppose that the input file is VASP based.
+            
             if len(item) == 1:
-                index_str = '-1:'
+                index = 0
+                if rank == 0:
+                    self.parent.logfile.write('{} 0'.format(item[0]))
             else:
-                index_str = item[1]
-            snapshots = io.read(item[0], index=index_str, force_consistent=True)
+                if ':' in item[1]:
+                    index = item[1]
+                else:
+                    index = int(item[1])
+
+                if rank == 0:
+                    self.parent.logfile.write('{} {}'.format(item[0], item[1]))
+
+            snapshots = io.read(item[0], index=index, force_consistent=True) 
 
             for atoms in snapshots:
                 cart = np.copy(atoms.positions, order='C')
@@ -150,25 +160,17 @@ class Symmetry_function(object):
                         res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
                                             reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
                         res['params'][jtem] = params_set[jtem]['total']
-                    # FIXME: change the data structure
-
-                    # FIXME: for test
-                    """
-                    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/structure1.pickle"), "rb") as fil:
-                        if six.PY2:
-                            refdat = pickle.load(fil)
-                        elif six.PY3:
-                            refdat = pickle.load(fil, encoding='latin1')
-
-                    dx_cal = res['dx'][:4]
-                    dx_ref = refdat['dsym']['Si']
-                    print(np.sum((dx_cal - dx_ref) < 1e-13))
-                    """
 
                 if rank == 0:
                     tmp_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/test1.pickle")
                     with open(tmp_filename, "wb") as fil:
                         pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  # TODO: directory setting?
 
-                    self.parent.data_list.append(tmp_filename)
-                    # TODO: LOGGING
+                    train_dir.write('{}\n'.format(tmp_filename))
+                    tmp_endfile = tmp_filename
+
+            if rank == 0:
+                self.parent.logfile.write(': ~{}\n'.format(tmp_endfile))
+
+        if rank == 0:
+            train_dir.close()

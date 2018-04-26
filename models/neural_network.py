@@ -3,6 +3,7 @@ import numpy as np
 import random
 import six
 from six.moves import cPickle as pickle
+import collections
 
 """
 Neural network model with symmetry function as a descriptor
@@ -21,23 +22,35 @@ class Neural_network(object):
     def __init__(self):
         self.parent = None
         # TODO: default input setting
-        # TODO: update subdictionary using one function
         self.default_inputs = {'neural_network':
                                   {
                                       'method': 'Adam',
+                                      'continue': False,
+                                      'use_force': False,
+                                      'force_coeff': 0.3,
                                       'total_epoch': 10000,
+                                      'save_interval': 1000,
+                                      'show_interval': 100,
+                                      'max_iteration': 1000,
                                       'batch_size': 64,
                                       'loss_scale': 1.,
-                                      'continue': False,
+                                      'double_precision': True,
+                                      'use_atomic_weight': False,
                                       'data': ['./train_dir'],
-                                      'learning_rate': {},
+                                      'learning_rate': 0.01,
+                                      'optimizer': dict()
                                   }
                               }
         self.inputs = dict()
 
     def _make_fileiter(self):
         # TODO: check tf.data
-        self.parent._make_filelist(self.inputs['data']) 
+        data_list = list()
+        for item in self.inputs['data']:
+            with open(item, 'r') as fil:
+                for line in fil:
+                    data_list.append(line.strip())
+ 
         class iterfile(object):
             def __init__(self, filelist):
                 self.items = filelist
@@ -62,15 +75,16 @@ class Neural_network(object):
                 def __next__(self):
                     return self._next()
 
-        self.filelist = iterfile(self.parent.filelist)
+        self.filelist = iterfile(data_list)
 
     def _get_batch(self, batch_size, initial=False):
-        self.batch = {'x': dict(),
-                      'dx': dict(),
-                      '_E': list(),
-                      '_F': list(),
-                      'N': dict(),
-                      'seg_id': dict()
+        self.batch = {
+                        'x': dict(),
+                        'dx': dict(),
+                        '_E': list(),
+                        '_F': list(),
+                        'N': dict(),
+                        'seg_id': dict()
                       }
 
         for item in self.parent.inputs['atom_types']:
@@ -136,7 +150,7 @@ class Neural_network(object):
         # TODO: add the check code for valid scale file
         self.gdf = pickle_load(gdf_file)
 
-    def _make_model(self, calc_deriv=False):
+    def _make_model(self):
         self.models = dict()
         self.ys = dict()
         self.dys = dict()
@@ -156,19 +170,19 @@ class Neural_network(object):
             self.models[item] = model
             self.ys[item] = self.models[item](self.x[item])
 
-            if calc_deriv:
+            if self.inputs['use_force']:
                 self.dys[item] = tf.gradients(self.ys[item], self.x[item])[0]
             else:
                 self.dys[item] = None
 
 
-    def _calc_output(self, calc_force=False):
+    def _calc_output(self):
         self.E = self.F = 0
 
         for item in self.parent.inputs['atom_types']:
             self.E += tf.segment_sum(self.ys[item], self.batch['seg_id'][item])
 
-            if calc_force:
+            if self.inputs['use_force']:
                 tmp_force = self.batch['dx'][item] * \
                             tf.expand_dims(\
                                 tf.expand_dims(self.dys[item], axis=2),
@@ -179,15 +193,15 @@ class Neural_network(object):
                 self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                    self.batch['partition'], 2)[0]
 
-    def _get_loss(self, calc_force=False, force_coeff=0.03, use_gdf=False, gdf_values=None):
+    def _get_loss(self, use_gdf=False, gdf_values=None):
         self.e_loss = tf.reduce_mean(tf.square(self.E - self._E) / self.tot_num)
         self.total_loss = self.e_loss
 
-        if calc_force:
+        if self.inputs['use_force']:
             self.f_loss = tf.square(self.F - self._F)
             if use_gdf:
                 self.f_loss *= gdf_values
-            self.f_loss = tf.reduce_mean(self.f_loss) * force_coeff
+            self.f_loss = tf.reduce_mean(self.f_loss) * self.inputs['force_coeff']
         
             self.total_loss += self.f_loss
 
@@ -197,8 +211,11 @@ class Neural_network(object):
                                                                 method=self.inputs['method'], 
                                                                 options=self.inputs['optimizer'])
         elif self.inputs['method'] == 'Adam':
-            # FIXME: learning_rate kwargs
-            self.learning_rate = tf.train.exponential_decay(**self.inputs['learning_rate'])
+            if isinstance(self.inputs['learning_rate'], collections.Mapping):
+                self.learning_rate = tf.train.exponential_decay(**self.inputs['learning_rate'])
+            else:
+                self.learning_rate = self.inputs['learning_rate']
+
             self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rate, 
                                                 name='Adam', **self.inputs['optimizer'])
             self.optim = self.optim.minimize(self.total_loss*self.inputs['lossscale'])
@@ -221,13 +238,21 @@ class Neural_network(object):
             self.fdict[self.dx[item]] = self.batch['dx'][item]
             self.fdict[self.seg_id[item]] = self.batch['seg_id'][item] 
 
+    def _generate_lammps_potential(self):
+        # TODO: get the parameter info from initial batch generting processs
+        return 0
+
+    def _save(self, sess, saver):
+        self.parent.logfile.write("Save the weights and write the LAMMPS potential..")              
+        saver.save(sess, './SAVER')
+        self._generate_lammps_potential()
+
     def run(self, user_optimizer=None):
-        # FIXME: change the code that compatable for other part
 
         # read data?
         # preprocessing: scale, GDF...
 
-        self._make_fileiter() # TODO: need to change
+        self._make_fileiter()
         self._get_batch(1, initial=True)
 
         # Generate placeholder
@@ -248,7 +273,6 @@ class Neural_network(object):
         self._get_loss()
         self._make_optimizer(user_optimizer=user_optimizer)
 
-        # TODO: tf.Session setting
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         #config.gpu_options.per_process_gpu_memory_fraction = 0.45
@@ -261,6 +285,7 @@ class Neural_network(object):
                 sess.run(tf.global_variables_initializer())
 
             if self.inputs['method'] == 'L-BFGS-B':
+                # TODO: complete this part
                 raise ValueError
             elif self.inputs['method'] == 'Adam':
                 for epoch in range(self.inputs['total_epoch']):
@@ -268,9 +293,13 @@ class Neural_network(object):
                     self._make_feed_dict()
                     self.optim.run(feed_dict=self.fdict)
 
-                    if epoch % 1000 == 0:
-                        print("aa") # FIXME: logging
-                            
+                    # Logging
+                    if epoch+1 % 1000 == 0:
+                        self.parent.logfile.write("epoch {}: ".format(epoch))
 
-        return 0
+                    # Temp saving
+                    if epoch+1 % 10000 == 0:
+                        self._save(sess, saver)
+
+            self._save(sess, saver)
     
