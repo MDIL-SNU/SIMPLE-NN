@@ -44,6 +44,7 @@ class Neural_network(object):
                                   }
                               }
         self.inputs = dict()
+        self.global_step = tf.Variable(0, trainable=False)
 
     def _make_fileiter(self):
         # TODO: check tf.data
@@ -136,15 +137,15 @@ class Neural_network(object):
                 tmp_dx[tmp_idx:tmp_idx+jtem.shape[0],:,\
                        :jtem.shape[2],:] = jtem
                 tmp_idx += jtem.shape[0]
-            self.batch['dx'][item] = tmp_idx
+            self.batch['dx'][item] = tmp_dx
 
             self.batch['seg_id'][item] = \
-                np.concatenate([[i]*item for i,item in enumerate(self.batch['N'][item])])
+                np.concatenate([[j]*jtem for j,jtem in enumerate(self.batch['N'][item])])
             
             # TODO: scale
 
         self.batch['partition'] = \
-            np.concatenate([[1]*item + [0]*(max_atom_num - item) for item in self.batch['tot_num']])
+            np.concatenate([[0]*item + [1]*(max_atom_num - item) for item in self.batch['tot_num']])
         
 
     def _set_scale_parameter(self, scale_file, gdf_file=None):
@@ -164,9 +165,9 @@ class Neural_network(object):
 
         for item in self.parent.inputs['atom_types']:
             if isinstance(self.inputs['nodes'], collections.Mapping):
-                nodes = list(map(int, self.inputs['nodes'][item]))
+                nodes = list(map(int, self.inputs['nodes'][item].split('-')))
             else:
-                nodes = list(map(int, self.inputs['nodes']))
+                nodes = list(map(int, self.inputs['nodes'].split('-')))
             nlayers = len(nodes)
             model = tf.keras.models.Sequential()
             model.add(tf.keras.layers.Dense(nodes[0], activation='sigmoid', \
@@ -189,18 +190,18 @@ class Neural_network(object):
         self.E = self.F = 0
 
         for item in self.parent.inputs['atom_types']:
-            self.E += tf.segment_sum(self.ys[item], self.batch['seg_id'][item])
+            self.E += tf.segment_sum(self.ys[item], self.seg_id[item])
 
             if self.inputs['use_force']:
-                tmp_force = self.batch['dx'][item] * \
+                tmp_force = self.dx[item] * \
                             tf.expand_dims(\
                                 tf.expand_dims(self.dys[item], axis=2),
                                 axis=3)
                 tmp_force = tf.reduce_sum(\
-                                tf.segment_sum(tmp_force, self.batch['seg_id'][item]),
+                                tf.segment_sum(tmp_force, self.seg_id[item]),
                                 axis=1)
                 self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
-                                                   self.batch['partition'], 2)[0]
+                                                   self.partition, 2)[0]
 
     def _get_loss(self, use_gdf=False, gdf_values=None):
         self.e_loss = tf.reduce_mean(tf.square(self.E - self._E) / self.tot_num)
@@ -215,22 +216,23 @@ class Neural_network(object):
             self.total_loss += self.f_loss
 
     def _make_optimizer(self, user_optimizer=None):
+        final_loss = self.inputs['loss_scale']*self.total_loss
         if self.inputs['method'] == 'L-BFGS-B':
-            self.optim = tf.contrib.opt.ScipyOptimizerInterface(self.inputs['lossscale']*self.total_loss, 
+            self.optim = tf.contrib.opt.ScipyOptimizerInterface(final_loss, 
                                                                 method=self.inputs['method'], 
                                                                 options=self.inputs['optimizer'])
         elif self.inputs['method'] == 'Adam':
             if isinstance(self.inputs['learning_rate'], collections.Mapping):
-                self.learning_rate = tf.train.exponential_decay(**self.inputs['learning_rate'])
+                self.learning_rate = tf.train.exponential_decay(global_step=self.global_step, **self.inputs['learning_rate'])
             else:
                 self.learning_rate = self.inputs['learning_rate']
 
             self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rate, 
                                                 name='Adam', **self.inputs['optimizer'])
-            self.optim = self.optim.minimize(self.total_loss*self.inputs['lossscale'])
+            self.optim = self.optim.minimize(final_loss, global_step=self.global_step)
         else:
             if user_optimizer != None:
-                self.optim = user_optimizer.minimize(self.total_loss*self.inputs['lossscale'])
+                self.optim = user_optimizer.minimize(final_loss, global_step=self.global_step)
             else:
                 raise ValueError
 
@@ -304,11 +306,23 @@ class Neural_network(object):
                     self.optim.run(feed_dict=self.fdict)
 
                     # Logging
-                    if epoch+1 % 1000 == 0:
-                        self.parent.logfile.write("epoch {}: ".format(epoch))
+                    if (epoch+1) % self.inputs['show_interval'] == 0:
+                        result = "epoch {}: ".format(epoch)
+
+                        eloss = sess.run(self.e_loss, feed_dict=self.fdict)
+                        eloss = np.sqrt(eloss)
+                        result += 'E loss = {}'.format(eloss)
+
+                        if self.inputs['use_force']:
+                            floss = sess.run(self.f_loss, feed_dict=self.fdict)
+                            floss = np.sqrt(floss*3/self.inputs['force_coeff'])
+                            result += ', F loss = {}'.format(floss)
+
+                        result += '\n'
+                        self.parent.logfile.write(result)
 
                     # Temp saving
-                    if epoch+1 % 10000 == 0:
+                    if (epoch+1) % self.inputs['save_interval'] == 0:
                         self._save(sess, saver)
 
             self._save(sess, saver)
