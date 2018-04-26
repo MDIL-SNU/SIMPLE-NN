@@ -34,6 +34,7 @@ def _read_params(filename):
 class Symmetry_function(object):
     def __init__(self, inputs=None):
         self.parent = None
+        self.key = 'symmetry_function'
         self.default_inputs = {'symmetry_function': 
                                   {
                                       'structures': ['./str_list'],

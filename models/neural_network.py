@@ -21,6 +21,7 @@ def pickle_load(filename):
 class Neural_network(object):
     def __init__(self):
         self.parent = None
+        self.key = 'neural_network'
         # TODO: default input setting
         self.default_inputs = {'neural_network':
                                   {
@@ -248,7 +249,8 @@ class Neural_network(object):
         self._generate_lammps_potential()
 
     def run(self, user_optimizer=None):
-
+        # FIXME: make individual function to set self.inputs?
+        self.inputs = self.parent.inputs['neural_network']
         # read data?
         # preprocessing: scale, GDF...
 

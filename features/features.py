@@ -1,6 +1,7 @@
 # Code for generating feature vector from atomic coordinates.
 # Currently, atomic symmetry function(reference) can available.
 
+"""
 import sys
 import symmetry_function
 
@@ -18,3 +19,4 @@ def main(argv=argv):
 
 if __name__ == "__main__":
     main(sys.argv)
+    """

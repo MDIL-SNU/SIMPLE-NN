@@ -62,7 +62,6 @@ class simple_nn(object):
     def descriptor(self, descriptor):
         descriptor.parent = self
         self._descriptor = descriptor
-        self._descriptor.inputs = self.inputs['neural_network']
 
     @property
     def model(self):
