@@ -77,6 +77,7 @@ class Symmetry_function(object):
             params_set[item]['total'] = np.concatenate((params_set[item]['i'], params_set[item]['d']), axis=1)
             params_set[item]['num'] = len(params_set[item]['total'])
             
+        data_idx = 1
         for item in structures:
             # FIXME: add another input type
             # TODO: modulization. currently, we suppose that the input file is VASP based.
@@ -163,12 +164,15 @@ class Symmetry_function(object):
                         res['params'][jtem] = params_set[jtem]['total']
 
                 if rank == 0:
-                    tmp_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/test/test1.pickle")
+                    # TODO: add the directory setting part for saving the data
+                    tmp_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)) + \
+                                                    "/data/test{}.pickle".format(data_idx))
                     with open(tmp_filename, "wb") as fil:
-                        pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  # TODO: directory setting?
+                        pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 
                     train_dir.write('{}\n'.format(tmp_filename))
                     tmp_endfile = tmp_filename
+                    data_idx += 1
 
             if rank == 0:
                 self.parent.logfile.write(': ~{}\n'.format(tmp_endfile))
