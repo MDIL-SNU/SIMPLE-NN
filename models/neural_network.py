@@ -39,7 +39,8 @@ class Neural_network(object):
                                       'use_atomic_weight': False,
                                       'data': ['./train_dir'],
                                       'learning_rate': 0.01,
-                                      'optimizer': dict()
+                                      'optimizer': dict(),
+                                      'nodes': '30-30'
                                   }
                               }
         self.inputs = dict()
@@ -118,7 +119,7 @@ class Neural_network(object):
             self.inp_size = dict()
 
         for item in self.parent.inputs['atom_types']:
-            self.batch['N'][item] = np.concatenate(self.batch['N'][item], axis=0).astype(np.int)
+            self.batch['N'][item] = np.array(self.batch['N'][item], dtype=np.int)
             self.batch['x'][item] = np.concatenate(self.batch['x'][item], axis=0).astype(np.float64)
 
             if initial:
@@ -155,10 +156,17 @@ class Neural_network(object):
         self.models = dict()
         self.ys = dict()
         self.dys = dict()
-        dtype = self.parent.inputs['dtype']
+
+        if self.inputs['double_precision']:
+            dtype = tf.float64
+        else:
+            dtype = tf.float32
 
         for item in self.parent.inputs['atom_types']:
-            nodes = self.parent.inputs['nodes'][item]
+            if isinstance(self.inputs['nodes'], collections.Mapping):
+                nodes = list(map(int, self.inputs['nodes'][item]))
+            else:
+                nodes = list(map(int, self.inputs['nodes']))
             nlayers = len(nodes)
             model = tf.keras.models.Sequential()
             model.add(tf.keras.layers.Dense(nodes[0], activation='sigmoid', \
