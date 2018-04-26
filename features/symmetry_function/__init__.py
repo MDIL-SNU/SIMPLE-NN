@@ -59,17 +59,17 @@ class Symmetry_function(object):
         if rank == 0:
             train_dir = open('./train_dir', 'w')
 
-        # Get structure list to calculate
-        # TODO: change this part to self.parent._make_filelist_from_file  
+        # Get structure list to calculate  
         structures = list()
         for item in self.inputs['structures']:
-            with open(item[1:], 'r') as fil:
+            with open(item, 'r') as fil:
                 for line in fil:
                     structures.append(line.strip().split())
 
         # Get parameter list for each atom types
         params_set = dict()
         for item in self.parent.inputs['atom_types']:
+            params_set[item] = dict()
             params_set[item]['i'], params_set[item]['d'] = \
                 _read_params(self.inputs['params'][item])
             params_set[item]['ip'] = _gen_2Darray_for_ffi(params_set[item]['i'], ffi, "int")
@@ -165,8 +165,9 @@ class Symmetry_function(object):
 
                 if rank == 0:
                     # TODO: add the directory setting part for saving the data
-                    tmp_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)) + \
-                                                    "/data/test{}.pickle".format(data_idx))
+                    #tmp_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)) + \
+                    #                                "/data/test{}.pickle".format(data_idx))
+                    tmp_filename = "./data/data{}.pickle".format(data_idx)
                     with open(tmp_filename, "wb") as fil:
                         pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 

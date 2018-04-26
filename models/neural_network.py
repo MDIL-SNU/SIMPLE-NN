@@ -118,8 +118,8 @@ class Neural_network(object):
             self.inp_size = dict()
 
         for item in self.parent.inputs['atom_types']:
-            self.batch['N'][item] = np.array(self.batch['N'][item], dtype=np.int)
-            self.batch['x'][item] = np.array(self.batch['x'][item], dtype=np.float64)
+            self.batch['N'][item] = np.concatenate(self.batch['N'][item], axis=0).astype(np.int)
+            self.batch['x'][item] = np.concatenate(self.batch['x'][item], axis=0).astype(np.float64)
 
             if initial:
                 self.inp_size[item] = self.batch['x'][item].shape[1]
@@ -248,7 +248,7 @@ class Neural_network(object):
         saver.save(sess, './SAVER')
         self._generate_lammps_potential()
 
-    def run(self, user_optimizer=None):
+    def train(self, user_optimizer=None):
         # FIXME: make individual function to set self.inputs?
         self.inputs = self.parent.inputs['neural_network']
         # read data?
