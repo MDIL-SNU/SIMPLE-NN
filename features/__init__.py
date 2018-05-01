@@ -2,4 +2,4 @@
 # Currently, atomic symmetry function(reference) can available.
 # TODO: make atomic symmetry function feature generator(use C)
 
-from features import *
+#from features import *

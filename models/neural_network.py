@@ -4,25 +4,28 @@ import random
 import six
 from six.moves import cPickle as pickle
 import collections
+from ..utils import *
 
 """
 Neural network model with symmetry function as a descriptor
 """
 
+"""
 def pickle_load(filename):
     with open(filename, 'rb') as fil:
         if six.PY2:
             return pickle.load(fil)
         elif six.PY3:
             return pickle.load(fil, encoding='latin1')
+"""
 
 # TODO: complete the code
 # TODO: add the part for selecting the memory device(CPU or GPU)
+# TODO: validation set & test set
 class Neural_network(object):
     def __init__(self):
         self.parent = None
         self.key = 'neural_network'
-        # TODO: default input setting
         self.default_inputs = {'neural_network':
                                   {
                                       'method': 'Adam',
@@ -37,10 +40,15 @@ class Neural_network(object):
                                       'loss_scale': 1.,
                                       'double_precision': True,
                                       'use_atomic_weight': False,
+                                      'scale': False,
                                       'data': ['./train_dir'],
                                       'learning_rate': 0.01,
                                       'optimizer': dict(),
-                                      'nodes': '30-30'
+                                      'nodes': '30-30',
+                                      'atomic_weights': {
+                                          'type': None
+                                          'params': dict()
+                                      }
                                   }
                               }
         self.inputs = dict()
@@ -48,11 +56,15 @@ class Neural_network(object):
 
     def _make_fileiter(self):
         # TODO: check tf.data
+        """
         data_list = list()
         for item in self.inputs['data']:
             with open(item, 'r') as fil:
                 for line in fil:
                     data_list.append(line.strip())
+        """
+        data_list = _make_data_list(self.inputs['data'])
+        data_list = list(zip(data_list, list(range(len(data_list)))))
  
         class iterfile(object):
             def __init__(self, filelist):
@@ -89,6 +101,10 @@ class Neural_network(object):
                         'N': dict(),
                         'seg_id': dict()
                       }
+        
+        tag_atomic_weights = self.inputs['atomic_weights']['type']
+        if tag_atomic_weights != None:
+            self.batch['atomic_weights'] = list()
 
         for item in self.parent.inputs['atom_types']:
             self.batch['x'][item] = list()
@@ -96,7 +112,7 @@ class Neural_network(object):
             self.batch['N'][item] = list()
         
         for i,item in enumerate(self.filelist):
-            loaded_fil = pickle_load(item)
+            loaded_fil = pickle_load(item[0])
 
             # TODO: add parameter check part
             self.batch['_E'].append(loaded_fil['E'])
@@ -105,12 +121,17 @@ class Neural_network(object):
                 self.batch['x'][jtem].append(loaded_fil['x'][jtem])
                 self.batch['dx'][jtem].append(loaded_fil['dx'][jtem])
                 self.batch['N'][jtem].append(loaded_fil['N'][jtem])
+                if tag_atomic_weights != None:
+                    self.batch['atomic_weights'].
+                        append(self.atomic_weights_full[self.atomic_weights_full[item][:,1] == item[1],:])
 
             if i+2 > batch_size:
                 break
 
         self.batch['_E'] = np.array(self.batch['_E'], dtype=np.float64)
         self.batch['_F'] = np.concatenate(self.batch['_F']).astype(np.float64)
+        if tag_atomic_weights != None:
+            self.batch['atomic_weights'] = np.concatenate(self.batch['atomic_weights']).astype(np.float64)
 
         self.batch['tot_num'] = np.sum(list(self.batch['N'].values()), axis=0)
         max_atom_num = np.max(self.batch['tot_num'])
@@ -122,6 +143,8 @@ class Neural_network(object):
         for item in self.parent.inputs['atom_types']:
             self.batch['N'][item] = np.array(self.batch['N'][item], dtype=np.int)
             self.batch['x'][item] = np.concatenate(self.batch['x'][item], axis=0).astype(np.float64)
+            self.batch['x'][item] -= self.scale[item][0:1,:]
+            self.batch['x'][item] /= self.scale[item][1:2,:]
 
             if initial:
                 self.inp_size[item] = self.batch['x'][item].shape[1]
@@ -137,16 +160,14 @@ class Neural_network(object):
                 tmp_dx[tmp_idx:tmp_idx+jtem.shape[0],:,\
                        :jtem.shape[2],:] = jtem
                 tmp_idx += jtem.shape[0]
-            self.batch['dx'][item] = tmp_dx
+            self.batch['dx'][item] = tmp_dx / self.scale[item][1:2,:].reshape([1,self.inp_size[item],1,1])
 
             self.batch['seg_id'][item] = \
                 np.concatenate([[j]*jtem for j,jtem in enumerate(self.batch['N'][item])])
-            
-            # TODO: scale
 
         self.batch['partition'] = \
             np.concatenate([[0]*item + [1]*(max_atom_num - item) for item in self.batch['tot_num']])
-        
+        # TODO: gdf?
 
     def _set_scale_parameter(self, scale_file, gdf_file=None):
         self.scale = pickle_load(scale_file)
@@ -163,6 +184,12 @@ class Neural_network(object):
         else:
             dtype = tf.float32
 
+        dense_basic_setting = {
+            'dtype': dtype,
+            'kernel_initializer': tf.initializers.truncated_normal(stddev=0.3),
+            'bias_initializer': tf.initializers.truncated_normal(stddev=0.3)
+        }
+
         for item in self.parent.inputs['atom_types']:
             if isinstance(self.inputs['nodes'], collections.Mapping):
                 nodes = list(map(int, self.inputs['nodes'][item].split('-')))
@@ -171,11 +198,12 @@ class Neural_network(object):
             nlayers = len(nodes)
             model = tf.keras.models.Sequential()
             model.add(tf.keras.layers.Dense(nodes[0], activation='sigmoid', \
-                                            input_dim=self.inp_size[item], dtype=dtype))
+                                            input_dim=self.inp_size[item],
+                                            **dense_basic_setting))
 
             for i in range(1, nlayers):
-                model.add(tf.keras.layers.Dense(nodes[i], activation='sigmoid', dtype=dtype))
-            model.add(tf.keras.layers.Dense(1, activation='linear', dtype=dtype))
+                model.add(tf.keras.layers.Dense(nodes[i], activation='sigmoid', **dense_basic_setting))
+            model.add(tf.keras.layers.Dense(1, activation='linear', **dense_basic_setting))
 
             self.models[item] = model
             self.ys[item] = self.models[item](self.x[item])
@@ -203,12 +231,12 @@ class Neural_network(object):
                 self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                    self.partition, 2)[0]
 
-    def _get_loss(self, use_gdf=False, gdf_values=None):
-        self.e_loss = tf.reduce_mean(tf.square(self.E - self._E) / self.tot_num)
+    def _get_loss(self, use_gdf=False, atomic_weights=None):
+        self.e_loss = tf.reduce_mean(tf.square((self._E - self.E) / self.tot_num))
         self.total_loss = self.e_loss
 
         if self.inputs['use_force']:
-            self.f_loss = tf.square(self.F - self._F)
+            self.f_loss = tf.square(self._F - self.F)
             if use_gdf:
                 self.f_loss *= gdf_values
             self.f_loss = tf.reduce_mean(self.f_loss) * self.inputs['force_coeff']
@@ -244,6 +272,9 @@ class Neural_network(object):
             self.partition: self.batch['partition']
         }
 
+        if self.inputs['atomic_weights']['type'] != None:
+            self.fdict[self.atomic_weights]: self.batch['atomic_weights']
+
         for item in self.parent.inputs['atom_types']:
             self.fdict[self.x[item]] = self.batch['x'][item]
             self.fdict[self.dx[item]] = self.batch['dx'][item]
@@ -258,13 +289,29 @@ class Neural_network(object):
         saver.save(sess, './SAVER')
         self._generate_lammps_potential()
 
-    def train(self, user_optimizer=None):
+    def train(self, user_optimizer=None, user_atomic_weights_function=None):
         # FIXME: make individual function to set self.inputs?
         self.inputs = self.parent.inputs['neural_network']
         # read data?
         # preprocessing: scale, GDF...
 
         self._make_fileiter()
+
+        if self.inputs['atomic_weights']['type'] == 'gdf':
+            get_atomic_weights = _generate_gdf_file
+        elif self.inputs['atomic_weights']['type'] == 'user':
+            get_atomic_weights = user_atomic_weights_function
+        elif self.inputs['atomic_weights']['type'] == 'file':
+            get_atomic_weights = './atomic_weights'
+        else:
+            get_atomic_weights = None
+
+        self.scale, self.atomic_weights_full = \
+            preprocessing(self.inputs['data'], self.parent.inputs['atom_types'], 'x', \
+                          calc_scale=self.inputs['scale'], \
+                          get_atomic_weights=get_atomic_weights, \
+                          **self.inputs['atomic_weights']['params'])
+
         self._get_batch(1, initial=True)
 
         # Generate placeholder
@@ -275,6 +322,8 @@ class Neural_network(object):
         self.seg_id = dict()
         self.x = dict()
         self.dx = dict()
+        self.atomic_weights = tf.placeholder(tf.float64, [None, 1]) \
+                                if self.inputs['atomic_weights']['type'] != None else None
         for item in self.parent.inputs['atom_types']:
             self.x[item] = tf.placeholder(tf.float64, [None, self.inp_size[item]])
             self.dx[item] = tf.placeholder(tf.float64, [None, self.inp_size[item], None, 3])
@@ -318,7 +367,8 @@ class Neural_network(object):
                             floss = np.sqrt(floss*3/self.inputs['force_coeff'])
                             result += ', F loss = {}'.format(floss)
 
-                        result += '\n'
+                        lr = sess.run(self.learning_rate)
+                        result += ', learning_rate: {}\n'.format(lr)
                         self.parent.logfile.write(result)
 
                     # Temp saving

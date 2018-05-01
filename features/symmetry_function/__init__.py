@@ -7,8 +7,10 @@ import six
 from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
+from ...utils import *
 
 # TODO: Different atom can get different symmetry function parameter
+"""
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
     shape = arr.shape
@@ -16,6 +18,7 @@ def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     for i in range(shape[0]):
         arr_p[i] = ffi.cast(cdata + " *", arr[i].ctypes.data)
     return arr_p
+"""
 
 def _read_params(filename):
     params_i = list()
