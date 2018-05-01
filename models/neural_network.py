@@ -4,7 +4,7 @@ import random
 import six
 from six.moves import cPickle as pickle
 import collections
-from ..utils import *
+from ..utils import _make_data_list, pickle_load, preprocessing, _generate_gdf_file
 
 """
 Neural network model with symmetry function as a descriptor
@@ -46,7 +46,7 @@ class Neural_network(object):
                                       'optimizer': dict(),
                                       'nodes': '30-30',
                                       'atomic_weights': {
-                                          'type': None
+                                          'type': None,
                                           'params': dict()
                                       }
                                   }
@@ -122,7 +122,7 @@ class Neural_network(object):
                 self.batch['dx'][jtem].append(loaded_fil['dx'][jtem])
                 self.batch['N'][jtem].append(loaded_fil['N'][jtem])
                 if tag_atomic_weights != None:
-                    self.batch['atomic_weights'].
+                    self.batch['atomic_weights'].\
                         append(self.atomic_weights_full[self.atomic_weights_full[item][:,1] == item[1],:])
 
             if i+2 > batch_size:
@@ -237,8 +237,8 @@ class Neural_network(object):
 
         if self.inputs['use_force']:
             self.f_loss = tf.square(self._F - self.F)
-            if use_gdf:
-                self.f_loss *= gdf_values
+            if self.inputs['atomic_weights']['type'] != None:
+                self.f_loss *= self.atomic_weights
             self.f_loss = tf.reduce_mean(self.f_loss) * self.inputs['force_coeff']
         
             self.total_loss += self.f_loss
@@ -273,7 +273,7 @@ class Neural_network(object):
         }
 
         if self.inputs['atomic_weights']['type'] != None:
-            self.fdict[self.atomic_weights]: self.batch['atomic_weights']
+            self.fdict[self.atomic_weights] = self.batch['atomic_weights']
 
         for item in self.parent.inputs['atom_types']:
             self.fdict[self.x[item]] = self.batch['x'][item]
@@ -285,7 +285,7 @@ class Neural_network(object):
         return 0
 
     def _save(self, sess, saver):
-        self.parent.logfile.write("Save the weights and write the LAMMPS potential..")              
+        self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")              
         saver.save(sess, './SAVER')
         self._generate_lammps_potential()
 
