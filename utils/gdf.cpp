@@ -1,24 +1,36 @@
 #include <math.h>
 
+// TODO: check the scale
 extern "C" void calculate_gdf(double** features, int num_points, int num_features, double sigma, double* gdf) {
     /*
     C extern function for calculating GDF value [paper ref.]
     features: [# of points, # of features]
     gdf: [# of points]
     */
-    double tmp_gdf, tmp_indi;
+    double tmp_gdf, tmp_indi, max_val;
 
+    max_val = 0;
     for (int i=0; i<num_points; ++i) {
         tmp_gdf = 0;
         for (int j=0; j<num_points; ++j) {
+            if (i==j) continue;
+
             tmp_indi = 0;
             for (int k=0; k<num_features; ++k) {
                 tmp_indi += (features[i][k] - features[j][k]) * (features[i][k] - features[j][k]);
             }
-            tmp_indi = exp(-tmp_gdf/sigma/sigma/2/num_features);
+            tmp_gdf += exp(-tmp_indi/sigma/sigma/2/num_features);
         }
-        tmp_gdf += tmp_indi;
-        gdf[i] = tmp_gdf / num_points;
-        // TODO: scaling?
+
+        // gdf[i] = tmp_gdf / num_points;
+        gdf[i] = num_points / tmp_gdf;
+
+        if (max_val < gdf[i]) {
+            max_val = gdf[i];
+        }
+    }
+
+    for (int i=0; i<num_points; ++i) {
+        gdf[i] = gdf[i] / max_val;
     }
 }

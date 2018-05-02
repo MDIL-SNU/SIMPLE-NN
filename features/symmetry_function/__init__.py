@@ -40,10 +40,11 @@ class Symmetry_function(object):
         self.key = 'symmetry_function'
         self.default_inputs = {'symmetry_function': 
                                   {
-                                      'structures': ['./str_list'],
                                       'params': dict()
                                   }
                               }
+        self.structure_list = './str_list'
+        self.train_data_list = './train_list'
 
     def generate(self):
         self.inputs = self.parent.inputs['symmetry_function']
@@ -60,14 +61,13 @@ class Symmetry_function(object):
         lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libsymf.so"))
 
         if rank == 0:
-            train_dir = open('./train_dir', 'w')
+            train_dir = open(self.train_data_list, 'w')
 
         # Get structure list to calculate  
         structures = list()
-        for item in self.inputs['structures']:
-            with open(item, 'r') as fil:
-                for line in fil:
-                    structures.append(line.strip().split())
+        with open(self.structure_list, 'r') as fil:
+            for line in fil:
+                structures.append(line.strip().split())
 
         # Get parameter list for each atom types
         params_set = dict()

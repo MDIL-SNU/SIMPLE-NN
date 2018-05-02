@@ -22,12 +22,11 @@ def pickle_load(filename):
             return pickle.load(fil, encoding='latin1')
 
 
-def _make_data_list(filelist):
+def _make_data_list(filename):
     data_list = list()
-    for item in filelist:
-        with open(item, 'r') as fil:
-            for line in fil:
-                data_list.append(line.strip())
+    with open(item, 'r') as fil:
+        for line in fil:
+            data_list.append(line.strip())
     return data_list
 
 
@@ -79,11 +78,14 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02):
         scaled_feature /= scale[item][1:2,:]
         scaled_feature_p = _gen_2Darray_for_ffi(scaled_feature, ffi)
 
-        temp_gdf = np.zeros([scaled_feature_p[0]], dtype=np.float64, order='C')
+        temp_gdf = np.zeros([scaled_feature.shape[0]], dtype=np.float64, order='C')
         temp_gdf_p = ffi.cast("double *", temp_gdf.ctypes.data)
 
         lib.calculate_gdf(scaled_feature_p, scaled_feature.shape[0], scaled_feature.shape[1], sigma, temp_gdf_p)
-        gdf[item] = np.dstack(([temp_gdf, idx_list[item]]))
+        gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
+
+    with open('atomic_weights', 'wb') as fil:
+        pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)
 
     return gdf
 
