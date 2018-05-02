@@ -49,7 +49,7 @@ def _make_full_featurelist(filelist, atom_types, feature_tag):
 
     for item in atom_types:
         feature_list[item] = np.concatenate(feature_list[item], axis=0)
-        idx_list[jtem] = np.concatenate(idx_list[item], axis=0)
+        idx_list[item] = np.concatenate(idx_list[item], axis=0)
 
     return feature_list, idx_list
 
@@ -58,7 +58,7 @@ def _generate_scale_file(feature_list, atom_types):
     scale = dict()
     for item in atom_types:
         tmp_shape = feature_list[item].shape
-        scale[item] = np.zeros(2, tmp_shape[1])
+        scale[item] = np.zeros([2, tmp_shape[1]])
         scale[item][0,:] = 0.5*(np.amax(feature_list[item], axis=0) + np.amin(feature_list[item], axis=0))
         scale[item][1,:] = 0.5*(np.amax(feature_list[item], axis=0) - np.amin(feature_list[item], axis=0))
 

@@ -22,6 +22,7 @@ def pickle_load(filename):
 # TODO: complete the code
 # TODO: add the part for selecting the memory device(CPU or GPU)
 # TODO: validation set & test set
+# TODO: BFGS support
 class Neural_network(object):
     def __init__(self):
         self.parent = None
@@ -128,7 +129,7 @@ class Neural_network(object):
             if i+2 > batch_size:
                 break
 
-        self.batch['_E'] = np.array(self.batch['_E'], dtype=np.float64)
+        self.batch['_E'] = np.array(self.batch['_E'], dtype=np.float64).reshape([-1,1])
         self.batch['_F'] = np.concatenate(self.batch['_F']).astype(np.float64)
         if tag_atomic_weights != None:
             self.batch['atomic_weights'] = np.concatenate(self.batch['atomic_weights']).astype(np.float64)
@@ -157,8 +158,7 @@ class Neural_network(object):
 
             tmp_idx = 0
             for jtem in self.batch['dx'][item]:
-                tmp_dx[tmp_idx:tmp_idx+jtem.shape[0],:,\
-                       :jtem.shape[2],:] = jtem
+                tmp_dx[tmp_idx:tmp_idx+jtem.shape[0],:,:jtem.shape[2],:] = jtem
                 tmp_idx += jtem.shape[0]
             self.batch['dx'][item] = tmp_dx / self.scale[item][1:2,:].reshape([1,self.inp_size[item],1,1])
 
@@ -315,7 +315,7 @@ class Neural_network(object):
         self._get_batch(1, initial=True)
 
         # Generate placeholder
-        self._E = tf.placeholder(tf.float64, [None])
+        self._E = tf.placeholder(tf.float64, [None, 1])
         self._F = tf.placeholder(tf.float64, [None, 3])
         self.tot_num = tf.placeholder(tf.float64, [None])
         self.partition = tf.placeholder(tf.int32, [None])

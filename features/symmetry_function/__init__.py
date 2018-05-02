@@ -7,7 +7,7 @@ import six
 from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
-from ...utils import *
+from ...utils import _gen_2Darray_for_ffi
 
 # TODO: Different atom can get different symmetry function parameter
 """
