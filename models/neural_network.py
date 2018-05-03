@@ -398,7 +398,7 @@ class Neural_network(object):
 
                         # Logging
                         if (epoch+1) % self.inputs['show_interval'] == 0:
-                            result = "epoch {:7d}: ".format(epoch+1)
+                            result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
 
                             eloss = sess.run(self.e_loss, feed_dict=valid_fdict)
                             eloss = np.sqrt(eloss)
