@@ -155,7 +155,7 @@ class Neural_network(object):
                         batch['atomic_weights'].append([1.]*loaded_fil['N'][jtem])
                     else:
                         batch['atomic_weights'].\
-                            append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],:])
+                            append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
 
             if (not valid) and (i+2 > batch_size):
                 break
@@ -398,19 +398,19 @@ class Neural_network(object):
 
                         # Logging
                         if (epoch+1) % self.inputs['show_interval'] == 0:
-                            result = "epoch {}: ".format(epoch)
+                            result = "epoch {:7d}: ".format(epoch+1)
 
                             eloss = sess.run(self.e_loss, feed_dict=valid_fdict)
                             eloss = np.sqrt(eloss)
-                            result += 'E loss = {}'.format(eloss)
+                            result += 'E loss = {:6.4e}'.format(eloss)
 
                             if self.inputs['use_force']:
                                 floss = sess.run(self.f_loss, feed_dict=valid_fdict)
                                 floss = np.sqrt(floss*3/self.inputs['force_coeff'])
-                                result += ', F loss = {}'.format(floss)
+                                result += ', F loss = {:6.4e}'.format(floss)
 
                             lr = sess.run(self.learning_rate)
-                            result += ', learning_rate: {}\n'.format(lr)
+                            result += ', learning_rate: {:6.4e}\n'.format(lr)
                             self.parent.logfile.write(result)
 
                         # Temp saving
