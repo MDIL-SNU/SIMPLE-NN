@@ -77,6 +77,9 @@ class Neural_network(object):
                 for item in full_data[valid_idx:]:
                     fil.write(item)
 
+            self.inputs['generate_valid'] = False
+            self.parent.write_inputs()
+
         class iterfile(object):
             def __init__(self, filelist):
                 self.items = filelist
@@ -316,6 +319,10 @@ class Neural_network(object):
         return 0
 
     def _save(self, sess, saver):
+        if not self.inputs['continue']:
+            self.inputs['continue'] = True
+            self.parent.write_inputs()
+
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")              
         saver.save(sess, './SAVER')
         self._generate_lammps_potential()
@@ -376,38 +383,65 @@ class Neural_network(object):
             else:
                 sess.run(tf.global_variables_initializer())
 
-            if self.inputs['method'] == 'L-BFGS-B':
-                # TODO: complete this part
-                raise ValueError
-            elif self.inputs['method'] == 'Adam':
-                valid_set = self._get_batch(valid_fileiter, 1, valid=True)
-                valid_fdict = self._make_feed_dict(valid_set)
+            if self.inputs['train']:
+                if self.inputs['method'] == 'L-BFGS-B':
+                    # TODO: complete this part
+                    raise ValueError
+                elif self.inputs['method'] == 'Adam':
+                    valid_set = self._get_batch(valid_fileiter, 1, valid=True)
+                    valid_fdict = self._make_feed_dict(valid_set)
 
-                for epoch in range(self.inputs['total_epoch']):
-                    train_batch = self._get_batch(train_fileiter, self.inputs['batch_size'])
-                    train_fdict = self._make_feed_dict(train_batch)
-                    self.optim.run(feed_dict=train_fdict)
+                    for epoch in range(self.inputs['total_epoch']):
+                        train_batch = self._get_batch(train_fileiter, self.inputs['batch_size'])
+                        train_fdict = self._make_feed_dict(train_batch)
+                        self.optim.run(feed_dict=train_fdict)
 
-                    # Logging
-                    if (epoch+1) % self.inputs['show_interval'] == 0:
-                        result = "epoch {}: ".format(epoch)
+                        # Logging
+                        if (epoch+1) % self.inputs['show_interval'] == 0:
+                            result = "epoch {}: ".format(epoch)
 
-                        eloss = sess.run(self.e_loss, feed_dict=valid_fdict)
-                        eloss = np.sqrt(eloss)
-                        result += 'E loss = {}'.format(eloss)
+                            eloss = sess.run(self.e_loss, feed_dict=valid_fdict)
+                            eloss = np.sqrt(eloss)
+                            result += 'E loss = {}'.format(eloss)
 
-                        if self.inputs['use_force']:
-                            floss = sess.run(self.f_loss, feed_dict=valid_fdict)
-                            floss = np.sqrt(floss*3/self.inputs['force_coeff'])
-                            result += ', F loss = {}'.format(floss)
+                            if self.inputs['use_force']:
+                                floss = sess.run(self.f_loss, feed_dict=valid_fdict)
+                                floss = np.sqrt(floss*3/self.inputs['force_coeff'])
+                                result += ', F loss = {}'.format(floss)
 
-                        lr = sess.run(self.learning_rate)
-                        result += ', learning_rate: {}\n'.format(lr)
-                        self.parent.logfile.write(result)
+                            lr = sess.run(self.learning_rate)
+                            result += ', learning_rate: {}\n'.format(lr)
+                            self.parent.logfile.write(result)
 
-                    # Temp saving
-                    if (epoch+1) % self.inputs['save_interval'] == 0:
-                        self._save(sess, saver)
+                        # Temp saving
+                        if (epoch+1) % self.inputs['save_interval'] == 0:
+                            self._save(sess, saver)
 
-            self._save(sess, saver)
+                self._save(sess, saver)
+
+            if self.inputs['test']:
+                test_set = self._get_batch(test_fileiter, 1, valid=True)
+                test_fdict = self._make_feed_dict(test_set)
+
+                test_save = dict()
+                test_save['DFT_E'] = test_set['_E']
+                test_save['NN_E'] = sess.run(self.E, feed_dict=test_fdict)
+
+                eloss = sess.run(self.e_loss, feed_dict=test_fdict)
+                eloss = np.sqrt(eloss)
+
+                if self.inputs['use_force']:
+                    test_save['DFT_F'] = test_set['_F']
+                    test_save['NN_F'] = sess.run(self.F, feed_dict=test_fdict)
+
+                    floss = sess.run(self.f_loss, feed_dict=test_fdict)
+                    floss = np.sqrt(floss*3/self.inputs['force_coeff'])
+
+                with open('./test_result', 'wb') as fil:
+                    pickle.dump(test_save, fil, pickle.HIGHEST_PROTOCOL)
+
+                self.parent.logfile.write('Test result saved..\n')
+                self.parent.logfile.write(' Test E RMSE: {}, F RMSE: {}\n'.format(eloss, floss))
+
+                
     

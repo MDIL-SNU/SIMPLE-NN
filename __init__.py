@@ -46,6 +46,10 @@ class simple_nn(object):
         # TODO: make the log header (low priority)
         self.logfile.write("SIMPLE_NN\n")
 
+    def write_inputs(self):
+        with open('input_cont.yaml', 'w') as fil:
+            yaml.dump(self.inputs, fil, default_flow_style=False)
+
     @property
     def inputs(self):
         return self._inputs

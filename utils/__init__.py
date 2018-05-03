@@ -24,7 +24,7 @@ def pickle_load(filename):
 
 def _make_data_list(filename):
     data_list = list()
-    with open(item, 'r') as fil:
+    with open(filename, 'r') as fil:
         for line in fil:
             data_list.append(line.strip())
     return data_list

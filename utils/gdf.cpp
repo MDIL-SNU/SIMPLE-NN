@@ -7,9 +7,9 @@ extern "C" void calculate_gdf(double** features, int num_points, int num_feature
     features: [# of points, # of features]
     gdf: [# of points]
     */
-    double tmp_gdf, tmp_indi, max_val;
+    double tmp_gdf, tmp_indi, tot_val;
 
-    max_val = 0;
+    tot_val = 0;
     for (int i=0; i<num_points; ++i) {
         tmp_gdf = 0;
         for (int j=0; j<num_points; ++j) {
@@ -25,12 +25,11 @@ extern "C" void calculate_gdf(double** features, int num_points, int num_feature
         // gdf[i] = tmp_gdf / num_points;
         gdf[i] = num_points / tmp_gdf;
 
-        if (max_val < gdf[i]) {
-            max_val = gdf[i];
-        }
+        tot_val += gdf[i];
     }
 
+    tot_val = tot_val / num_points;
     for (int i=0; i<num_points; ++i) {
-        gdf[i] = gdf[i] / max_val;
+        gdf[i] = gdf[i] / tot_val;
     }
 }
