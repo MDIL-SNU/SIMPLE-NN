@@ -400,7 +400,7 @@ void PairNN::read_file(char *fname) {
     }
   }
 
-  int n,nwords,nsym,nlayer,isym,iscale,inode,ilayer,t_wb;
+  int n,nwords,nsym,nlayer,isym,iscale,inode,ilayer,maxnode,t_wb;
   char line[MAXLINE], *ptr, *tstr;
   int eof = 0;
   int stats = 0;
@@ -524,19 +524,36 @@ void PairNN::read_file(char *fname) {
       iscale++;
       if (iscale == 2) stats = 5;
     } else if (stats == 5) { // network number setting
-      nets[nnet].nnode.push_back(nsym);
+      //nets[nnet].nnode.push_back(nsym);
       tstr = strtok(line," \t\n\r\f");
+      // TODO: potential file change: NET nlayer-1 nnode nnode
       nlayer = atoi(strtok(NULL," \t\n\r\f"));
+      nlayer += 1;
 
       nets[nnet].nnode = new int[nlayer];
       nets[nnet].nnode[0] = nsym;
       ilayer = 1;
+      maxnode = 0;
       while ((tstr = strtok(NULL," \t\n\r\f"))) {
         nets[nnet].nnode[ilayer] = atoi(tstr);
         ilayer++;
+        if (nets[nnet].nnode[ilayer] > maxnode) {
+          maxnode = nets[nnet].nnode[ilayer];
+        }
       }
       nets[nnet].nnode[ilayer] = 1;
 
+      nets[nnet].nodes = new double[ilayer][maxnode];
+      nets[nnet].dnodes = new double[ilayer][maxnode];
+      nets[nnet].bnodes = new double[ilayer][maxnode];
+      nets[nnet].acti = net int[ilayer];
+
+      if (maxnode < nsym) maxnode = nsym;
+
+      nets[nnet].weights = new double[ilayer][maxnode*maxnode];
+      nets[nnet].bias = new double[ilayer][maxnode];
+
+      /*
       vector<double> tnode;
       vector<double> tdnode;
       vector<double> tbnode;
@@ -551,17 +568,17 @@ void PairNN::read_file(char *fname) {
         }
         nets[nnet].nodes.push_back(tnode);
         nets[nnet].dnodes.push_back(tdnode);
-        nets[nnet].bnodes.push_back(tbnode);
+        nets[nnet].bnodes.push_back(tbnode);   
       }
-
+      */
       stats = 6;
       ilayer = 0;
     } else if (stats == 6) { // layer setting
       tstr = strtok(line," \t\n\r\f");
       tstr = strtok(NULL," \t\n\r\f");
       tstr = strtok(NULL," \t\n\r\f");
-      if (strncmp(tstr, "linear", 6) == 0) nets[nnet].acti.push_back(0);
-      else nets[nnet].acti.push_back(1);
+      if (strncmp(tstr, "linear", 6) == 0) nets[nnet].acti[ilayer] = 0;
+      else nets[nnet].acti[ilayer] = 1;
       inode = 0;
       stats = 7;
       t_wb = 0;
@@ -571,20 +588,22 @@ void PairNN::read_file(char *fname) {
       if (t_wb == 0) { // weights
         tstr = strtok(line," \t\n\r\f");
         for (i=0; i<nets[nnet].nnode[ilayer]; i++) {
-          tmp_w.push_back(atof(strtok(NULL," \t\n\r\f")));
+          //tmp_w.push_back(atof(strtok(NULL," \t\n\r\f")));
+          nets[nnet].weights[inode*i] = atof(strtok(NULL," \t\n\r\f"));
         }
         t_wb = 1;
       } else if (t_wb == 1) { // bias
         tstr = strtok(line," \t\n\r\f");
-        tmp_b.push_back(atof(strtok(NULL," \t\n\r\f")));
+        //tmp_b.push_back(atof(strtok(NULL," \t\n\r\f")));
+        nets[nnet].bias[inode] = atof(strtok(NULL," \t\n\r\f"));
         t_wb = 0;
         inode++;
       }
       if (inode == nets[nnet].nnode[ilayer+1]) {
         ilayer++;
         stats = 6;
-        nets[nnet].weights.push_back(tmp_w);
-        nets[nnet].bias.push_back(tmp_b);
+        //nets[nnet].weights.push_back(tmp_w);
+        //nets[nnet].bias.push_back(tmp_b);
       }
       if (ilayer == (nets[nnet].nnode.size() - 1)) stats = 1;
     }
