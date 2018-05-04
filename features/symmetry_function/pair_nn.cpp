@@ -80,7 +80,6 @@ void PairNN::compute(int eflag, int vflag)
   double dangtmp[3];
   double tmpd[9];
   double precal[11];
-  
   // precal: cfij, dcfij, cfik, dcfik, cfjk, dcfjk, dist_square_sum,
   //         cosval, dcosval/dij, dcosval/dik, dcosval/djk
   double delij[3],delik[3],deljk[3],vecij[3],vecik[3],vecjk[3];
@@ -117,7 +116,8 @@ void PairNN::compute(int eflag, int vflag)
     jlist = firstneigh[i];
     jnum = numneigh[i];
     int numshort = 0;
-    nsym = nets[ielem].slists.size();
+    nsym = nets[ielem].nnode[0];
+    /*
     vector<double> symvec(nsym, 0.0);
     vector<double> dsymvec(nsym, 0.0);
     //vector<double> tmpf(nsym*tot_at*3, 0.0);
@@ -126,6 +126,15 @@ void PairNN::compute(int eflag, int vflag)
 
     // add scale criteria ----
     vector<double> scale1(nsym, 0.0);
+    */
+    double *symvec = new double[nsym];
+    double *dsymvec = new double[nsym];
+    //vector<double> tmpf(nsym*tot_at*3, 0.0);
+    double *tmpf = new double[nsym*(jnum+1)*3];
+    double *powtwo = new double[nsym];
+
+    // add scale criteria ----
+    double *scale1 = new double[nsym];
 
     for (tt=0; tt<nsym; tt++) {
       //if (nets[ielem].scale[1][tt] > 0.1)
@@ -256,6 +265,12 @@ void PairNN::compute(int eflag, int vflag)
         }
         //if (comm->me == 0) printf("a4\n"); // check print
       }
+
+      delete [] symvec;
+      delete [] dsymvec;
+      delete [] tmpf;
+      delete [] powtwo;
+      delete [] scale1;
     }
     //if (comm->me == 0) printf("a4-1\n"); // check print
     // calc E and dE/dG (need scale)
@@ -408,8 +423,8 @@ void PairNN::read_file(char *fname) {
   int max_sym_line = 6;
   char **p_elem = new char*[nelements];
   struct Symc one_sym;
-  vector<double> tmp_w;
-  vector<double> tmp_b;
+  //vector<double> tmp_w;
+  //vector<double> tmp_b;
   cutmax = 0;
 
   while (1) {
@@ -526,7 +541,7 @@ void PairNN::read_file(char *fname) {
     } else if (stats == 5) { // network number setting
       //nets[nnet].nnode.push_back(nsym);
       tstr = strtok(line," \t\n\r\f");
-      // TODO: potential file change: NET nlayer-1 nnode nnode
+      // TODO: potential file change: NET [nlayer-1] [nnode] [nnode] ...
       nlayer = atoi(strtok(NULL," \t\n\r\f"));
       nlayer += 1;
 
