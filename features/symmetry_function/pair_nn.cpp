@@ -491,15 +491,18 @@ void PairNN::read_file(char *fname) {
         error->one(FLERR,"potential file error: missing info(# of symfunc)");
       nsym = atoi(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists = new Symc[nsym];
-      nets[nnet].scale = new double[2][nsym];
+      nets[nnet].scale = new double*[2];
+      for (i=0; i<2; ++i) {
+        nets[nnet].scale[i] = new double[nsym];
+      }
       stats = 3;
       isym = 0;
     } else if (stats == 3) { // read symfunc parameters
-      nets[nnet].slist[isym].stype = atoi(strtok(line," \t\n\r\f"));
-      nets[nnet].slist[isym].coefs[0] = atof(strtok(NULL," \t\n\r\f"));
-      nets[nnet].slist[isym].coefs[1] = atof(strtok(NULL," \t\n\r\f"));
-      nets[nnet].slist[isym].coefs[2] = atof(strtok(NULL," \t\n\r\f"));
-      nets[nnet].slist[isym].coefs[3] = atof(strtok(NULL," \t\n\r\f"));
+      nets[nnet].slists[isym].stype = atoi(strtok(line," \t\n\r\f"));
+      nets[nnet].slists[isym].coefs[0] = atof(strtok(NULL," \t\n\r\f"));
+      nets[nnet].slists[isym].coefs[1] = atof(strtok(NULL," \t\n\r\f"));
+      nets[nnet].slists[isym].coefs[2] = atof(strtok(NULL," \t\n\r\f"));
+      nets[nnet].slists[isym].coefs[3] = atof(strtok(NULL," \t\n\r\f"));
       /*
       one_sym.stype = atoi(strtok(line," \t\n\r\f"));
       one_sym.coefs[0] = (atof(strtok(NULL," \t\n\r\f")));
@@ -564,15 +567,28 @@ void PairNN::read_file(char *fname) {
       }
       nets[nnet].nnode[ilayer] = 1;
 
-      nets[nnet].nodes = new double[ilayer][maxnode];
-      nets[nnet].dnodes = new double[ilayer][maxnode];
-      nets[nnet].bnodes = new double[ilayer][maxnode];
-      nets[nnet].acti = net int[ilayer];
+      nets[nnet].nodes = new double*[ilayer];
+      nets[nnet].dnodes = new double*[ilayer];
+      nets[nnet].bnodes = new double*[ilayer];
+      for (i=0; i<ilayer; ++i) {
+        nets[nnet].nodes[i] = new double[maxnode];
+        nets[nnet].dnodes[i] = new double[maxnode];
+        nets[nnet].bnodes[i] = new double[maxnode];
+
+        nets[nnet].nodes[i] = { 0 };
+        nets[nnet].dnodes[i] = { 0 };
+        nets[nnet].bnodes[i] = { 0 };
+      }
+      nets[nnet].acti = new int[ilayer];
 
       if (maxnode < nsym) maxnode = nsym;
 
-      nets[nnet].weights = new double[ilayer][maxnode*maxnode];
-      nets[nnet].bias = new double[ilayer][maxnode];
+      nets[nnet].weights = new double*[ilayer];
+      nets[nnet].bias = new double*[ilayer];
+      for (i=0; i<ilayer; ++i) {
+        nets[nnet].weights[i] = new double[maxnode*maxnode];
+        nets[nnet].bias[i] = new double[maxnode];
+      }
 
       /*
       vector<double> tnode;
@@ -610,13 +626,13 @@ void PairNN::read_file(char *fname) {
         tstr = strtok(line," \t\n\r\f");
         for (i=0; i<nets[nnet].nnode[ilayer]; i++) {
           //tmp_w.push_back(atof(strtok(NULL," \t\n\r\f")));
-          nets[nnet].weights[inode*i] = atof(strtok(NULL," \t\n\r\f"));
+          nets[nnet].weights[ilayer][inode*i] = atof(strtok(NULL," \t\n\r\f"));
         }
         t_wb = 1;
       } else if (t_wb == 1) { // bias
         tstr = strtok(line," \t\n\r\f");
         //tmp_b.push_back(atof(strtok(NULL," \t\n\r\f")));
-        nets[nnet].bias[inode] = atof(strtok(NULL," \t\n\r\f"));
+        nets[nnet].bias[ilayer][inode] = atof(strtok(NULL," \t\n\r\f"));
         t_wb = 0;
         inode++;
       }
@@ -626,7 +642,7 @@ void PairNN::read_file(char *fname) {
         //nets[nnet].weights.push_back(tmp_w);
         //nets[nnet].bias.push_back(tmp_b);
       }
-      if (ilayer == (nets[nnet].nnode.size() - 1)) stats = 1;
+      if (ilayer == (nets[nnet].nnode->size() - 1)) stats = 1;
     }
   }
 
@@ -693,7 +709,7 @@ double PairNN::single(int i, int j, int itype, int jtype, double rsq,
 
 double PairNN::evalNet(const double* inpv, double *outv, Net &net){
 // return energy and modify dE_dG
-  int nl = net.nnode.size();
+  int nl = net.nnode->size();
   
   // forwardprop
   // input - hidden1
