@@ -514,7 +514,7 @@ void PairNN::read_file(char *fname) {
       tstr = strtok(NULL," \t\n\r\f");
       for (i=0; i<nelements; i++) {
         if (strcmp(tstr,elements[i]) == 0) {
-          nets[nnet].slist[isym].atype[0] = i;
+          nets[nnet].slists[isym].atype[0] = i;
           break;
         }
       }
@@ -522,7 +522,7 @@ void PairNN::read_file(char *fname) {
         tstr = strtok(NULL," \t\n\r\f");
         for (i=0; i<nelements; i++) {
           if (strcmp(tstr,elements[i]) == 0) {
-            nets[nnet].slist[isym].atype[1] = i;
+            nets[nnet].slists[isym].atype[1] = i;
             break;
           }
         }
@@ -642,7 +642,7 @@ void PairNN::read_file(char *fname) {
         //nets[nnet].weights.push_back(tmp_w);
         //nets[nnet].bias.push_back(tmp_b);
       }
-      if (ilayer == (nets[nnet].nnode->size() - 1)) stats = 1;
+      if (ilayer == (nlayer - 1)) stats = 1;
     }
   }
 
@@ -709,8 +709,9 @@ double PairNN::single(int i, int j, int itype, int jtype, double rsq,
 
 double PairNN::evalNet(const double* inpv, double *outv, Net &net){
 // return energy and modify dE_dG
-  int nl = net.nnode->size();
-  
+  //int nl = net.nnode->size();
+  int nl = (sizeof(net.nnode)) / sizeof(net.nnode[0]);
+
   // forwardprop
   // input - hidden1
   for (int i=0; i<net.nnode[1]; i++) {
