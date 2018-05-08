@@ -136,12 +136,6 @@ void PairNN::compute(int eflag, int vflag)
     // add scale criteria ----
     double *scale1 = new double[nsym];
 
-    symvec = { 0 };
-    dsymvec = { 0 };
-    tmpf = { 0 };
-    powtwo = { 0 };
-    scale1 = { 0 };
-
     for (tt=0; tt<nsym; tt++) {
       //if (nets[ielem].scale[1][tt] > 0.1)
       scale1[tt] = nets[ielem].scale[1][tt];
@@ -271,12 +265,6 @@ void PairNN::compute(int eflag, int vflag)
         }
         //if (comm->me == 0) printf("a4\n"); // check print
       }
-
-      delete [] symvec;
-      delete [] dsymvec;
-      delete [] tmpf;
-      delete [] powtwo;
-      delete [] scale1;
     }
     //if (comm->me == 0) printf("a4-1\n"); // check print
     // calc E and dE/dG (need scale)
@@ -306,6 +294,11 @@ void PairNN::compute(int eflag, int vflag)
     //symvec.clear();
     //dsymvec.clear();
     //tmpf.clear();
+    delete [] symvec;
+    delete [] dsymvec;
+    delete [] tmpf;
+    delete [] powtwo;
+    delete [] scale1;
   }
   //if (comm->me == 0) printf("a7\n"); // check print
   if (vflag_fdotr) virial_fdotr_compute();
@@ -639,7 +632,7 @@ void PairNN::read_file(char *fname) {
         //nets[nnet].weights.push_back(tmp_w);
         //nets[nnet].bias.push_back(tmp_b);
       }
-      if (ilayer == (nlayer - 1)) stats = 1;
+      if (ilayer == nlayer) stats = 1;
     }
   }
 
