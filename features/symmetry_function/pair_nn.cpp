@@ -425,7 +425,7 @@ void PairNN::read_file(char *fname) {
   //vector<double> tmp_w;
   //vector<double> tmp_b;
   cutmax = 0;
-
+  // TODO: fix the part for reading the weights from file 
   while (1) {
     if (comm->me == 0) {
       ptr = fgets(line,MAXLINE,fp);
@@ -560,7 +560,7 @@ void PairNN::read_file(char *fname) {
         ilayer++;
       }
       nets[nnet].nnode[nlayer] = 1;
-
+      // TODO: fix the array size
       nets[nnet].nodes = new double*[nlayer];
       nets[nnet].dnodes = new double*[nlayer];
       nets[nnet].bnodes = new double*[nlayer];
@@ -580,24 +580,6 @@ void PairNN::read_file(char *fname) {
         nets[nnet].bias[i] = new double[maxnode];
       }
 
-      /*
-      vector<double> tnode;
-      vector<double> tdnode;
-      vector<double> tbnode;
-      for (i=0; i<nets[nnet].nnode.size()-1; i++) {
-        tnode.clear();
-        tdnode.clear();
-        tbnode.clear();
-        for (j=0; j<nets[nnet].nnode[i+1]; j++) {
-          tnode.push_back(0);
-          tdnode.push_back(0);
-          tbnode.push_back(0);
-        }
-        nets[nnet].nodes.push_back(tnode);
-        nets[nnet].dnodes.push_back(tdnode);
-        nets[nnet].bnodes.push_back(tbnode);   
-      }
-      */
       stats = 6;
       ilayer = 0;
     } else if (stats == 6) { // layer setting
@@ -609,19 +591,16 @@ void PairNN::read_file(char *fname) {
       inode = 0;
       stats = 7;
       t_wb = 0;
-      //tmp_w.clear();
-      //tmp_b.clear();
+      
     } else if (stats == 7) { // weights setting
       if (t_wb == 0) { // weights
         tstr = strtok(line," \t\n\r\f");
         for (i=0; i<nets[nnet].nnode[ilayer]; i++) {
-          //tmp_w.push_back(atof(strtok(NULL," \t\n\r\f")));
-          nets[nnet].weights[ilayer][inode*i] = atof(strtok(NULL," \t\n\r\f"));
+          nets[nnet].weights[ilayer][inode*nets[nnet].nnode[ilayer] + i] = atof(strtok(NULL," \t\n\r\f"));
         }
         t_wb = 1;
       } else if (t_wb == 1) { // bias
         tstr = strtok(line," \t\n\r\f");
-        //tmp_b.push_back(atof(strtok(NULL," \t\n\r\f")));
         nets[nnet].bias[ilayer][inode] = atof(strtok(NULL," \t\n\r\f"));
         t_wb = 0;
         inode++;
@@ -629,8 +608,6 @@ void PairNN::read_file(char *fname) {
       if (inode == nets[nnet].nnode[ilayer+1]) {
         ilayer++;
         stats = 6;
-        //nets[nnet].weights.push_back(tmp_w);
-        //nets[nnet].bias.push_back(tmp_b);
       }
       if (ilayer == nlayer) stats = 1;
     }
