@@ -561,32 +561,28 @@ void PairNN::read_file(char *fname) {
       maxnode = 0;
       while ((tstr = strtok(NULL," \t\n\r\f"))) {
         nets[nnet].nnode[ilayer] = atoi(tstr);
-        ilayer++;
         if (nets[nnet].nnode[ilayer] > maxnode) {
           maxnode = nets[nnet].nnode[ilayer];
         }
+        ilayer++;
       }
-      nets[nnet].nnode[ilayer] = 1;
+      nets[nnet].nnode[nlayer] = 1;
 
-      nets[nnet].nodes = new double*[ilayer];
-      nets[nnet].dnodes = new double*[ilayer];
-      nets[nnet].bnodes = new double*[ilayer];
-      for (i=0; i<ilayer; ++i) {
+      nets[nnet].nodes = new double*[nlayer];
+      nets[nnet].dnodes = new double*[nlayer];
+      nets[nnet].bnodes = new double*[nlayer];
+      for (i=0; i<nlayer; ++i) {
         nets[nnet].nodes[i] = new double[maxnode];
         nets[nnet].dnodes[i] = new double[maxnode];
         nets[nnet].bnodes[i] = new double[maxnode];
-
-        nets[nnet].nodes[i] = { 0 };
-        nets[nnet].dnodes[i] = { 0 };
-        nets[nnet].bnodes[i] = { 0 };
       }
-      nets[nnet].acti = new int[ilayer];
+      nets[nnet].acti = new int[nlayer];
 
       if (maxnode < nsym) maxnode = nsym;
 
-      nets[nnet].weights = new double*[ilayer];
-      nets[nnet].bias = new double*[ilayer];
-      for (i=0; i<ilayer; ++i) {
+      nets[nnet].weights = new double*[nlayer];
+      nets[nnet].bias = new double*[nlayer];
+      for (i=0; i<nlayer; ++i) {
         nets[nnet].weights[i] = new double[maxnode*maxnode];
         nets[nnet].bias[i] = new double[maxnode];
       }
