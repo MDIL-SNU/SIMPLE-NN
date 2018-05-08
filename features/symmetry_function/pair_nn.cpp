@@ -136,6 +136,12 @@ void PairNN::compute(int eflag, int vflag)
     // add scale criteria ----
     double *scale1 = new double[nsym];
 
+    symvec = { 0 };
+    dsymvec = { 0 };
+    tmpf = { 0 };
+    powtwo = { 0 };
+    scale1 = { 0 };
+
     for (tt=0; tt<nsym; tt++) {
       //if (nets[ielem].scale[1][tt] > 0.1)
       scale1[tt] = nets[ielem].scale[1][tt];
@@ -597,8 +603,8 @@ void PairNN::read_file(char *fname) {
       inode = 0;
       stats = 7;
       t_wb = 0;
-      tmp_w.clear();
-      tmp_b.clear();
+      //tmp_w.clear();
+      //tmp_b.clear();
     } else if (stats == 7) { // weights setting
       if (t_wb == 0) { // weights
         tstr = strtok(line," \t\n\r\f");
