@@ -553,6 +553,7 @@ void PairNN::read_file(char *fname) {
       // TODO: potential file change: NET [nlayer-1] [nnode] [nnode] ...
       nlayer = atoi(strtok(NULL," \t\n\r\f"));
       nlayer += 1;
+      nets[nnet].nlayer = nlayer;
 
       nets[nnet].nnode = new int[nlayer];
       nets[nnet].nnode[0] = nsym;
@@ -709,8 +710,8 @@ double PairNN::single(int i, int j, int itype, int jtype, double rsq,
 
 double PairNN::evalNet(const double* inpv, double *outv, Net &net){
 // return energy and modify dE_dG
-  //int nl = net.nnode->size();
-  int nl = (sizeof(net.nnode)) / sizeof(net.nnode[0]);
+  int nl = net.nlayer;
+  //int nl = (sizeof(net.nnode)) / sizeof(net.nnode[0]);
 
   // forwardprop
   // input - hidden1

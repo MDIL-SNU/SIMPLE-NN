@@ -56,6 +56,7 @@ class PairNN : public Pair {
     // do not include input layer and dE/dG
     char *elem; // elements 
     int *nnode; // number of nodes
+    int nlayer; // number of layers
     int *acti; // activation function types
     double **weights; // weights
     double **bias; // bias
