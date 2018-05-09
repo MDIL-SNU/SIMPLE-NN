@@ -141,6 +141,8 @@ void PairNN::compute(int eflag, int vflag)
       scale1[tt] = nets[ielem].scale[1][tt];
       //else
       //  scale1[tt] = 1;
+      symvec[tt] = 0;
+
 
       if (nets[ielem].slists[tt].stype == 4)
         powtwo[tt] = powint(2, 1-nets[ielem].slists[tt].coefs[2]);
@@ -167,13 +169,14 @@ void PairNN::compute(int eflag, int vflag)
       vecij[2] = delij[2]/rRij;
 
       // Assume that cutoff radius for all symmetry functions are same
-      precal[0] = cutf(rRij/nets[ielem].slists[0].coefs[0]);
-      precal[1] = dcutf(rRij, nets[ielem].slists[0].coefs[0]);
 
       // calc radial symfunc
       for (tt=0; tt<nsym; tt++) {
         sym = &nets[ielem].slists[tt];
         if ((sym->stype == 2) && (sym->atype[0] == jelem)) {
+          precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
+          precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
+
           symvec[tt] += G2(rRij, precal, sym->coefs, dradtmp);
           tmpd[0] = dradtmp*vecij[0];
           tmpd[1] = dradtmp*vecij[1];
@@ -221,10 +224,7 @@ void PairNN::compute(int eflag, int vflag)
         vecjk[2] = deljk[2]/rRjk;
 
         // Assume that cutoff radius for all symmetry functions are same
-        precal[2] = cutf(rRik/nets[ielem].slists[0].coefs[0]);
-        precal[3] = dcutf(rRik, nets[ielem].slists[0].coefs[0]);
-        precal[4] = cutf(rRjk/nets[ielem].slists[0].coefs[0]);
-        precal[5] = dcutf(rRjk, nets[ielem].slists[0].coefs[0]);
+        
         precal[6] = rRij*rRij+rRik*rRik+rRjk*rRjk;
         precal[7] = (rRij*rRij + rRik*rRik - rRjk*rRjk)/2/rRij/rRik;
         precal[8] = 0.5*(1/rRik + 1/rRij/rRij*(rRjk*rRjk/rRik - rRik));
@@ -237,6 +237,11 @@ void PairNN::compute(int eflag, int vflag)
           if ((sym->stype) == 4 && \
               ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
                (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
+            precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
+            precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
+            precal[4] = cutf(rRjk/nets[ielem].slists[tt].coefs[0]);
+            precal[5] = dcutf(rRjk, nets[ielem].slists[tt].coefs[0]);
+            
             symvec[tt] += G4(rRij, rRik, rRjk, powtwo[tt], precal, sym->coefs, dangtmp);
 
             tmpd[0] = dangtmp[0]*vecij[0];
@@ -425,7 +430,7 @@ void PairNN::read_file(char *fname) {
   //vector<double> tmp_w;
   //vector<double> tmp_b;
   cutmax = 0;
-  // TODO: fix the part for reading the weights from file 
+  // TODO: check the value of energy and force 
   while (1) {
     if (comm->me == 0) {
       ptr = fgets(line,MAXLINE,fp);
@@ -543,10 +548,10 @@ void PairNN::read_file(char *fname) {
     } else if (stats == 5) { // network number setting
       //nets[nnet].nnode.push_back(nsym);
       tstr = strtok(line," \t\n\r\f");
-      // TODO: potential file change: NET [nlayer-1] [nnode] [nnode] ...
+      // TODO: potential file change: NET [nlayer-2] [nnode] [nnode] ...
       nlayer = atoi(strtok(NULL," \t\n\r\f"));
       nlayer += 1;
-      nets[nnet].nlayer = nlayer;
+      nets[nnet].nlayer = nlayer + 1;
 
       nets[nnet].nnode = new int[nlayer];
       nets[nnet].nnode[0] = nsym;
