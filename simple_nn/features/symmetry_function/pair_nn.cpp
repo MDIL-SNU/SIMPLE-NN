@@ -128,7 +128,7 @@ void PairNN::compute(int eflag, int vflag)
       //  scale1[tt] = 1;
       symvec[tt] = 0;
       dsymvec[tt] = 0;
-      powtow[tt] = 0;
+      powtwo[tt] = 0;
 
       if (nets[ielem].slists[tt].stype == 4)
         powtwo[tt] = powint(2, 1-nets[ielem].slists[tt].coefs[2]);
