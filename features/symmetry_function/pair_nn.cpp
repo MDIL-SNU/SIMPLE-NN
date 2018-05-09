@@ -237,6 +237,8 @@ void PairNN::compute(int eflag, int vflag)
           if ((sym->stype) == 4 && \
               ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
                (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
+            precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
+            precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
             precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
             precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
             precal[4] = cutf(rRjk/nets[ielem].slists[tt].coefs[0]);
@@ -516,7 +518,7 @@ void PairNN::read_file(char *fname) {
           break;
         }
       }
-      if (one_sym.stype > 2) {
+      if (nets[nnet].slists[isym].stype > 2) {
         tstr = strtok(NULL," \t\n\r\f");
         for (i=0; i<nelements; i++) {
           if (strcmp(tstr,elements[i]) == 0) {
