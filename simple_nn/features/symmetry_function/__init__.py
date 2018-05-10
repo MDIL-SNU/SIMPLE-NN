@@ -1,8 +1,8 @@
 from __future__ import print_function
 from __future__ import division
-import os
+import os, sys
 # TODO: mpi setting
-from mpi4py import MPI
+#from mpi4py import MPI
 import numpy as np
 import six
 from six.moves import cPickle as pickle
@@ -11,15 +11,28 @@ from cffi import FFI
 from ...utils import _gen_2Darray_for_ffi
 
 # TODO: Different atom can get different symmetry function parameter
-"""
-def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
-    # Function to generate 2D pointer for cffi  
-    shape = arr.shape
-    arr_p = ffi.new(cdata + " *[%d]" % shape[0])
-    for i in range(shape[0]):
-        arr_p[i] = ffi.cast(cdata + " *", arr[i].ctypes.data)
-    return arr_p
-"""
+class DummyMPI(object):
+    rank = 0
+    size = 1
+
+    def barrier(self):
+        pass
+
+    def gather(self, data, root=0):
+        return data
+
+class MPI4PY(object):
+    def __init__(self):
+        from mpi4py import MPI
+        self.comm = MPI.COMM_WORLD
+        self.size = self.comm.Get_size()
+        self.rank = self.comm.Get_rank()
+
+    def barrier(self):
+        self.comm.barrier()
+
+    def gather(self, data, root=0):
+        return self.comm.gather(data, root=0)
 
 def _read_params(filename):
     params_i = list()
@@ -50,10 +63,17 @@ class Symmetry_function(object):
     def generate(self):
         self.inputs = self.parent.inputs['symmetry_function']
 
+        """
         comm = MPI.COMM_WORLD
         size = comm.Get_size()
         rank = comm.Get_rank()
-       
+        """
+
+        if 'mpi4py' in sys.modules:
+            comm = MPI4PY()
+        else:
+            comm = DummyMPI()
+
         ffi = FFI()
         ffi.cdef("""void calculate_sf(double **, double **, double **,
                                       int *, int, int*, int,
@@ -61,7 +81,7 @@ class Symmetry_function(object):
                                       double**, double**);""")
         lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libsymf.so"))
 
-        if rank == 0:
+        if comm.rank == 0:
             train_dir = open(self.train_data_list, 'w')
 
         # Get structure list to calculate  
@@ -88,7 +108,7 @@ class Symmetry_function(object):
             
             if len(item) == 1:
                 index = 0
-                if rank == 0:
+                if comm.rank == 0:
                     self.parent.logfile.write('{} 0'.format(item[0]))
             else:
                 if ':' in item[1]:
@@ -96,7 +116,7 @@ class Symmetry_function(object):
                 else:
                     index = int(item[1])
 
-                if rank == 0:
+                if comm.rank == 0:
                     self.parent.logfile.write('{} {}'.format(item[0], item[1]))
 
             snapshots = io.read(item[0], index=index, force_consistent=True) 
@@ -134,12 +154,12 @@ class Symmetry_function(object):
                 res['F'] = atoms.get_forces()
 
                 for j,jtem in enumerate(self.parent.inputs['atom_types']):
-                    q = type_num[jtem] // size
-                    r = type_num[jtem] %  size
+                    q = type_num[jtem] // comm.size
+                    r = type_num[jtem] %  comm.size
 
-                    begin = rank * q + min(rank, r)
+                    begin = comm.rank * q + min(comm.rank, r)
                     end = begin + q
-                    if r > rank:
+                    if r > comm.rank:
                         end += 1
 
                     cal_atoms = np.asarray(type_idx[jtem][begin:end], dtype=np.intc, order='C')
@@ -161,13 +181,13 @@ class Symmetry_function(object):
                     res['x'][jtem] = np.array(comm.gather(x, root=0))
                     res['dx'][jtem] = np.array(comm.gather(dx, root=0))
 
-                    if rank == 0:
+                    if comm.rank == 0:
                         res['x'][jtem] = np.concatenate(res['x'][jtem], axis=0).reshape([type_num[jtem], params_set[jtem]['num']])
                         res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
                                             reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
                         res['params'][jtem] = params_set[jtem]['total']
 
-                if rank == 0:
+                if comm.rank == 0:
                     # TODO: add the directory setting part for saving the data
                     #tmp_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)) + \
                     #                                "/data/test{}.pickle".format(data_idx))
@@ -179,8 +199,8 @@ class Symmetry_function(object):
                     tmp_endfile = tmp_filename
                     data_idx += 1
 
-            if rank == 0:
+            if comm.rank == 0:
                 self.parent.logfile.write(': ~{}\n'.format(tmp_endfile))
 
-        if rank == 0:
+        if comm.rank == 0:
             train_dir.close()

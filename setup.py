@@ -13,7 +13,6 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 install_requires = [
     'numpy',
     'ase>=3.10.0',
-    'mpi4py',
     'pyyaml>=3.10',
     'cffi>=1.0.0'
 ]
@@ -47,7 +46,7 @@ extension_libgdf = Extension(
 setup(
     name='simple-nn',
     version='0.1.0',
-    #description='',
+    description='Package for generating atomic potentials using neural network.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/Nanco-L/simple-nn', # temperary url 
@@ -59,7 +58,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
 
         # other arguments are listed here.
 
