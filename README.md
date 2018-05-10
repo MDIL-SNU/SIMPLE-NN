@@ -16,3 +16,25 @@ pip install mpi4py
 ```
 pip install simple-nn
 ```
+
+## Usage
+
+```
+"""
+Run the code below:
+    python run.py
+
+run.py:
+"""
+
+from simple_nn import Simple_nn
+from simple_nn.features.symmetry_function import Symmetry_function
+from simple_nn.models.neural_network import Neural_network
+
+model = Simple_nn('input.yaml', 
+                   descriptor=Symmetry_function(), 
+                   model=Neural_network())
+model.run()
+```
+
+input.yaml is the input parameter file for run SIMPLE-NN

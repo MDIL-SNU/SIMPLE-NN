@@ -20,7 +20,7 @@ def deep_update(source, overrides):
             source = {key: overrides[key]}
     return source
 
-class simple_nn(object):
+class Simple_nn(object):
     def __init__(self, inputs, descriptor=None, model=None):
         """
         inputs: filename which contains YAML style input parameters
