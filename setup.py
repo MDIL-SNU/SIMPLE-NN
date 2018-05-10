@@ -9,19 +9,33 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # required module
+# TODO: version check
 install_requires = [
     'numpy',
-    'ase',
+    'ase>=3.10.0',
     'mpi4py',
-    'pyyaml',
-    'cffi',
-    'tensorflow',
+    'pyyaml>=3.10',
+    'cffi>=1.0.0'
 ]
 
+extension_libsymf = Extension(
+    'simple_nn.features.symmetry_function.libsymf', 
+    sources=[
+        'simple_nn/features/symmetry_function/calculate_sf.cpp',
+        'simple_nn/features/symmetry_function/symmetry_functions.cpp'
+        ],
+    languages='C++',
+    extra_compile_args=[
+        '-O3'
+    ]
+    )
+
 # TODO: extern C module add
+# TODO: install requires add
+# FIXME: fill the empty part
 setup(
     name='simple-nn',
-    version='1.0.0',
+    version='0.1.0',
     #description='',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -53,4 +67,6 @@ setup(
     package_data={'':['*.cpp', '*.h']},
     #project_urls={},
     python_requires='>=2.7, >=3, <4',
+    install_requires=install_requires,
+    ext_modules=[extension_libsymf]
 )
