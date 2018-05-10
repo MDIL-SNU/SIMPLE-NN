@@ -19,7 +19,7 @@ pip install simple-nn
 
 ## Usage
 
-```
+```python
 """
 Run the code below:
     python run.py
