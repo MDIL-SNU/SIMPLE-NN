@@ -33,3 +33,5 @@ extern "C" void calculate_gdf(double** features, int num_points, int num_feature
         gdf[i] = gdf[i] / tot_val;
     }
 }
+
+void PyInit_libgdf(void) { } // for windows

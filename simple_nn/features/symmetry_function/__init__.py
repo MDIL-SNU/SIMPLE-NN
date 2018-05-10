@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import division
 import os
+# TODO: mpi setting
 from mpi4py import MPI
 import numpy as np
 import six

@@ -18,6 +18,7 @@ install_requires = [
     'cffi>=1.0.0'
 ]
 
+# C extension library for calculating symmetry function
 extension_libsymf = Extension(
     'simple_nn.features.symmetry_function.libsymf', 
     sources=[
@@ -26,8 +27,18 @@ extension_libsymf = Extension(
         ],
     languages='C++',
     extra_compile_args=[
+        '-O3',
+        ]
+    )
+
+# C extension library for calculating gdf
+extension_libgdf = Extension(
+    'simple_nn.utils.libgdf',
+    sources = ['simple_nn/utils/gdf.cpp'],
+    language='C++',
+    extra_compile_args=[
         '-O3'
-    ]
+        ]
     )
 
 # TODO: extern C module add
@@ -66,7 +77,10 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     package_data={'':['*.cpp', '*.h']},
     #project_urls={},
-    python_requires='>=2.7, >=3, <4',
+    python_requires='>=2.7, <4',
     install_requires=install_requires,
-    ext_modules=[extension_libsymf]
+    ext_modules=[
+        extension_libsymf,
+        extension_libgdf
+        ]
 )

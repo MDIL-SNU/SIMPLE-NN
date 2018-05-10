@@ -1,4 +1,4 @@
-#include <mpi.h>
+//#include <mpi.h>
 #include <math.h>
 #include <stdio.h>
 #include "calculate_sf.h"
@@ -24,35 +24,18 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
 
     int total_bins, max_atoms_bin, bin_num, neigh_check_bins, nneigh;
     int bin_range[3], nbins[3], cell_shift[3], max_bin[3], min_bin[3], pbc_bin[3];
-    int bin_i[natoms][4];
+    //int bin_i[natoms][4];
     double vol, tmp, cutoff, dradtmp, rRij, rRik, rRjk;
     double plane_d[3], total_shift[3], precal[11], tmpd[9], dangtmp[3];
     double vecij[3], vecik[3], vecjk[3], deljk[3];
-    double cross[3][3], reci[3][3], powtwo[nsyms];
+    double cross[3][3], reci[3][3];//, powtwo[nsyms];
 
-    /* FIXME: input test
-    printf("Input check\n");
-    printf(" Cell info\n");
-    for (int i=0; i<3; ++i)
-        printf("  %f  %f  %f\n", cell[i][0], cell[i][1], cell[i][2]);
-    printf(" Cartesian coordinate info\n");
-    for (int i=0; i<natoms; ++i)
-        printf("  %f  %f  %f\n", cart[i][0], cart[i][1], cart[i][2]);
-    printf(" Fractional coordinate info\n");
-    for (int i=0; i<natoms; ++i)
-        printf("  %f  %f  %f\n", scale[i][0], scale[i][1], scale[i][2]);
-    printf(" Atom type info\n");
-    for (int i=0; i<natoms; ++i)
-        printf("  atom %d: %d\n", i+1, atom_i[i]);
-    printf(" Calculating atom info\n");
-    for (int i=0; i<cal_num; ++i)
-        printf("  %dth atom in this process: atom %d\n", i+1, cal_atoms[i]);
-    printf(" Symmetry function parameter info\n");
-    for (int i=0; i<nsyms; ++i) {
-        printf("  %d %d %d %f %f %f %f\n", params_i[i][0], params_i[i][1], params_i[i][2],
-                params_d[i][0], params_d[i][1], params_d[i][2], params_d[i][3]);
+    int **bin_i = new int*[natoms];
+    for (int i=0; i<natoms; i++) {
+        bin_i[i] = new int[4];
     }
-    */
+
+    double *powtwo = new double[nsyms];
 
     cutoff = 0.0;
     for (int s=0; s < nsyms; ++s) {
@@ -263,4 +246,11 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
         delete[] nei_list_i;
     }
     
+    for (int i=0; i<natoms; i++) {
+        delete[] bin_i[i];
+    }
+    delete[] bin_i;
+    delete[] powtwo;
 }
+
+void PyInit_libsymf(void) { } // for windows
