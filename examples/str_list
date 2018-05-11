@@ -1,0 +1,4 @@
+/path/to/data/md/bulk/OUTCAR ::10
+/path/to/data/md/vacancy/OUTCAR 100:800:10
+/path/to/data/Bulk/tilt/one_shot1/OUTCAR :
+/path/to/data/Bulk/tilt/one_shot2/OUTCAR :
