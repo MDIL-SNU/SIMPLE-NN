@@ -2,7 +2,7 @@ import six
 from six.moves import cPickle as pickle
 import numpy as np
 from cffi import FFI
-import os
+import os, sys
 import types
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
@@ -113,3 +113,53 @@ def preprocessing(filelist, atom_types, feature_tag, \
         atomic_weights = pickle_load(get_atomic_weights)
 
     return scale, atomic_weights
+
+def compress_outcar(filename):
+    """
+    Compress VASP OUTCAR file for fast file-reading in ASE.
+    Original file is renamed to [filename]_org
+
+    supported properties:
+    - atom types
+    - lattice vector(cell)
+    - free energy
+    - force
+    """
+    oldname = filename + '_org'
+    
+    if sys.platform == 'win32':
+        print('move /Y {} {}'.format(filename.replace('/','\\'), oldname.replace('/', '\\')))
+        os.system('move /Y {} {}'.format(filename.replace('/','\\'), oldname.replace('/', '\\')))
+    elif 'linux' in sys.platform:
+        os.system('mv {} {}'.format(filename, oldname))
+    else:
+        print('Only support Windows and Linux')
+        assert 0
+
+    res = open(filename, 'w')
+    with open(oldname, 'r') as fil:
+        minus_tag = 0
+        line_tag = 0
+        for line in fil:
+            if 'POTCAR:' in line:
+                res.write(line)
+            elif 'ions per type' in line:
+                res.write(line)
+            elif 'direct lattice vectors' in line:
+                res.write(line)
+                minus_tag = 3
+            elif 'FREE ENERGIE OF THE ION-ELECTRON SYSTEM' in line:
+                res.write(line)
+                minus_tag = 4
+            elif 'POSITION          ' in line:
+                res.write(line)
+                line_tag = 3
+            elif minus_tag > 0:
+                res.write(line)
+                minus_tag -= 1
+            elif line_tag > 0:
+                res.write(line)
+                if '-------------------' in line:
+                    line_tag -= 1
+
+    res.close()

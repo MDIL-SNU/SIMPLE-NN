@@ -8,7 +8,7 @@ import six
 from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
-from ...utils import _gen_2Darray_for_ffi
+from ...utils import _gen_2Darray_for_ffi, compress_outcar
 
 # TODO: Different atom can get different symmetry function parameter
 class DummyMPI(object):
@@ -54,7 +54,8 @@ class Symmetry_function(object):
         self.key = 'symmetry_function'
         self.default_inputs = {'symmetry_function': 
                                   {
-                                      'params': dict()
+                                      'params': dict(),
+                                      'compress_outcar':True
                                   }
                               }
         self.structure_list = './str_list'
@@ -119,6 +120,9 @@ class Symmetry_function(object):
                 if comm.rank == 0:
                     self.parent.logfile.write('{} {}'.format(item[0], item[1]))
 
+            if self.inputs['compress_outcar']:
+                compress_outcar(item[0])
+                
             snapshots = io.read(item[0], index=index, force_consistent=True) 
 
             for atoms in snapshots:
