@@ -285,7 +285,7 @@ class Neural_network(object):
             if isinstance(self.inputs['learning_rate'], collections.Mapping):
                 self.learning_rate = tf.train.exponential_decay(global_step=self.global_step, **self.inputs['learning_rate'])
             else:
-                self.learning_rate = self.inputs['learning_rate']
+                self.learning_rate = tf.constant(self.inputs['learning_rate'])
 
             self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rate, 
                                                 name='Adam', **self.inputs['optimizer'])

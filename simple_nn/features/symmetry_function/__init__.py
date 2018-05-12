@@ -195,7 +195,10 @@ class Symmetry_function(object):
                     # TODO: add the directory setting part for saving the data
                     #tmp_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)) + \
                     #                                "/data/test{}.pickle".format(data_idx))
-                    tmp_filename = "./data/data{}.pickle".format(data_idx)
+                    data_dir = "./data/"
+                    if not os.path.exists(data_dir):
+                        os.makedirs(data_dir)
+                    tmp_filename = os.path.join(data_dir, "data{}.pickle".format(data_idx))
                     with open(tmp_filename, "wb") as fil:
                         pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 
