@@ -335,7 +335,7 @@ class Neural_network(object):
             
             weights = sess.run(self.models[item].weights)
             nlayers = len(self.nodes[item])
-            FIL.write('NET {} {}\n'.format(nlayers-1, ' '.join(map(str, self.nodes))))
+            FIL.write('NET {} {}\n'.format(nlayers-1, ' '.join(map(str, self.nodes[item]))))
 
             for j in range(nlayers):
                 # FIXME: add activation function type if new activation is added
