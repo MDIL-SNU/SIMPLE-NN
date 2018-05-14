@@ -1,8 +1,6 @@
 from __future__ import print_function
 from __future__ import division
 import os, sys
-# TODO: mpi setting
-#from mpi4py import MPI
 import numpy as np
 import six
 from six.moves import cPickle as pickle
@@ -10,7 +8,6 @@ from ase import io
 from cffi import FFI
 from ...utils import _gen_2Darray_for_ffi, compress_outcar
 
-# TODO: Different atom can get different symmetry function parameter
 class DummyMPI(object):
     rank = 0
     size = 1
@@ -64,12 +61,6 @@ class Symmetry_function(object):
     def generate(self):
         self.inputs = self.parent.inputs['symmetry_function']
 
-        """
-        comm = MPI.COMM_WORLD
-        size = comm.Get_size()
-        rank = comm.Get_rank()
-        """
-
         if 'mpi4py' in sys.modules:
             comm = MPI4PY()
         else:
@@ -105,7 +96,6 @@ class Symmetry_function(object):
         data_idx = 1
         for item in structures:
             # FIXME: add another input type
-            # TODO: modulization. currently, we suppose that the input file is VASP based.
             
             if len(item) == 1:
                 index = 0
@@ -121,9 +111,10 @@ class Symmetry_function(object):
                     self.parent.logfile.write('{} {}'.format(item[0], item[1]))
 
             if self.inputs['compress_outcar']:
-                compress_outcar(item[0])
-                
-            snapshots = io.read(item[0], index=index, force_consistent=True) 
+                tmp_name = compress_outcar(item[0])
+                snapshots = io.read(tmp_name, index=index, force_consistent=True)
+            else:    
+                snapshots = io.read(item[0], index=index, force_consistent=True) 
 
             for atoms in snapshots:
                 cart = np.copy(atoms.positions, order='C')
@@ -192,9 +183,6 @@ class Symmetry_function(object):
                         res['params'][jtem] = params_set[jtem]['total']
 
                 if comm.rank == 0:
-                    # TODO: add the directory setting part for saving the data
-                    #tmp_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)) + \
-                    #                                "/data/test{}.pickle".format(data_idx))
                     data_dir = "./data/"
                     if not os.path.exists(data_dir):
                         os.makedirs(data_dir)

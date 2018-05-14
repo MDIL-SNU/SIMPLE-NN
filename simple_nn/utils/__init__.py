@@ -71,7 +71,6 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02):
     ffi.cdef("""void calculate_gdf(double **, int, int, double, double *);""")
     lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libgdf.so"))
 
-    # TODO: C type change
     gdf = dict()
     for item in atom_types:
         scaled_feature = feature_list[item] - scale[item][0:1,:]
@@ -125,19 +124,10 @@ def compress_outcar(filename):
     - free energy
     - force
     """
-    oldname = filename + '_org'
-    
-    if sys.platform == 'win32':
-        print('move /Y {} {}'.format(filename.replace('/','\\'), oldname.replace('/', '\\')))
-        os.system('move /Y {} {}'.format(filename.replace('/','\\'), oldname.replace('/', '\\')))
-    elif 'linux' in sys.platform:
-        os.system('mv {} {}'.format(filename, oldname))
-    else:
-        print('Only support Windows and Linux')
-        assert 0
+    comp_name = './tmp_comp_OUTCAR'
 
-    res = open(filename, 'w')
-    with open(oldname, 'r') as fil:
+    res = open(comp_name, 'w')
+    with open(filename, 'r') as fil:
         minus_tag = 0
         line_tag = 0
         for line in fil:
@@ -163,3 +153,5 @@ def compress_outcar(filename):
                     line_tag -= 1
 
     res.close()
+
+    return comp_name
