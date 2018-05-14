@@ -334,7 +334,7 @@ class Neural_network(object):
             FIL.write('scale2 {}\n'.format(' '.join(self.scale[item][1,:].astype(np.str))))
             
             weights = sess.run(self.models[item].weights)
-            nlayers = len(self.nodes)
+            nlayers = len(self.nodes[item])
             FIL.write('NET {} {}\n'.format(nlayers-1, ' '.join(map(str, self.nodes))))
 
             for j in range(nlayers):
@@ -346,7 +346,7 @@ class Neural_network(object):
 
                 FIL.write('LAYER {} {}\n'.format(j, acti))
 
-                for k,ktem in enumerate(range(self.nodes[j])):
+                for k in range(self.nodes[item][j]):
                     FIL.write('w{} {}\n'.format(k, ' '.join(weights[j*2][:,k].astype(np.str))))
                     FIL.write('b{} {}\n'.format(k, weights[j*2 + 1][k]))
             
