@@ -26,7 +26,13 @@ class Simple_nn(object):
         inputs: filename which contains YAML style input parameters
         descriptor, model
         """
-        self.inputs = dict()
+        self.default_inputs = {
+            'generate_features': True,
+            'train_model': True
+            }
+
+        self.inputs = self.default_inputs
+
         if descriptor != None:
             self.descriptor = descriptor
             self.inputs = deep_update(self.inputs, self.descriptor.default_inputs)
@@ -81,5 +87,8 @@ class Simple_nn(object):
     #    self._log.write(message)
 
     def run(self, user_optimizer=None):
-        self.descriptor.generate()
-        self.model.train(user_optimizer=user_optimizer)
+        if self.inputs['generate_features']:
+            self.descriptor.generate()
+        
+        if self.inputs['train_model']:
+            self.model.train(user_optimizer=user_optimizer)

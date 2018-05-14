@@ -10,19 +10,9 @@ from ..utils import _make_data_list, pickle_load, preprocessing, _generate_gdf_f
 Neural network model with symmetry function as a descriptor
 """
 
-"""
-def pickle_load(filename):
-    with open(filename, 'rb') as fil:
-        if six.PY2:
-            return pickle.load(fil)
-        elif six.PY3:
-            return pickle.load(fil, encoding='latin1')
-"""
-
-# TODO: complete the code
 # TODO: add the part for selecting the memory device(CPU or GPU)
-# TODO: validation set & test set
 # TODO: BFGS support
+# TODO: add regularization
 class Neural_network(object):
     def __init__(self):
         self.parent = None
@@ -42,7 +32,7 @@ class Neural_network(object):
                                       'double_precision': True,
                                       'valid_rate': 0.1,
                                       'generate_valid': True,
-                                      'scale': False,
+                                      'scale': True,
                                       'learning_rate': 0.01,
                                       'optimizer': dict(),
                                       'nodes': '30-30',
@@ -157,6 +147,9 @@ class Neural_network(object):
                         batch['atomic_weights'].\
                             append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
 
+            if initial:
+                self.params = loaded_fil['params']
+
             if (not valid) and (i+2 > batch_size):
                 break
 
@@ -167,7 +160,6 @@ class Neural_network(object):
 
         batch['tot_num'] = np.sum(list(batch['N'].values()), axis=0)
         max_atom_num = np.max(batch['tot_num'])
-        #total_atom_num = np.sum(atom_num_per_structure)
 
         if initial:
             self.inp_size = dict()
@@ -224,17 +216,17 @@ class Neural_network(object):
 
         for item in self.parent.inputs['atom_types']:
             if isinstance(self.inputs['nodes'], collections.Mapping):
-                nodes = list(map(int, self.inputs['nodes'][item].split('-')))
+                self.nodes = list(map(int, self.inputs['nodes'][item].split('-')))
             else:
-                nodes = list(map(int, self.inputs['nodes'].split('-')))
-            nlayers = len(nodes)
+                self.nodes = list(map(int, self.inputs['nodes'].split('-')))
+            nlayers = len(self.nodes)
             model = tf.keras.models.Sequential()
-            model.add(tf.keras.layers.Dense(nodes[0], activation='sigmoid', \
+            model.add(tf.keras.layers.Dense(self.nodes[0], activation='sigmoid', \
                                             input_dim=self.inp_size[item],
                                             **dense_basic_setting))
 
             for i in range(1, nlayers):
-                model.add(tf.keras.layers.Dense(nodes[i], activation='sigmoid', **dense_basic_setting))
+                model.add(tf.keras.layers.Dense(self.nodes[i], activation='sigmoid', **dense_basic_setting))
             model.add(tf.keras.layers.Dense(1, activation='linear', **dense_basic_setting))
 
             self.models[item] = model
@@ -314,9 +306,50 @@ class Neural_network(object):
 
         return fdict 
 
-    def _generate_lammps_potential(self):
+    def _generate_lammps_potential(self, sess):
         # TODO: get the parameter info from initial batch generting processs
-        return 0
+        atom_type_str = ' '.join(self.parent.inputs['atom_types'])
+
+        filename = './potential_saved'
+        FIL = open(filename, 'w')
+        FIL.write('ELEM_LIST ' + atom_type_str + '\n\n')
+
+        for item in self.parent.inputs['atom_types']:
+            FIL.write('POT {} {}\n'.format(item, np.max(self.params[item][:,3])))
+            FIL.write('SYM {}\n'.format(self.params[item]))
+
+            for ctem in self.params[item]:
+                tmp_types = self.parent.inputs['atom_types'][int(ctem[1])]
+                if int(ctem[0]) > 3:
+                    tmp_types += ' {}'.format(self.parent.inputs['atom_types'][int(ctem[2])])
+
+                FIL.write('{} {} {} {} {} {}\n'.\
+                    format(int(ctem[0]), ctem[3], ctem[4], ctem[5], ctem[6], tmp_types))
+
+            FIL.write('scale1 {}\n'.format(' '.join(self.scale[item][0,:].astype(np.str))))
+            FIL.write('scale2 {}\n'.format(' '.join(self.scale[item][1,:].astype(np.str))))
+            
+            weights = sess.run(self.models[item].weights)
+            nlayers = len(self.nodes)
+            FIL.write('NET {} {}\n'.format(nlayers, ' '.join(map(str, self.nodes))))
+            nlayers += 1
+
+            for j in range(nlayers):
+                # FIXME: add activation function type if new activation is added
+                if j == nlayers-1:
+                    acti = 'linear'
+                else:
+                    acti = 'sigmoid'
+
+                FIL.write('LAYER {} {}\n'.format(j, acti))
+
+                for k,ktem in weights[j*2]:
+                    FIL.write('w{} {}\n'.format(k, ' '.join(ktem.astype(np.str))))
+                    FIL.write('b{} {}\n'.format(k, weights[j*2 + 1][k]))
+            
+            FIL.write('\n')
+
+        FIL.close()
 
     def _save(self, sess, saver):
         if not self.inputs['continue']:
@@ -325,10 +358,9 @@ class Neural_network(object):
 
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")              
         saver.save(sess, './SAVER')
-        self._generate_lammps_potential()
+        self._generate_lammps_potential(sess)
 
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
-        # FIXME: make individual function to set self.inputs?
         self.inputs = self.parent.inputs['neural_network']
         # read data?
         
@@ -344,13 +376,20 @@ class Neural_network(object):
         else:
             get_atomic_weights = None
 
-        self.scale, self.atomic_weights_full = \
-            preprocessing(self.train_data_list, self.parent.inputs['atom_types'], 'x', \
-                          calc_scale=self.inputs['scale'], \
-                          get_atomic_weights=get_atomic_weights, \
-                          **self.inputs['atomic_weights']['params'])
+        # FIXME: Error occur: only test
+        if self.inputs['train']:
+            self.scale, self.atomic_weights_full = \
+                preprocessing(self.train_data_list, self.parent.inputs['atom_types'], 'x', \
+                            calc_scale=self.inputs['scale'], \
+                            get_atomic_weights=get_atomic_weights, \
+                            **self.inputs['atomic_weights']['params'])
 
-        self._get_batch(train_fileiter, 1, initial=True)
+            self._get_batch(train_fileiter, 1, initial=True)
+        else:
+            self.scale, self.atomic_weights_full = \
+                preprocessing(self.test_data_list, self.parent.inputs['atom_types'], 'x', \
+                            calc_scale=False, get_atomic_weights=None)
+            self._get_batch(test_fileiter, 1, initial=True)
 
         # Generate placeholder
         self._E = tf.placeholder(tf.float64, [None, 1])
