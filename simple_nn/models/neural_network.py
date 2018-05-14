@@ -210,24 +210,28 @@ class Neural_network(object):
 
         dense_basic_setting = {
             'dtype': dtype,
-            'kernel_initializer': tf.initializers.truncated_normal(stddev=0.3),
-            'bias_initializer': tf.initializers.truncated_normal(stddev=0.3)
+            'kernel_initializer': tf.initializers.truncated_normal(stddev=0.3, dtype=dtype),
+            'bias_initializer': tf.initializers.truncated_normal(stddev=0.3, dtype=dtype)
         }
 
+        self.nodes = dict()
         for item in self.parent.inputs['atom_types']:
             if isinstance(self.inputs['nodes'], collections.Mapping):
-                self.nodes = list(map(int, self.inputs['nodes'][item].split('-')))
+                nodes = list(map(int, self.inputs['nodes'][item].split('-')))
             else:
-                self.nodes = list(map(int, self.inputs['nodes'].split('-')))
-            nlayers = len(self.nodes)
+                nodes = list(map(int, self.inputs['nodes'].split('-')))
+            nlayers = len(nodes)
             model = tf.keras.models.Sequential()
-            model.add(tf.keras.layers.Dense(self.nodes[0], activation='sigmoid', \
+            model.add(tf.keras.layers.Dense(nodes[0], activation='sigmoid', \
                                             input_dim=self.inp_size[item],
                                             **dense_basic_setting))
 
             for i in range(1, nlayers):
-                model.add(tf.keras.layers.Dense(self.nodes[i], activation='sigmoid', **dense_basic_setting))
+                model.add(tf.keras.layers.Dense(nodes[i], activation='sigmoid', **dense_basic_setting))
             model.add(tf.keras.layers.Dense(1, activation='linear', **dense_basic_setting))
+
+            nodes.append(1)
+            self.nodes[item] = nodes
 
             self.models[item] = model
             self.ys[item] = self.models[item](self.x[item])
@@ -316,12 +320,12 @@ class Neural_network(object):
 
         for item in self.parent.inputs['atom_types']:
             FIL.write('POT {} {}\n'.format(item, np.max(self.params[item][:,3])))
-            FIL.write('SYM {}\n'.format(self.params[item]))
+            FIL.write('SYM {}\n'.format(len(self.params[item])))
 
             for ctem in self.params[item]:
-                tmp_types = self.parent.inputs['atom_types'][int(ctem[1])]
+                tmp_types = self.parent.inputs['atom_types'][int(ctem[1])-1]
                 if int(ctem[0]) > 3:
-                    tmp_types += ' {}'.format(self.parent.inputs['atom_types'][int(ctem[2])])
+                    tmp_types += ' {}'.format(self.parent.inputs['atom_types'][int(ctem[2])-1])
 
                 FIL.write('{} {} {} {} {} {}\n'.\
                     format(int(ctem[0]), ctem[3], ctem[4], ctem[5], ctem[6], tmp_types))
@@ -331,8 +335,7 @@ class Neural_network(object):
             
             weights = sess.run(self.models[item].weights)
             nlayers = len(self.nodes)
-            FIL.write('NET {} {}\n'.format(nlayers, ' '.join(map(str, self.nodes))))
-            nlayers += 1
+            FIL.write('NET {} {}\n'.format(nlayers-1, ' '.join(map(str, self.nodes))))
 
             for j in range(nlayers):
                 # FIXME: add activation function type if new activation is added
@@ -343,8 +346,8 @@ class Neural_network(object):
 
                 FIL.write('LAYER {} {}\n'.format(j, acti))
 
-                for k,ktem in weights[j*2]:
-                    FIL.write('w{} {}\n'.format(k, ' '.join(ktem.astype(np.str))))
+                for k,ktem in enumerate(range(self.nodes[j])):
+                    FIL.write('w{} {}\n'.format(k, ' '.join(weights[j*2][:,k].astype(np.str))))
                     FIL.write('b{} {}\n'.format(k, weights[j*2 + 1][k]))
             
             FIL.write('\n')
