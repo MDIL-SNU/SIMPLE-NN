@@ -389,7 +389,7 @@ class Neural_network(object):
             self.scale, self.atomic_weights_full = \
                 preprocessing(self.test_data_list, self.parent.inputs['atom_types'], 'x', \
                             calc_scale=False, get_atomic_weights=None)
-            self._get_batch(test_fileiter, 1, initial=True)
+            self._get_batch(test_fileiter, 1, initial=True, valid=True)
 
         # Generate placeholder
         self._E = tf.placeholder(tf.float64, [None, 1])
