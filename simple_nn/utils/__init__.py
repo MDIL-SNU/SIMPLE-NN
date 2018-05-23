@@ -116,7 +116,7 @@ def preprocessing(filelist, atom_types, feature_tag, \
 def compress_outcar(filename):
     """
     Compress VASP OUTCAR file for fast file-reading in ASE.
-    Compressed file (tmp_comp_OUTCAR) is temporarily created in the current directory.
+    Original file is renamed to [filename]_org
 
     supported properties:
     - atom types
@@ -126,7 +126,8 @@ def compress_outcar(filename):
     """
     comp_name = './tmp_comp_OUTCAR'
 
-    with open(filename, 'r') as fil, open(comp_name, 'w') as res:
+    res = open(comp_name, 'w')
+    with open(filename, 'r') as fil:
         minus_tag = 0
         line_tag = 0
         for line in fil:
@@ -150,5 +151,7 @@ def compress_outcar(filename):
                 res.write(line)
                 if '-------------------' in line:
                     line_tag -= 1
+
+    res.close()
 
     return comp_name
