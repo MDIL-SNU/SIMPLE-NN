@@ -218,6 +218,12 @@ class Neural_network(object):
             'bias_initializer': tf.initializers.truncated_normal(stddev=0.3, dtype=dtype)
         }
 
+        if self.inputs['regularization']['type'] is not None:
+            if self.inputs['regularization']['type'] == 'l2':
+                coeff = self.inputs['regularization']['params'].get('coeff', 1e-6)
+                dense_basic_setting['kernel_regularizer'] = tf.keras.regularizers.l2(l=coeff)
+                dense_basic_setting['bias_regularizer'] = tf.keras.regularizers.l2(l=coeff)
+
         self.nodes = dict()
         for item in self.parent.inputs['atom_types']:
             if isinstance(self.inputs['nodes'], collections.Mapping):
@@ -275,16 +281,7 @@ class Neural_network(object):
         
             self.total_loss += self.f_loss
 
-        if self.inputs['regularization']['type'] is not None:
-            if self.inputs['regularization']['type'] == 'l2':
-                coeff = self.inputs['regularization']['params'].get('coeff', 1e-6)
-                self.reg_loss = 0
-                for item in self.parent.inputs['atom_types']:
-                    for weight in self.models[item].weights:
-                        self.reg_loss += tf.nn.l2_loss(weight)
-                self.total_loss += self.reg_loss * coeff
-            else:
-                raise NotImplementedError
+        self.total_loss += tf.losses.get_regularization_loss()
 
     def _make_optimizer(self, user_optimizer=None):
         final_loss = self.inputs['loss_scale']*self.total_loss
