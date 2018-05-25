@@ -40,8 +40,12 @@ class Neural_network(object):
                                       'train': True,
                                       'atomic_weights': {
                                           'type': None,
-                                          'params': dict()
-                                      }
+                                          'params': dict(),
+                                      },
+                                      'regularization': {
+                                          'type': None,
+                                          'params': dict(),
+                                      },
                                   }
                               }
         self.inputs = dict()
@@ -265,11 +269,22 @@ class Neural_network(object):
 
         if self.inputs['use_force']:
             self.f_loss = tf.square(self._F - self.F)
-            if self.inputs['atomic_weights']['type'] != None:
+            if self.inputs['atomic_weights']['type'] is not None:
                 self.f_loss *= self.atomic_weights
             self.f_loss = tf.reduce_mean(self.f_loss) * self.inputs['force_coeff']
         
             self.total_loss += self.f_loss
+
+        if self.inputs['regularization']['type'] is not None:
+            if self.inputs['regularization']['type'] == 'l2':
+                coeff = self.inputs['regularization']['params'].get('coeff', 1e-6)
+                self.reg_loss = 0
+                for item in self.parent.inputs['atom_types']:
+                    for weight in self.models[item].weights:
+                        self.reg_loss += tf.nn.l2_loss(weight)
+                self.total_loss += self.reg_loss * coeff
+            else:
+                raise NotImplementedError
 
     def _make_optimizer(self, user_optimizer=None):
         final_loss = self.inputs['loss_scale']*self.total_loss
