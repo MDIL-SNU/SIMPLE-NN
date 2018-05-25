@@ -17,6 +17,15 @@ pip install mpi4py
 pip install simple-nn
 ```
 
+### Install LAMMPS' module
+Currently, we support the module for symmetry_function - Neural_network model.
+Copy the source code to LAMMPS src directory.
+```
+cp /directory/of/simple-nn/features/symmetry_function/pair_nn.* /directory/of/lammps/src/
+cp /directory/of/simple-nn/features/symmetry_function/symmetry_function.* /directory/of/lammps/src/
+```
+And compile LAMMPS code.
+
 ## Usage
 
 ```python
