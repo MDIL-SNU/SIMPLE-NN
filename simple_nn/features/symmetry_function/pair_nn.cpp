@@ -64,8 +64,8 @@ PairNN::~PairNN()
     delete [] map;
   }
 
-  for (int i=0; i<(nelements+1); i++) free_net(nets[i])
-  delete [] nets
+  for (int i=0; i<(nelements+1); i++) free_net(nets[i]);
+  delete [] nets;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -459,7 +459,7 @@ void PairNN::read_file(char *fname) {
       }
       if (nnet == nelements) {
         if (valid) {
-          free_net(nets[nnet])
+          free_net(nets[nnet]);
         }
         valid = true;
       }
@@ -662,27 +662,27 @@ double PairNN::single(int i, int j, int itype, int jtype, double rsq,
 
 void PairNN::free_net(Net &net) {
   for (int i=0; i<(net.nlayer-1); i++) {
-    delete [] net.nodes[i]
-    delete [] net.dnodes[i]
-    delete [] net.bnodes[i]
-    delete [] net.weights[i]
-    delete [] net.bias[i]
+    delete [] net.nodes[i];
+    delete [] net.dnodes[i];
+    delete [] net.bnodes[i];
+    delete [] net.weights[i];
+    delete [] net.bias[i];
   }
-  delete [] net.nodes
-  delete [] net.dnodes
-  delete [] net.bnodes
-  delete [] net.weights
-  delete [] net.bias
+  delete [] net.nodes;
+  delete [] net.dnodes;
+  delete [] net.bnodes;
+  delete [] net.weights;
+  delete [] net.bias;
 
   for (int i=0; i<2; i++) {
-    delete [] net.scale[i]
+    delete [] net.scale[i];
   }
-  delete [] net.scale
+  delete [] net.scale;
 
-  delete [] net.acti
-  delete [] net.nnode
+  delete [] net.acti;
+  delete [] net.nnode;
 
-  delete [] net.slists
+  delete [] net.slists;
 }
 
 
