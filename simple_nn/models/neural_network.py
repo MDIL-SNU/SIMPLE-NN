@@ -222,7 +222,6 @@ class Neural_network(object):
 
             batch['seg_id'][item] = \
                 np.concatenate([[j]*jtem for j,jtem in enumerate(batch['N'][item])])
-            print item, batch['seg_id'][item], batch['seg_id'][item].astype(np.int), max(batch['seg_id'][item])
 
         batch['partition'] = \
             np.concatenate([[0]*item + [1]*(max_atom_num - item) for item in batch['tot_num']])
@@ -490,7 +489,6 @@ class Neural_network(object):
                     valid_fdict = self._make_feed_dict(valid_set)
 
                     for epoch in range(self.inputs['total_epoch']):
-                        print epoch
                         train_batch = self._get_batch(train_fileiter)
                         train_fdict = self._make_feed_dict(train_batch)
                         self.optim.run(feed_dict=train_fdict)
