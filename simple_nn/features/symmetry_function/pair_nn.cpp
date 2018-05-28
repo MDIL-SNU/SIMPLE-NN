@@ -368,7 +368,7 @@ void PairNN::coeff(int narg, char **arg)
     }
   }
 
-  nets = new Net[nelements];
+  nets = new Net[nelements+1]; // extra one is used for reading irrelevant elements.
 
   // read potential file and initialize potential parameters
   read_file(arg[2]);
@@ -408,9 +408,11 @@ void PairNN::read_file(char *fname) {
   char line[MAXLINE], *ptr, *tstr;
   int eof = 0;
   int stats = 0;
-  int nnet = -1;
+  int nnet = nelements;
   int max_sym_line = 6;
   char **p_elem = new char*[nelements];
+  int valid_count = 0;
+  bool valid = true;
   cutmax = 0;
    
   while (1) {
@@ -452,15 +454,17 @@ void PairNN::read_file(char *fname) {
           break;
         }
       }
-      if (nnet == -1) error->one(FLERR,"potential file error: invalid elements");
+      if (nnet == nelements) valid = false;
       else {
-        stats = 2;
-        // cutoff setting
-        for (i=1; i<=atom->ntypes; i++) {
-          if (map[i] == nnet) {
-            for (j=1; j<=atom->ntypes; j++) {
-              cutsq[i][j] = t_cut*t_cut;
-            }
+        valid = true;
+        valid_count++;
+      }
+      stats = 2;
+      // cutoff setting
+      for (i=1; i<=atom->ntypes; i++) {
+        if (map[i] == nnet) {
+          for (j=1; j<=atom->ntypes; j++) {
+            cutsq[i][j] = t_cut*t_cut;
           }
         }
       }
@@ -484,6 +488,7 @@ void PairNN::read_file(char *fname) {
       nets[nnet].slists[isym].coefs[3] = atof(strtok(NULL," \t\n\r\f"));
 
       tstr = strtok(NULL," \t\n\r\f");
+      nets[nnet].slists[isym].atype[0] = nelements;
       for (i=0; i<nelements; i++) {
         if (strcmp(tstr,elements[i]) == 0) {
           nets[nnet].slists[isym].atype[0] = i;
@@ -492,6 +497,7 @@ void PairNN::read_file(char *fname) {
       }
       if (nets[nnet].slists[isym].stype > 2) {
         tstr = strtok(NULL," \t\n\r\f");
+        nets[nnet].slists[isym].atype[1] = nelements;
         for (i=0; i<nelements; i++) {
           if (strcmp(tstr,elements[i]) == 0) {
             nets[nnet].slists[isym].atype[1] = i;
@@ -582,6 +588,7 @@ void PairNN::read_file(char *fname) {
       if (ilayer == nlayer) stats = 1;
     }
   }
+  if (valid_count == 0) error->one(FLERR,"potential file error: invalid elements");
 
   delete [] p_elem;
 }
