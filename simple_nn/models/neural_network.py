@@ -75,18 +75,35 @@ class Neural_network(object):
             self.parent.write_inputs()
 
         class iterfile(object):
-            def __init__(self, filelist):
+            def __init__(self, filelist, maxiter=None):
                 self.items = filelist
                 self.index = 0
 
+                if maxiter is None:
+                    self.maxiter = len(filelist)
+                else:
+                    self.maxiter = maxiter
+                
+                self.curiter = 0
+
             def __iter__(self):
+                self.curiter = 0
                 return self
             
+            def set_maxiter(self, maxiter):
+                self.maxiter = maxiter
+
             def _next(self):
                 if self.index == 0:
                     random.shuffle(self.items)
         
                 n = self.items[self.index]
+
+                if self.curiter == self.maxiter:
+                    raise StopIteration
+                else:
+                    self.curiter += 1
+
                 self.index += 1
                 self.index = self.index % len(self.items)
                 return n
@@ -115,7 +132,31 @@ class Neural_network(object):
  
         return train_data, valid_data, test_data
 
-    def _get_batch(self, fileiter, batch_size, initial=False, valid=False):
+    def _set_params(self, fileiter):
+        self.inp_size = dict()
+        self.params = dict()
+
+        def _check_and_update(source, overrides):
+            for item in overrides.keys():
+                if item in source:
+                    if not np.array_equal(source[item], overrides[item]):
+                        raise ValueError
+                else:
+                    source[item] = overrides[item]
+
+            return source
+
+        for item in fileiter:
+            loaded_fil = pickle_load(item[0])
+            tmp_inp_size = dict()
+            for item in loaded_fil['params'].keys():
+                tmp_inp_size[item] = loaded_fil['x'][item].shape[1]
+
+            self.inp_size = _check_and_update(self.inp_size, tmp_inp_size)
+            self.params = _check_and_update(self.params, loaded_fil['params'])
+            
+
+    def _get_batch(self, fileiter, valid=False):
         batch = {
             'x': dict(),
             'dx': dict(),
@@ -134,28 +175,27 @@ class Neural_network(object):
             batch['dx'][item] = list()
             batch['N'][item] = list()
         
-        for i,item in enumerate(fileiter):
+        for item in fileiter:
             loaded_fil = pickle_load(item[0])
+            tmp_atom_types = loaded_fil['N'].keys()
 
             # TODO: add parameter check part
             batch['_E'].append(loaded_fil['E'])
             batch['_F'].append(loaded_fil['F'])
             for jtem in self.parent.inputs['atom_types']:
-                batch['x'][jtem].append(loaded_fil['x'][jtem])
-                batch['dx'][jtem].append(loaded_fil['dx'][jtem])
-                batch['N'][jtem].append(loaded_fil['N'][jtem])
-                if tag_atomic_weights != None:
-                    if valid:
-                        batch['atomic_weights'].append([1.]*loaded_fil['N'][jtem])
-                    else:
-                        batch['atomic_weights'].\
-                            append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
+                if jtem in tmp_atom_types:
+                    batch['x'][jtem].append(loaded_fil['x'][jtem])
+                    batch['dx'][jtem].append(loaded_fil['dx'][jtem])
+                    batch['N'][jtem].append(loaded_fil['N'][jtem])
+                    if tag_atomic_weights != None:
+                        if valid:
+                            batch['atomic_weights'].append([1.]*loaded_fil['N'][jtem])
+                        else:
+                            batch['atomic_weights'].\
+                                append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
+                else:
+                    batch['N'][jtem].append(0)
 
-            if initial:
-                self.params = loaded_fil['params']
-
-            if (not valid) and (i+2 > batch_size):
-                break
 
         batch['_E'] = np.array(batch['_E'], dtype=np.float64).reshape([-1,1])
         batch['_F'] = np.concatenate(batch['_F']).astype(np.float64)
@@ -165,20 +205,11 @@ class Neural_network(object):
         batch['tot_num'] = np.sum(list(batch['N'].values()), axis=0)
         max_atom_num = np.max(batch['tot_num'])
 
-        if initial:
-            self.inp_size = dict()
-
         for item in self.parent.inputs['atom_types']:
             batch['N'][item] = np.array(batch['N'][item], dtype=np.int)
             batch['x'][item] = np.concatenate(batch['x'][item], axis=0).astype(np.float64)
             batch['x'][item] -= self.scale[item][0:1,:]
             batch['x'][item] /= self.scale[item][1:2,:]
-
-            if initial:
-                self.inp_size[item] = batch['x'][item].shape[1]
-            else:
-                if self.inp_size[item] != batch['x'][item].shape[1]:
-                    raise ValueError
 
             tmp_dx = np.zeros([np.sum(batch['N'][item]), self.inp_size[item],\
                                max_atom_num, 3], dtype=np.float64)
@@ -399,12 +430,15 @@ class Neural_network(object):
                             get_atomic_weights=get_atomic_weights, \
                             **self.inputs['atomic_weights']['params'])
 
-            self._get_batch(train_fileiter, 1, initial=True)
+            #self._get_batch(train_fileiter, 1, initial=True)
+            self._set_params(train_fileiter)
+            train_fileiter.set_maxiter(self.inputs['batch_size'])
         else:
             self.scale, self.atomic_weights_full = \
                 preprocessing(self.test_data_list, self.parent.inputs['atom_types'], 'x', \
                             calc_scale=False, get_atomic_weights=None)
-            self._get_batch(test_fileiter, 1, initial=True, valid=True)
+            #self._get_batch(test_fileiter, 1, initial=True, valid=True)
+            self._set_params(test_fileiter)
 
         # Generate placeholder
         self._E = tf.placeholder(tf.float64, [None, 1])
@@ -442,11 +476,11 @@ class Neural_network(object):
                     # TODO: complete this part
                     raise ValueError
                 elif self.inputs['method'] == 'Adam':
-                    valid_set = self._get_batch(valid_fileiter, 1, valid=True)
+                    valid_set = self._get_batch(valid_fileiter, valid=True)
                     valid_fdict = self._make_feed_dict(valid_set)
 
                     for epoch in range(self.inputs['total_epoch']):
-                        train_batch = self._get_batch(train_fileiter, self.inputs['batch_size'])
+                        train_batch = self._get_batch(train_fileiter)
                         train_fdict = self._make_feed_dict(train_batch)
                         self.optim.run(feed_dict=train_fdict)
 
@@ -474,7 +508,7 @@ class Neural_network(object):
                 self._save(sess, saver)
 
             if self.inputs['test']:
-                test_set = self._get_batch(test_fileiter, 1, valid=True)
+                test_set = self._get_batch(test_fileiter, valid=True)
                 test_fdict = self._make_feed_dict(test_set)
 
                 test_save = dict()

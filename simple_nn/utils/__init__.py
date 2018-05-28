@@ -43,9 +43,10 @@ def _make_full_featurelist(filelist, atom_types, feature_tag):
     for i,item in enumerate(data_list):
         tmp_data = pickle_load(item)
         for jtem in atom_types:
-            feature_list[jtem].append(tmp_data[feature_tag][jtem])
-            idx_list[jtem].append([i]*tmp_data['N'][jtem])
-
+            if jtem in tmp_data[feature_tag]:
+                feature_list[jtem].append(tmp_data[feature_tag][jtem])
+                idx_list[jtem].append([i]*tmp_data['N'][jtem])
+                
     for item in atom_types:
         feature_list[item] = np.concatenate(feature_list[item], axis=0)
         idx_list[item] = np.concatenate(idx_list[item], axis=0)
