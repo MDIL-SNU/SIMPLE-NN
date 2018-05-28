@@ -40,8 +40,12 @@ class Neural_network(object):
                                       'train': True,
                                       'atomic_weights': {
                                           'type': None,
-                                          'params': dict()
-                                      }
+                                          'params': dict(),
+                                      },
+                                      'regularization': {
+                                          'type': None,
+                                          'params': dict(),
+                                      },
                                   }
                               }
         self.inputs = dict()
@@ -214,6 +218,12 @@ class Neural_network(object):
             'bias_initializer': tf.initializers.truncated_normal(stddev=0.3, dtype=dtype)
         }
 
+        if self.inputs['regularization']['type'] is not None:
+            if self.inputs['regularization']['type'] == 'l2':
+                coeff = self.inputs['regularization']['params'].get('coeff', 1e-6)
+                dense_basic_setting['kernel_regularizer'] = tf.keras.regularizers.l2(l=coeff)
+                dense_basic_setting['bias_regularizer'] = tf.keras.regularizers.l2(l=coeff)
+
         self.nodes = dict()
         for item in self.parent.inputs['atom_types']:
             if isinstance(self.inputs['nodes'], collections.Mapping):
@@ -265,11 +275,13 @@ class Neural_network(object):
 
         if self.inputs['use_force']:
             self.f_loss = tf.square(self._F - self.F)
-            if self.inputs['atomic_weights']['type'] != None:
+            if self.inputs['atomic_weights']['type'] is not None:
                 self.f_loss *= self.atomic_weights
             self.f_loss = tf.reduce_mean(self.f_loss) * self.inputs['force_coeff']
         
             self.total_loss += self.f_loss
+
+        self.total_loss += tf.losses.get_regularization_loss()
 
     def _make_optimizer(self, user_optimizer=None):
         final_loss = self.inputs['loss_scale']*self.total_loss

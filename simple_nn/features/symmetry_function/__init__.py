@@ -113,6 +113,7 @@ class Symmetry_function(object):
             if self.inputs['compress_outcar']:
                 tmp_name = compress_outcar(item[0])
                 snapshots = io.read(tmp_name, index=index, force_consistent=True)
+                os.remove(tmp_name)
             else:    
                 snapshots = io.read(item[0], index=index, force_consistent=True) 
 
