@@ -75,6 +75,7 @@ class PairNN : public Pair {
 
   virtual void allocate();
   virtual void read_file(char *);  
+  void free_net(Net &);
   double evalNet(const double *, double *, Net &);
 };
 
