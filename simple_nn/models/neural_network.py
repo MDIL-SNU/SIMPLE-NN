@@ -177,7 +177,7 @@ class Neural_network(object):
         
         for item in fileiter:
             loaded_fil = pickle_load(item[0])
-            tmp_atom_types = loaded_fil['N'].keys()
+            tmp_atom_types = loaded_fil['x'].keys()
 
             # TODO: add parameter check part
             batch['_E'].append(loaded_fil['E'])
@@ -194,7 +194,7 @@ class Neural_network(object):
                             batch['atomic_weights'].\
                                 append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
                 else:
-                    batch['N'][jtem].append(0)
+                    batch['N'][jtem].append(loaded_fil['N'][jtem])
 
 
         batch['_E'] = np.array(batch['_E'], dtype=np.float64).reshape([-1,1])
@@ -287,7 +287,9 @@ class Neural_network(object):
         self.E = self.F = 0
 
         for item in self.parent.inputs['atom_types']:
-            self.E += tf.segment_sum(self.ys[item], self.seg_id[item])
+            #self.E += tf.segment_sum(self.ys[item], self.seg_id[item])
+            self.E += tf.sparse_segment_sum(self.ys[item], self.sparse_indices[item], self.seg_id[item], 
+                                            num_segments=self.num_seg)
 
             if self.inputs['use_force']:
                 tmp_force = self.dx[item] * \
@@ -295,7 +297,8 @@ class Neural_network(object):
                                 tf.expand_dims(self.dys[item], axis=2),
                                 axis=3)
                 tmp_force = tf.reduce_sum(\
-                                tf.segment_sum(tmp_force, self.seg_id[item]),
+                                tf.sparse_segment_sum(tmp_force, self.sparse_indices[item], self.seg_id[item], 
+                                                      num_segments=self.num_seg),
                                 axis=1)
                 self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                    self.partition, 2)[0]
@@ -346,10 +349,13 @@ class Neural_network(object):
         if self.inputs['atomic_weights']['type'] != None:
             fdict[self.atomic_weights] = batch['atomic_weights']
 
+        fdict[self.num_seg] = len(batch['_E'])
+
         for item in self.parent.inputs['atom_types']:
             fdict[self.x[item]] = batch['x'][item]
             fdict[self.dx[item]] = batch['dx'][item]
             fdict[self.seg_id[item]] = batch['seg_id'][item]
+            fdict[self.sparse_indices[item]] = list(range(len(batch['x'][item])))
 
         return fdict 
 
@@ -446,14 +452,17 @@ class Neural_network(object):
         self.tot_num = tf.placeholder(tf.float64, [None])
         self.partition = tf.placeholder(tf.int32, [None])
         self.seg_id = dict()
+        self.sparse_indices = dict()
         self.x = dict()
         self.dx = dict()
+        self.num_seg = tf.placeholder(tf.int32, ())
         self.atomic_weights = tf.placeholder(tf.float64, [None, 1]) \
                                 if self.inputs['atomic_weights']['type'] != None else None
         for item in self.parent.inputs['atom_types']:
             self.x[item] = tf.placeholder(tf.float64, [None, self.inp_size[item]])
             self.dx[item] = tf.placeholder(tf.float64, [None, self.inp_size[item], None, 3])
             self.seg_id[item] = tf.placeholder(tf.int32, [None])
+            self.sparse_indices[item] = tf.placeholder(tf.int32, [None])
 
         self._make_model()
         self._calc_output()
