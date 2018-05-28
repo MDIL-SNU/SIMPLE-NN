@@ -139,15 +139,15 @@ class Neural_network(object):
         def _check_and_update(source, overrides):
             for item in overrides.keys():
                 if item in source:
-                    if not np.equal(source[item], overrides[item]):
+                    if not np.array_equal(source[item], overrides[item]):
                         raise ValueError
                 else:
                     source[item] = overrides[item]
 
             return source
 
-        for item in enumerate(fileiter):
-            loaded_fil = pickle.load(item[0])
+        for item in fileiter:
+            loaded_fil = pickle_load(item[0])
             tmp_inp_size = dict()
             for item in loaded_fil['params'].keys():
                 tmp_inp_size[item] = loaded_fil['x'][item].shape[1]
@@ -177,20 +177,24 @@ class Neural_network(object):
         
         for item in fileiter:
             loaded_fil = pickle_load(item[0])
+            tmp_atom_types = loaded_fil['N'].keys()
 
             # TODO: add parameter check part
             batch['_E'].append(loaded_fil['E'])
             batch['_F'].append(loaded_fil['F'])
             for jtem in self.parent.inputs['atom_types']:
-                batch['x'][jtem].append(loaded_fil['x'][jtem])
-                batch['dx'][jtem].append(loaded_fil['dx'][jtem])
-                batch['N'][jtem].append(loaded_fil['N'][jtem])
-                if tag_atomic_weights != None:
-                    if valid:
-                        batch['atomic_weights'].append([1.]*loaded_fil['N'][jtem])
-                    else:
-                        batch['atomic_weights'].\
-                            append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
+                if jtem in tmp_atom_types:
+                    batch['x'][jtem].append(loaded_fil['x'][jtem])
+                    batch['dx'][jtem].append(loaded_fil['dx'][jtem])
+                    batch['N'][jtem].append(loaded_fil['N'][jtem])
+                    if tag_atomic_weights != None:
+                        if valid:
+                            batch['atomic_weights'].append([1.]*loaded_fil['N'][jtem])
+                        else:
+                            batch['atomic_weights'].\
+                                append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
+                else:
+                    batch['N'][jtem].append(0)
 
 
         batch['_E'] = np.array(batch['_E'], dtype=np.float64).reshape([-1,1])
