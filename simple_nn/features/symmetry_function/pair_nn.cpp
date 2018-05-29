@@ -63,6 +63,9 @@ PairNN::~PairNN()
     memory->destroy(cutsq);
     delete [] map;
   }
+
+  for (int i=0; i<nelements; i++) free_net(nets[i]);
+  delete [] nets;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -412,7 +415,7 @@ void PairNN::read_file(char *fname) {
   int max_sym_line = 6;
   char **p_elem = new char*[nelements];
   int valid_count = 0;
-  bool valid = true;
+  bool valid = false;
   cutmax = 0;
    
   while (1) {
@@ -454,9 +457,13 @@ void PairNN::read_file(char *fname) {
           break;
         }
       }
-      if (nnet == nelements) valid = false;
-      else {
+      if (nnet == nelements) {
+        if (valid) {
+          free_net(nets[nnet]);
+        }
         valid = true;
+      }
+      else {
         valid_count++;
       }
       stats = 2;
@@ -585,7 +592,10 @@ void PairNN::read_file(char *fname) {
         ilayer++;
         stats = 6;
       }
-      if (ilayer == nlayer) stats = 1;
+      if (ilayer == nlayer) {
+        if (nnet == nelements) free_net(nets[nnet]);
+        stats = 1;
+      } 
     }
   }
   if (valid_count == 0) error->one(FLERR,"potential file error: invalid elements");
@@ -648,6 +658,36 @@ double PairNN::single(int i, int j, int itype, int jtype, double rsq,
   if (comm->me == 0) printf("single run\n");
   return factor_lj;
 }
+
+/* ----------------------------------------------------------------------
+   free the Nets struct
+------------------------------------------------------------------------- */
+
+void PairNN::free_net(Net &net) {
+  for (int i=0; i<(net.nlayer-1); i++) {
+    delete [] net.nodes[i];
+    delete [] net.dnodes[i];
+    delete [] net.bnodes[i];
+    delete [] net.weights[i];
+    delete [] net.bias[i];
+  }
+  delete [] net.nodes;
+  delete [] net.dnodes;
+  delete [] net.bnodes;
+  delete [] net.weights;
+  delete [] net.bias;
+
+  for (int i=0; i<2; i++) {
+    delete [] net.scale[i];
+  }
+  delete [] net.scale;
+
+  delete [] net.acti;
+  delete [] net.nnode;
+
+  delete [] net.slists;
+}
+
 
 /* ---------------------------------------------------------------------- */
 
