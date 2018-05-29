@@ -217,7 +217,6 @@ class Neural_network(object):
                 batch['x'][item] -= self.scale[item][0:1,:]
                 batch['x'][item] /= self.scale[item][1:2,:]
 
-                print self.scale[item][0,0]
                 tmp_dx = np.zeros([np.sum(batch['N'][item]), self.inp_size[item],\
                                    max_atom_num, 3], dtype=np.float64)
 
