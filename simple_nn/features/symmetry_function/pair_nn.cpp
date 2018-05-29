@@ -64,7 +64,7 @@ PairNN::~PairNN()
     delete [] map;
   }
 
-  for (int i=0; i<(nelements+1); i++) free_net(nets[i]);
+  for (int i=0; i<nelements; i++) free_net(nets[i]);
   delete [] nets;
 }
 
@@ -592,7 +592,10 @@ void PairNN::read_file(char *fname) {
         ilayer++;
         stats = 6;
       }
-      if (ilayer == nlayer) stats = 1;
+      if (ilayer == nlayer) {
+        if (nnet == nelements) free_net(nets[nnet]);
+        stats = 1;
+      } 
     }
   }
   if (valid_count == 0) error->one(FLERR,"potential file error: invalid elements");
