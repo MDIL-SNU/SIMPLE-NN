@@ -13,8 +13,6 @@ extern "C" void calculate_gdf(double** features, int num_points, int num_feature
     for (int i=0; i<num_points; ++i) {
         tmp_gdf = 0;
         for (int j=0; j<num_points; ++j) {
-            if (i==j) continue;
-
             tmp_indi = 0;
             for (int k=0; k<num_features; ++k) {
                 tmp_indi += (features[i][k] - features[j][k]) * (features[i][k] - features[j][k]);
