@@ -4,7 +4,8 @@ import random
 import six
 from six.moves import cPickle as pickle
 import collections
-from ..utils import _make_data_list, pickle_load, preprocessing, _generate_gdf_file
+import functools
+from ..utils import _make_data_list, pickle_load, preprocessing, _generate_gdf_file, modified_sigmoid
 
 """
 Neural network model with symmetry function as a descriptor
@@ -39,6 +40,10 @@ class Neural_network(object):
                                       'test': False,
                                       'train': True,
                                       'atomic_weights': {
+                                          'type': None,
+                                          'params': dict(),
+                                      },
+                                      'weight_modifier': {
                                           'type': None,
                                           'params': dict(),
                                       },
@@ -420,8 +425,11 @@ class Neural_network(object):
         train_fileiter, valid_fileiter, test_fileiter = self._make_fileiter()
 
         # preprocessing: scale, GDF...
+        modifier = None
+        if self.inputs['weight_modifier']['type'] == 'modified sigmoid':
+            modifier = functools.partial(modified_sigmoid, **self.inputs['weight_modifier']['params'])
         if self.inputs['atomic_weights']['type'] == 'gdf':
-            get_atomic_weights = _generate_gdf_file
+            get_atomic_weights = functools.partial(_generate_gdf_file, modifier=modifier)
         elif self.inputs['atomic_weights']['type'] == 'user':
             get_atomic_weights = user_atomic_weights_function
         elif self.inputs['atomic_weights']['type'] == 'file':
