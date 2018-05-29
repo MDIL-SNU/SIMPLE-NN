@@ -315,7 +315,8 @@ class Neural_network(object):
         
             self.total_loss += self.f_loss
 
-        self.total_loss += tf.losses.get_regularization_loss()
+        if self.inputs['regularization']['type'] is not None:
+            self.total_loss += tf.losses.get_regularization_loss()
 
     def _make_optimizer(self, user_optimizer=None):
         final_loss = self.inputs['loss_scale']*self.total_loss
