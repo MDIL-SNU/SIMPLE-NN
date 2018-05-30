@@ -77,18 +77,19 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, mo
 
     gdf = dict()
     for item in atom_types:
-        scaled_feature = feature_list[item] - scale[item][0:1,:]
-        scaled_feature /= scale[item][1:2,:]
-        scaled_feature_p = _gen_2Darray_for_ffi(scaled_feature, ffi)
+        if len(feature_list[item]) > 0:
+            scaled_feature = feature_list[item] - scale[item][0:1,:]
+            scaled_feature /= scale[item][1:2,:]
+            scaled_feature_p = _gen_2Darray_for_ffi(scaled_feature, ffi)
 
-        temp_gdf = np.zeros([scaled_feature.shape[0]], dtype=np.float64, order='C')
-        temp_gdf_p = ffi.cast("double *", temp_gdf.ctypes.data)
+            temp_gdf = np.zeros([scaled_feature.shape[0]], dtype=np.float64, order='C')
+            temp_gdf_p = ffi.cast("double *", temp_gdf.ctypes.data)
 
-        lib.calculate_gdf(scaled_feature_p, scaled_feature.shape[0], scaled_feature.shape[1], sigma, temp_gdf_p)
-        gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
-        if callable(modifier):
-            gdf[item] = modifier(gdf[item])
-        gdf[item][:,0] /= np.mean(gdf[item][:,0])
+            lib.calculate_gdf(scaled_feature_p, scaled_feature.shape[0], scaled_feature.shape[1], sigma, temp_gdf_p)
+            gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
+            if callable(modifier):
+                gdf[item] = modifier(gdf[item])
+            gdf[item][:,0] /= np.mean(gdf[item][:,0])
 
     with open('atomic_weights', 'wb') as fil:
         pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)
