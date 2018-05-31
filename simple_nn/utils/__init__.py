@@ -55,15 +55,17 @@ def _make_full_featurelist(filelist, atom_types, feature_tag):
     return feature_list, idx_list
 
 
-def _generate_scale_file(feature_list, atom_types):
+def _generate_scale_file(feature_list, atom_types, inp_size):
     scale = dict()
     for item in atom_types:
+        scale[item] = np.zeros([2, inp_size[item]])
+
         if len(feature_list[item]) > 0:
-            tmp_shape = feature_list[item].shape
-            scale[item] = np.zeros([2, tmp_shape[1]])
             scale[item][0,:] = 0.5*(np.amax(feature_list[item], axis=0) + np.amin(feature_list[item], axis=0))
             scale[item][1,:] = 0.5*(np.amax(feature_list[item], axis=0) - np.amin(feature_list[item], axis=0))
             scale[item][1, scale[item][1,:] < 1e-15] = 1.
+        else:
+            scale[item][1,:] = 1.
 
     with open('scale_factor', 'wb') as fil:
         pickle.dump(scale, fil, pickle.HIGHEST_PROTOCOL)
@@ -96,7 +98,7 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, mo
 
     return gdf
 
-def preprocessing(filelist, atom_types, feature_tag, \
+def preprocessing(filelist, atom_types, feature_tag, inp_size, \
                   calc_scale=True, get_atomic_weights=None, **kwarg):
     """
     get_atomic_weights:
@@ -110,7 +112,7 @@ def preprocessing(filelist, atom_types, feature_tag, \
     scale = None
     atomic_weights = None
     if calc_scale:
-        scale = _generate_scale_file(feature_list, atom_types)
+        scale = _generate_scale_file(feature_list, atom_types, inp_size)
     else:
         scale = pickle_load('./scale_factor')
     
