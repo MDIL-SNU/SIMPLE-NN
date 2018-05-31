@@ -70,22 +70,26 @@ def _generate_scale_file(feature_list, atom_types):
 
     return scale
 
-def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02):
+def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, modifier=None):
     ffi = FFI()
     ffi.cdef("""void calculate_gdf(double **, int, int, double, double *);""")
     lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libgdf.so"))
 
     gdf = dict()
     for item in atom_types:
-        scaled_feature = feature_list[item] - scale[item][0:1,:]
-        scaled_feature /= scale[item][1:2,:]
-        scaled_feature_p = _gen_2Darray_for_ffi(scaled_feature, ffi)
+        if len(feature_list[item]) > 0:
+            scaled_feature = feature_list[item] - scale[item][0:1,:]
+            scaled_feature /= scale[item][1:2,:]
+            scaled_feature_p = _gen_2Darray_for_ffi(scaled_feature, ffi)
 
-        temp_gdf = np.zeros([scaled_feature.shape[0]], dtype=np.float64, order='C')
-        temp_gdf_p = ffi.cast("double *", temp_gdf.ctypes.data)
+            temp_gdf = np.zeros([scaled_feature.shape[0]], dtype=np.float64, order='C')
+            temp_gdf_p = ffi.cast("double *", temp_gdf.ctypes.data)
 
-        lib.calculate_gdf(scaled_feature_p, scaled_feature.shape[0], scaled_feature.shape[1], sigma, temp_gdf_p)
-        gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
+            lib.calculate_gdf(scaled_feature_p, scaled_feature.shape[0], scaled_feature.shape[1], sigma, temp_gdf_p)
+            gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
+            if callable(modifier):
+                gdf[item] = modifier(gdf[item])
+            gdf[item][:,0] /= np.mean(gdf[item][:,0])
 
     with open('atomic_weights', 'wb') as fil:
         pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)
@@ -110,7 +114,7 @@ def preprocessing(filelist, atom_types, feature_tag, \
     else:
         scale = pickle_load('./scale_factor')
     
-    if isinstance(get_atomic_weights, types.FunctionType):
+    if callable(get_atomic_weights):
         atomic_weights = get_atomic_weights(feature_list, scale, atom_types, idx_list, **kwarg)
     elif isinstance(get_atomic_weights, six.string_types):
         atomic_weights = pickle_load(get_atomic_weights)
@@ -156,3 +160,7 @@ def compress_outcar(filename):
                     line_tag -= 1
 
     return comp_name
+
+def modified_sigmoid(gdf, b=150.0, c=1.0):
+    gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
+    return gdf

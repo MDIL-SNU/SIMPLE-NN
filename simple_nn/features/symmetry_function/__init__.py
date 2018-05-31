@@ -174,14 +174,15 @@ class Symmetry_function(object):
                                      x_p, dx_p)
                     comm.barrier()
 
-                    res['x'][jtem] = np.array(comm.gather(x, root=0))
-                    res['dx'][jtem] = np.array(comm.gather(dx, root=0))
 
                     if comm.rank == 0:
-                        res['x'][jtem] = np.concatenate(res['x'][jtem], axis=0).reshape([type_num[jtem], params_set[jtem]['num']])
-                        res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
-                                            reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
-                        res['params'][jtem] = params_set[jtem]['total']
+                        if type_num[jtem] != 0:
+                            res['x'][jtem] = np.array(comm.gather(x, root=0))
+                            res['dx'][jtem] = np.array(comm.gather(dx, root=0))
+                            res['x'][jtem] = np.concatenate(res['x'][jtem], axis=0).reshape([type_num[jtem], params_set[jtem]['num']])
+                            res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
+                                                reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
+                            res['params'][jtem] = params_set[jtem]['total']
 
                 if comm.rank == 0:
                     data_dir = "./data/"
