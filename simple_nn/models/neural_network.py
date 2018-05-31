@@ -132,7 +132,26 @@ class Neural_network(object):
  
         return train_data, valid_data, test_data
 
-    def _set_params(self, fileiter):
+    def _set_params(self, feature_name):
+        self.inp_size = dict()
+        self.params = dict()
+
+        for item in self.parent.inputs['atom_types']:
+            self.params[item] = list()
+
+            with open(self.parent.inputs[feature_name]['params'][item]) as fil:
+                for line in fil:
+                    tmp = line.split()
+                    self.params[item] += [list(map(float, tmp))]
+
+            self.params[item] = np.array(self.params[item])
+            self.inp_size[item] = self.params[item].shape[0]
+
+    def _set_params_old(self, fileiter):
+        """
+        Depracated..
+        """
+
         self.inp_size = dict()
         self.params = dict()
 
@@ -199,8 +218,9 @@ class Neural_network(object):
                             batch['atomic_weights'].\
                                 append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
                 else:
-                    batch['N'][jtem].append(loaded_fil['N'][jtem])
-
+                    batch['x'][jtem].append(np.zeros([0, self.inp_size[jtem]], dtype=np.float64))
+                    batch['dx'][jtem].append(np.zeros([0, self.inp_size[jtem], int(np.sum(list(loaded_fil['N'].values()))), 3], dtype=np.float64))
+                    batch['N'][jtem].append(0)
 
         batch['_E'] = np.array(batch['_E'], dtype=np.float64).reshape([-1,1])
         batch['_F'] = np.concatenate(batch['_F']).astype(np.float64)
@@ -212,24 +232,21 @@ class Neural_network(object):
 
         for item in self.parent.inputs['atom_types']:
             batch['N'][item] = np.array(batch['N'][item], dtype=np.int)
-            if self.inp_size[item] != 0:
-                batch['x'][item] = np.concatenate(batch['x'][item], axis=0).astype(np.float64)
-                batch['x'][item] -= self.scale[item][0:1,:]
-                batch['x'][item] /= self.scale[item][1:2,:]
+            batch['x'][item] = np.concatenate(batch['x'][item], axis=0).astype(np.float64)
+            batch['x'][item] -= self.scale[item][0:1,:]
+            batch['x'][item] /= self.scale[item][1:2,:]
 
-                tmp_dx = np.zeros([np.sum(batch['N'][item]), self.inp_size[item],\
-                                   max_atom_num, 3], dtype=np.float64)
+            tmp_dx = np.zeros([np.sum(batch['N'][item]), self.inp_size[item],\
+                               max_atom_num, 3], dtype=np.float64)
 
-                tmp_idx = 0
-                for jtem in batch['dx'][item]:
-                    tmp_dx[tmp_idx:tmp_idx+jtem.shape[0],:,:jtem.shape[2],:] = jtem
-                    tmp_idx += jtem.shape[0]
-                batch['dx'][item] = tmp_dx / self.scale[item][1:2,:].reshape([1,self.inp_size[item],1,1])
+            tmp_idx = 0
+            for jtem in batch['dx'][item]:
+                tmp_dx[tmp_idx:tmp_idx+jtem.shape[0],:,:jtem.shape[2],:] = jtem
+                tmp_idx += jtem.shape[0]
+            batch['dx'][item] = tmp_dx / self.scale[item][1:2,:].reshape([1,self.inp_size[item],1,1])
 
-                batch['seg_id'][item] = \
-                    np.concatenate([[j]*jtem for j,jtem in enumerate(batch['N'][item])])
-            else:
-                batch['seg_id'][item] = list()
+            batch['seg_id'][item] = \
+                np.concatenate([[j]*jtem for j,jtem in enumerate(batch['N'][item])])
 
         batch['partition'] = \
             np.concatenate([[0]*item + [1]*(max_atom_num - item) for item in batch['tot_num']])
@@ -265,53 +282,51 @@ class Neural_network(object):
 
         self.nodes = dict()
         for item in self.parent.inputs['atom_types']:
-            if self.inp_size[item] != 0:
-                if isinstance(self.inputs['nodes'], collections.Mapping):
-                    nodes = list(map(int, self.inputs['nodes'][item].split('-')))
-                else:
-                    nodes = list(map(int, self.inputs['nodes'].split('-')))
-                nlayers = len(nodes)
-                model = tf.keras.models.Sequential()
-                model.add(tf.keras.layers.Dense(nodes[0], activation='sigmoid', \
-                                                input_dim=self.inp_size[item],
-                                                **dense_basic_setting))
+            if isinstance(self.inputs['nodes'], collections.Mapping):
+                nodes = list(map(int, self.inputs['nodes'][item].split('-')))
+            else:
+                nodes = list(map(int, self.inputs['nodes'].split('-')))
+            nlayers = len(nodes)
+            model = tf.keras.models.Sequential()
+            model.add(tf.keras.layers.Dense(nodes[0], activation='sigmoid', \
+                                            input_dim=self.inp_size[item],
+                                            **dense_basic_setting))
 
-                for i in range(1, nlayers):
-                    model.add(tf.keras.layers.Dense(nodes[i], activation='sigmoid', **dense_basic_setting))
-                model.add(tf.keras.layers.Dense(1, activation='linear', **dense_basic_setting))
+            for i in range(1, nlayers):
+                model.add(tf.keras.layers.Dense(nodes[i], activation='sigmoid', **dense_basic_setting))
+            model.add(tf.keras.layers.Dense(1, activation='linear', **dense_basic_setting))
 
-                nodes.append(1)
-                self.nodes[item] = nodes
+            nodes.append(1)
+            self.nodes[item] = nodes
 
-                self.models[item] = model
-                self.ys[item] = self.models[item](self.x[item])
+            self.models[item] = model
+            self.ys[item] = self.models[item](self.x[item])
 
-                if self.inputs['use_force']:
-                    self.dys[item] = tf.gradients(self.ys[item], self.x[item])[0]
-                else:
-                    self.dys[item] = None
+            if self.inputs['use_force']:
+                self.dys[item] = tf.gradients(self.ys[item], self.x[item])[0]
+            else:
+                self.dys[item] = None
 
 
     def _calc_output(self):
         self.E = self.F = 0
 
         for item in self.parent.inputs['atom_types']:
-            if self.inp_size[item] != 0:
             #self.E += tf.segment_sum(self.ys[item], self.seg_id[item])
-                self.E += tf.sparse_segment_sum(self.ys[item], self.sparse_indices[item], self.seg_id[item], 
-                                                num_segments=self.num_seg)
+            self.E += tf.sparse_segment_sum(self.ys[item], self.sparse_indices[item], self.seg_id[item], 
+                                            num_segments=self.num_seg)
 
-                if self.inputs['use_force']:
-                    tmp_force = self.dx[item] * \
-                                tf.expand_dims(\
-                                    tf.expand_dims(self.dys[item], axis=2),
-                                    axis=3)
-                    tmp_force = tf.reduce_sum(\
-                                    tf.sparse_segment_sum(tmp_force, self.sparse_indices[item], self.seg_id[item], 
-                                                          num_segments=self.num_seg),
-                                    axis=1)
-                    self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
-                                                       self.partition, 2)[0]
+            if self.inputs['use_force']:
+                tmp_force = self.dx[item] * \
+                            tf.expand_dims(\
+                                tf.expand_dims(self.dys[item], axis=2),
+                                axis=3)
+                tmp_force = tf.reduce_sum(\
+                                tf.sparse_segment_sum(tmp_force, self.sparse_indices[item], self.seg_id[item], 
+                                                      num_segments=self.num_seg),
+                                axis=1)
+                self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
+                                                   self.partition, 2)[0]
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         self.e_loss = tf.reduce_mean(tf.square((self._E - self.E) / self.tot_num))
@@ -346,6 +361,7 @@ class Neural_network(object):
         else:
             if user_optimizer != None:
                 self.optim = user_optimizer.minimize(final_loss, global_step=self.global_step)
+                #self.optim = user_optimizer
             else:
                 raise ValueError
 
@@ -363,11 +379,10 @@ class Neural_network(object):
         fdict[self.num_seg] = len(batch['_E'])
 
         for item in self.parent.inputs['atom_types']:
-            if self.inp_size[item] != 0:
-                fdict[self.x[item]] = batch['x'][item]
-                fdict[self.dx[item]] = batch['dx'][item]
-                fdict[self.seg_id[item]] = batch['seg_id'][item]
-                fdict[self.sparse_indices[item]] = list(range(len(batch['x'][item])))
+            fdict[self.x[item]] = batch['x'][item]
+            fdict[self.dx[item]] = batch['dx'][item]
+            fdict[self.seg_id[item]] = batch['seg_id'][item]
+            fdict[self.sparse_indices[item]] = list(range(len(batch['x'][item])))
 
         return fdict 
 
@@ -440,23 +455,25 @@ class Neural_network(object):
         else:
             get_atomic_weights = None
 
+        self._set_params('symmetry_function')
+
         # FIXME: Error occur: only test
         if self.inputs['train']:
             self.scale, self.atomic_weights_full = \
-                preprocessing(self.train_data_list, self.parent.inputs['atom_types'], 'x', \
+                preprocessing(self.train_data_list, self.parent.inputs['atom_types'], 'x', self.inp_size,\
                             calc_scale=self.inputs['scale'], \
                             get_atomic_weights=get_atomic_weights, \
                             **self.inputs['atomic_weights']['params'])
 
             #self._get_batch(train_fileiter, 1, initial=True)
-            self._set_params(train_fileiter)
+            #self._set_params(train_fileiter)
             train_fileiter.set_maxiter(self.inputs['batch_size'])
         else:
             self.scale, self.atomic_weights_full = \
-                preprocessing(self.test_data_list, self.parent.inputs['atom_types'], 'x', \
+                preprocessing(self.test_data_list, self.parent.inputs['atom_types'], 'x', self.inp_size,\
                             calc_scale=False, get_atomic_weights=None)
             #self._get_batch(test_fileiter, 1, initial=True, valid=True)
-            self._set_params(test_fileiter)
+            #self._set_params(test_fileiter)
 
         # Generate placeholder
         self._E = tf.placeholder(tf.float64, [None, 1])
