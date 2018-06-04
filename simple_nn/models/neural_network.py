@@ -5,6 +5,7 @@ import six
 from six.moves import cPickle as pickle
 import collections
 import functools
+import timeit
 from ..utils import _make_data_list, pickle_load, preprocessing, _generate_gdf_file, modified_sigmoid
 
 """
@@ -383,8 +384,8 @@ class Neural_network(object):
         if self.inputs['atomic_weights']['type'] != None:
             fdict[self.atomic_weights] = batch['atomic_weights']
 
-        #fdict[self.num_seg] = len(batch['_E']) + 1
-        fdict[self.num_seg] = self.inputs['batch_size'] + 1
+        fdict[self.num_seg] = len(batch['_E']) + 1
+        #fdict[self.num_seg] = self.inputs['batch_size'] + 1
 
         for item in self.parent.inputs['atom_types']:
             if batch['x'][item].shape[0] > 0:
@@ -533,9 +534,11 @@ class Neural_network(object):
                     valid_fdict = self._make_feed_dict(valid_set)
 
                     for epoch in range(self.inputs['total_epoch']):
+                        time1 = timeit.default_timer()
                         train_batch = self._get_batch(train_fileiter)
                         train_fdict = self._make_feed_dict(train_batch)
                         self.optim.run(feed_dict=train_fdict)
+                        time2 = timeit.default_timer()
 
                         # Logging
                         if (epoch+1) % self.inputs['show_interval'] == 0:
@@ -551,7 +554,8 @@ class Neural_network(object):
                                 result += ', F loss = {:6.4e}'.format(floss)
 
                             lr = sess.run(self.learning_rate)
-                            result += ', learning_rate: {:6.4e}\n'.format(lr)
+                            result += ', learning_rate: {:6.4e}'.format(lr)
+                            result += ', elapsed: {:4.2e}\n'.format(time2-time1)
                             self.parent.logfile.write(result)
 
                         # Temp saving
