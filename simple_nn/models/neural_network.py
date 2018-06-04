@@ -234,6 +234,7 @@ class Neural_network(object):
 
         batch['tot_num'] = np.sum(list(batch['N'].values()), axis=0)
         max_atom_num = np.max(batch['tot_num'])
+        batch['max_atom_num'] = max_atom_num
 
         for item in self.parent.inputs['atom_types']:
             batch['N'][item] = np.array(batch['N'][item], dtype=np.int)
@@ -251,7 +252,7 @@ class Neural_network(object):
             batch['dx'][item] = tmp_dx / self.scale[item][1:2,:].reshape([1,self.inp_size[item],1,1])
 
             batch['seg_id'][item] = \
-                np.concatenate([[j]*jtem for j,jtem in enumerate(batch['N'][item])])
+                np.concatenate([[j]*jtem for j,jtem in enumerate(batch['N'][item])]) + 1.
 
         batch['partition'] = \
             np.concatenate([[0]*item + [1]*(max_atom_num - item) for item in batch['tot_num']])
@@ -319,7 +320,7 @@ class Neural_network(object):
         for item in self.parent.inputs['atom_types']:
             #self.E += tf.segment_sum(self.ys[item], self.seg_id[item])
             self.E += tf.sparse_segment_sum(self.ys[item], self.sparse_indices[item], self.seg_id[item], 
-                                            num_segments=self.num_seg)
+                                            num_segments=self.num_seg)[1:]
 
             if self.inputs['use_force']:
                 tmp_force = self.dx[item] * \
@@ -328,7 +329,7 @@ class Neural_network(object):
                                 axis=3)
                 tmp_force = tf.reduce_sum(\
                                 tf.sparse_segment_sum(tmp_force, self.sparse_indices[item], self.seg_id[item], 
-                                                      num_segments=self.num_seg),
+                                                      num_segments=self.num_seg)[1:],
                                 axis=1)
                 self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                    self.partition, 2)[0]
@@ -375,19 +376,22 @@ class Neural_network(object):
             self._E: batch['_E'],
             self._F: batch['_F'],
             self.tot_num: batch['tot_num'],
-            self.partition: batch['partition']
+            self.partition: batch['partition'],
+            self.max_atom_num: batch['max_atom_num']
         }
 
         if self.inputs['atomic_weights']['type'] != None:
             fdict[self.atomic_weights] = batch['atomic_weights']
 
-        fdict[self.num_seg] = len(batch['_E'])
+        #fdict[self.num_seg] = len(batch['_E']) + 1
+        fdict[self.num_seg] = self.inputs['batch_size'] + 1
 
         for item in self.parent.inputs['atom_types']:
-            fdict[self.x[item]] = batch['x'][item]
-            fdict[self.dx[item]] = batch['dx'][item]
-            fdict[self.seg_id[item]] = batch['seg_id'][item]
-            fdict[self.sparse_indices[item]] = list(range(len(batch['x'][item])))
+            if batch['x'][item].shape[0] > 0:
+                fdict[self.x[item]] = batch['x'][item]
+                fdict[self.dx[item]] = batch['dx'][item]
+                fdict[self.seg_id[item]] = batch['seg_id'][item]
+                fdict[self.sparse_indices[item]] = list(range(len(batch['x'][item])))
 
         return fdict 
 
@@ -493,13 +497,16 @@ class Neural_network(object):
         self.x = dict()
         self.dx = dict()
         self.num_seg = tf.placeholder(tf.int32, ())
+        self.max_atom_num = tf.placeholder(tf.int32, ())
         self.atomic_weights = tf.placeholder(tf.float64, [None, 1]) \
                                 if self.inputs['atomic_weights']['type'] != None else None
         for item in self.parent.inputs['atom_types']:
-            self.x[item] = tf.placeholder(tf.float64, [None, self.inp_size[item]])
-            self.dx[item] = tf.placeholder(tf.float64, [None, self.inp_size[item], None, 3])
-            self.seg_id[item] = tf.placeholder(tf.int32, [None])
-            self.sparse_indices[item] = tf.placeholder(tf.int32, [None])
+            self.x[item] = tf.placeholder_with_default(tf.zeros([1, self.inp_size[item]], dtype=tf.float64), 
+                                                       [None, self.inp_size[item]])
+            self.dx[item] = tf.placeholder_with_default(tf.zeros([1, self.inp_size[item], self.max_atom_num, 3], dtype=tf.float64), 
+                                                        [None, self.inp_size[item], None, 3])
+            self.seg_id[item] = tf.placeholder_with_default(tf.constant([0], dtype=tf.int32), [None])
+            self.sparse_indices[item] = tf.placeholder_with_default(tf.constant([0], dtype=tf.int32), [None])
 
         self._make_model()
         self._calc_output()
