@@ -10,8 +10,10 @@ Welcome to simple_nn's documentation!
    :maxdepth: 4
    :caption: Contents:
 
-   simple_nn
-
+   install
+   run
+   tutorials/tutorial
+   modules/modules
 
 Indices and tables
 ==================

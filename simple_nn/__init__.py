@@ -6,11 +6,10 @@ import collections
 def deep_update(source, overrides):
     """
     Update a nested dictionary or similar mapping.
-    Modify ``source`` in place. tttttt
+    Modify ``source`` in place.
 
     :param dict source: base dictionary to be updated
-    :param dict overrides: new dictionary 
-
+    :param dict overrides: new dictionary
     :returns: updated dictionary source
     """
     for key in overrides.keys():
@@ -28,14 +27,14 @@ def deep_update(source, overrides):
 class Simple_nn(object):
     """
     Base class for running simple-nn
+
+    :param str inputs: filename which contains YAML style input parameters
+    :param class descriptor: subclass for generating feature vectors
+    :param class model: subclass for training machine learning model
     """
     def __init__(self, inputs, descriptor=None, model=None):
         """
-        :params string inputs: filename which contains YAML style input parameters
-
-        :params class descriptor: subclass for generating feature vectors
         
-        :params class model: subclass for training machine learning model
         """
         self.default_inputs = {
             'generate_features': True,
@@ -64,6 +63,9 @@ class Simple_nn(object):
         self.logfile.write("SIMPLE_NN\n")
 
     def write_inputs(self):
+        """
+        Write current input parameters to the 'input_cont.yaml' file
+        """
         with open('input_cont.yaml', 'w') as fil:
             yaml.dump(self.inputs, fil, default_flow_style=False)
 
@@ -98,6 +100,11 @@ class Simple_nn(object):
     #    self._log.write(message)
 
     def run(self, user_optimizer=None):
+        """
+        Function for running simple-nn.
+
+        :param user_optimizer: tensorflow optimizer other than AdamOptimizer. 
+        """
         if self.inputs['generate_features']:
             self.descriptor.generate()
         

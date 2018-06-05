@@ -101,12 +101,12 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, mo
 def preprocessing(filelist, atom_types, feature_tag, inp_size, \
                   calc_scale=True, get_atomic_weights=None, **kwarg):
     """
-    get_atomic_weights:
-        if this parameter is function, generate atomic weights using this function.
-        else if this parameter is string, load atomic weights from file(its name is that string).
-        otherwise, ValueError
-    **kwarg:
-        parameter for get_atomic_weights
+    Function for perform preprocessing input data.
+
+    :param get_atomic_weights: if this parameter is function, generate atomic weights using this function.
+                               else if this parameter is string, load atomic weights from file(its name is that string).
+                               otherwise, ValueError
+    :param \**kwarg: parameter for get_atomic_weights
     """
     feature_list, idx_list = _make_full_featurelist(filelist, atom_types, feature_tag)
     scale = None
@@ -128,7 +128,10 @@ def compress_outcar(filename):
     Compress VASP OUTCAR file for fast file-reading in ASE.
     Compressed file (tmp_comp_OUTCAR) is temporarily created in the current directory.
 
+    :param str filename: filename of OUTCAR
+
     supported properties:
+
     - atom types
     - lattice vector(cell)
     - free energy
@@ -164,5 +167,12 @@ def compress_outcar(filename):
     return comp_name
 
 def modified_sigmoid(gdf, b=150.0, c=1.0):
+    """
+    modified sigmoid function for GDF calculation.
+
+    :param gdf: numpy array, calculated gdf value
+    :param b: float or double, coefficient for modified sigmoid
+    :param c: float or double, coefficient for modified sigmoid
+    """
     gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
     return gdf
