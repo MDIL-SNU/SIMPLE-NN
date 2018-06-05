@@ -16,6 +16,9 @@ Neural network model with symmetry function as a descriptor
 # TODO: BFGS support
 # TODO: add regularization
 class Neural_network(object):
+    """
+    Class for training neural network potential.
+    """
     def __init__(self):
         self.parent = None
         self.key = 'neural_network'
@@ -61,6 +64,11 @@ class Neural_network(object):
         self.test_data_list = './test_list'
 
     def _make_fileiter(self):
+        """
+        function to generate iterator for input data file list.
+        for training set, infinite random iterator is generated and
+        for validation/test set, normal iterator is generated.
+        """
         # TODO: check tf.data
         if self.inputs['generate_valid']:
             with open(self.train_data_list, 'r') as fil:

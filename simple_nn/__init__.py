@@ -6,7 +6,12 @@ import collections
 def deep_update(source, overrides):
     """
     Update a nested dictionary or similar mapping.
-    Modify ``source`` in place.
+    Modify ``source`` in place. tttttt
+
+    :param dict source: base dictionary to be updated
+    :param dict overrides: new dictionary 
+
+    :returns: updated dictionary source
     """
     for key in overrides.keys():
         if isinstance(source, collections.Mapping):
@@ -21,10 +26,16 @@ def deep_update(source, overrides):
     return source
 
 class Simple_nn(object):
+    """
+    Base class for running simple-nn
+    """
     def __init__(self, inputs, descriptor=None, model=None):
         """
-        inputs: filename which contains YAML style input parameters
-        descriptor, model
+        :params string inputs: filename which contains YAML style input parameters
+
+        :params class descriptor: subclass for generating feature vectors
+        
+        :params class model: subclass for training machine learning model
         """
         self.default_inputs = {
             'generate_features': True,
