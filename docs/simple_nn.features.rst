@@ -8,13 +8,6 @@ Subpackages
 
     simple_nn.features.symmetry_function
 
-Submodules
-----------
-
-.. toctree::
-
-   simple_nn.features.features
-
 Module contents
 ---------------
 
