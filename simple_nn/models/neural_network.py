@@ -153,39 +153,6 @@ class Neural_network(object):
             self.params[item] = np.array(self.params[item])
             self.inp_size[item] = self.params[item].shape[0]
 
-    def _set_params_old(self, fileiter):
-        """
-        Depracated..
-        """
-
-        self.inp_size = dict()
-        self.params = dict()
-
-        def _check_and_update(source, overrides):
-            for item in overrides.keys():
-                if item in source:
-                    if not np.array_equal(source[item], overrides[item]):
-                        raise ValueError
-                else:
-                    source[item] = overrides[item]
-
-            return source
-
-        for item in fileiter:
-            loaded_fil = pickle_load(item[0])
-            tmp_inp_size = dict()
-            for item in loaded_fil['params'].keys():
-                tmp_inp_size[item] = loaded_fil['x'][item].shape[1]
-
-            self.inp_size = _check_and_update(self.inp_size, tmp_inp_size)
-            self.params = _check_and_update(self.params, loaded_fil['params'])
-
-        for item in self.parent.inputs['atom_types']:
-            if not (item in self.inp_size):
-                self.inp_size[item] = 0 
-                self.params[item] = list()  # temp  
-    
-
     def _get_batch(self, fileiter, valid=False):
         batch = {
             'x': dict(),
@@ -529,6 +496,11 @@ class Neural_network(object):
                 if self.inputs['method'] == 'L-BFGS-B':
                     # TODO: complete this part
                     raise ValueError
+
+                    train_set = self._get_batch(train_fileiter, valid=True)
+                    train_fdict = self._make_feed_dict(train_set)
+                    valid_set = self._get_batch(valid_fileiter, valid=True)
+                    valid_fdict = self._make_feed_dict(valid_set)
                 elif self.inputs['method'] == 'Adam':
                     valid_set = self._get_batch(valid_fileiter, valid=True)
                     valid_fdict = self._make_feed_dict(valid_set)

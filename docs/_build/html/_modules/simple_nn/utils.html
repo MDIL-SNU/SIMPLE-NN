@@ -1,0 +1,324 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>simple_nn.utils &mdash; simple-nn 0.1.3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> simple-nn
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">simple-nn</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../simple_nn.html">simple_nn</a> &raquo;</li>
+        
+      <li>simple_nn.utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for simple_nn.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="k">import</span> <span class="n">cPickle</span> <span class="k">as</span> <span class="n">pickle</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">cffi</span> <span class="k">import</span> <span class="n">FFI</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">types</span>
+
+<span class="k">def</span> <span class="nf">_gen_2Darray_for_ffi</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">ffi</span><span class="p">,</span> <span class="n">cdata</span><span class="o">=</span><span class="s2">&quot;double&quot;</span><span class="p">):</span>
+    <span class="c1"># Function to generate 2D pointer for cffi  </span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">arr_p</span> <span class="o">=</span> <span class="n">ffi</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">cdata</span> <span class="o">+</span> <span class="s2">&quot; *[</span><span class="si">%d</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">arr_p</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ffi</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">cdata</span> <span class="o">+</span> <span class="s2">&quot; *&quot;</span><span class="p">,</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">arr_p</span>
+
+
+<div class="viewcode-block" id="pickle_load"><a class="viewcode-back" href="../../simple_nn.utils.html#simple_nn.utils.pickle_load">[docs]</a><span class="k">def</span> <span class="nf">pickle_load</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fil</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fil</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">six</span><span class="o">.</span><span class="n">PY3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fil</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;latin1&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_make_data_list</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">data_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fil</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fil</span><span class="p">:</span>
+            <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">data_list</span>
+
+
+<span class="k">def</span> <span class="nf">_make_full_featurelist</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="n">atom_types</span><span class="p">,</span> <span class="n">feature_tag</span><span class="p">):</span>
+    <span class="n">data_list</span> <span class="o">=</span> <span class="n">_make_data_list</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span>
+
+    <span class="n">feature_list</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">idx_list</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">atom_types</span><span class="p">:</span>
+        <span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">idx_list</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data_list</span><span class="p">):</span>
+        <span class="n">tmp_data</span> <span class="o">=</span> <span class="n">pickle_load</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">jtem</span> <span class="ow">in</span> <span class="n">atom_types</span><span class="p">:</span>
+            <span class="n">feature_list</span><span class="p">[</span><span class="n">jtem</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp_data</span><span class="p">[</span><span class="n">feature_tag</span><span class="p">][</span><span class="n">jtem</span><span class="p">])</span>
+            <span class="n">idx_list</span><span class="p">[</span><span class="n">jtem</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">tmp_data</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">][</span><span class="n">jtem</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">atom_types</span><span class="p">:</span>
+        <span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">idx_list</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">idx_list</span><span class="p">[</span><span class="n">item</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">feature_list</span><span class="p">,</span> <span class="n">idx_list</span>
+
+
+<span class="k">def</span> <span class="nf">_generate_scale_file</span><span class="p">(</span><span class="n">feature_list</span><span class="p">,</span> <span class="n">atom_types</span><span class="p">):</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">atom_types</span><span class="p">:</span>
+        <span class="n">tmp_shape</span> <span class="o">=</span> <span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">scale</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="n">tmp_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">scale</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">scale</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;scale_factor&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fil</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">fil</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">scale</span>
+
+<span class="k">def</span> <span class="nf">_generate_gdf_file</span><span class="p">(</span><span class="n">feature_list</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">atom_types</span><span class="p">,</span> <span class="n">idx_list</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.02</span><span class="p">):</span>
+    <span class="n">ffi</span> <span class="o">=</span> <span class="n">FFI</span><span class="p">()</span>
+    <span class="n">ffi</span><span class="o">.</span><span class="n">cdef</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;void calculate_gdf(double **, int, int, double, double *);&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="n">lib</span> <span class="o">=</span> <span class="n">ffi</span><span class="o">.</span><span class="n">dlopen</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;/libgdf.so&quot;</span><span class="p">))</span>
+
+    <span class="c1"># TODO: C type change</span>
+    <span class="n">gdf</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">atom_types</span><span class="p">:</span>
+        <span class="n">scaled_feature</span> <span class="o">=</span> <span class="n">feature_list</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">-</span> <span class="n">scale</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,:]</span>
+        <span class="n">scaled_feature</span> <span class="o">/=</span> <span class="n">scale</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">,:]</span>
+        <span class="n">scaled_feature_p</span> <span class="o">=</span> <span class="n">_gen_2Darray_for_ffi</span><span class="p">(</span><span class="n">scaled_feature</span><span class="p">,</span> <span class="n">ffi</span><span class="p">)</span>
+
+        <span class="n">temp_gdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">scaled_feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
+        <span class="n">temp_gdf_p</span> <span class="o">=</span> <span class="n">ffi</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;double *&quot;</span><span class="p">,</span> <span class="n">temp_gdf</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">lib</span><span class="o">.</span><span class="n">calculate_gdf</span><span class="p">(</span><span class="n">scaled_feature_p</span><span class="p">,</span> <span class="n">scaled_feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">scaled_feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">temp_gdf_p</span><span class="p">)</span>
+        <span class="n">gdf</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dstack</span><span class="p">(([</span><span class="n">temp_gdf</span><span class="p">,</span> <span class="n">idx_list</span><span class="p">[</span><span class="n">item</span><span class="p">]])))</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;atomic_weights&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fil</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">gdf</span><span class="p">,</span> <span class="n">fil</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">gdf</span>
+
+<div class="viewcode-block" id="preprocessing"><a class="viewcode-back" href="../../simple_nn.utils.html#simple_nn.utils.preprocessing">[docs]</a><span class="k">def</span> <span class="nf">preprocessing</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="n">atom_types</span><span class="p">,</span> <span class="n">feature_tag</span><span class="p">,</span> \
+                  <span class="n">calc_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">get_atomic_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    get_atomic_weights:</span>
+<span class="sd">        if this parameter is function, generate atomic weights using this function.</span>
+<span class="sd">        else if this parameter is string, load atomic weights from file(its name is that string).</span>
+<span class="sd">        otherwise, ValueError</span>
+<span class="sd">    **kwarg:</span>
+<span class="sd">        parameter for get_atomic_weights</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">feature_list</span><span class="p">,</span> <span class="n">idx_list</span> <span class="o">=</span> <span class="n">_make_full_featurelist</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="n">atom_types</span><span class="p">,</span> <span class="n">feature_tag</span><span class="p">)</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">atomic_weights</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">calc_scale</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">_generate_scale_file</span><span class="p">(</span><span class="n">feature_list</span><span class="p">,</span> <span class="n">atom_types</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">pickle_load</span><span class="p">(</span><span class="s1">&#39;./scale_factor&#39;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">get_atomic_weights</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">FunctionType</span><span class="p">):</span>
+        <span class="n">atomic_weights</span> <span class="o">=</span> <span class="n">get_atomic_weights</span><span class="p">(</span><span class="n">feature_list</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">atom_types</span><span class="p">,</span> <span class="n">idx_list</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">get_atomic_weights</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">string_types</span><span class="p">):</span>
+        <span class="n">atomic_weights</span> <span class="o">=</span> <span class="n">pickle_load</span><span class="p">(</span><span class="n">get_atomic_weights</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">scale</span><span class="p">,</span> <span class="n">atomic_weights</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Nanco-L.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1.3',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
