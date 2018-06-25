@@ -25,6 +25,7 @@ class Neural_network(object):
                                       'continue': False,
                                       'use_force': False,
                                       'force_coeff': 0.3,
+                                      'energy_coeff': 1.,
                                       'total_epoch': 10000,
                                       'save_interval': 1000,
                                       'show_interval': 100,
@@ -287,6 +288,11 @@ class Neural_network(object):
                 dense_basic_setting['kernel_regularizer'] = tf.keras.regularizers.l2(l=coeff)
                 dense_basic_setting['bias_regularizer'] = tf.keras.regularizers.l2(l=coeff)
 
+        #acti_func = 'selu'
+        #acti_func = 'elu'
+        acti_func = 'sigmoid'
+        #acti_func = 'tanh'
+
         self.nodes = dict()
         for item in self.parent.inputs['atom_types']:
             if isinstance(self.inputs['nodes'], collections.Mapping):
@@ -295,13 +301,21 @@ class Neural_network(object):
                 nodes = list(map(int, self.inputs['nodes'].split('-')))
             nlayers = len(nodes)
             model = tf.keras.models.Sequential()
-            model.add(tf.keras.layers.Dense(nodes[0], activation='sigmoid', \
+            model.add(tf.keras.layers.Dense(nodes[0], activation=acti_func, \
                                             input_dim=self.inp_size[item],
+                                            #kernel_initializer=tf.initializers.random_normal(stddev=1./self.inp_size[item], dtype=dtype),
+                                            #use_bias=False,
                                             **dense_basic_setting))
 
             for i in range(1, nlayers):
-                model.add(tf.keras.layers.Dense(nodes[i], activation='sigmoid', **dense_basic_setting))
-            model.add(tf.keras.layers.Dense(1, activation='linear', **dense_basic_setting))
+                model.add(tf.keras.layers.Dense(nodes[i], activation=acti_func,
+                                                #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[i-1], dtype=dtype),
+                                                #use_bias=False,
+                                                **dense_basic_setting))
+            model.add(tf.keras.layers.Dense(1, activation='linear', 
+                                            #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[-1], dtype=dtype),
+                                            #bias_initializer=tf.initializers.random_normal(stddev=0.1, dtype=dtype),
+                                            **dense_basic_setting))
 
             nodes.append(1)
             self.nodes[item] = nodes
@@ -337,15 +351,15 @@ class Neural_network(object):
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         self.e_loss = tf.reduce_mean(tf.square((self._E - self.E) / self.tot_num))
-        self.total_loss = self.e_loss
+        self.total_loss = self.e_loss * self.energy_coeff
 
         if self.inputs['use_force']:
             self.f_loss = tf.square(self._F - self.F)
             if self.inputs['atomic_weights']['type'] is not None:
                 self.f_loss *= self.atomic_weights
-            self.f_loss = tf.reduce_mean(self.f_loss) * self.inputs['force_coeff']
+            self.f_loss = tf.reduce_mean(self.f_loss)
         
-            self.total_loss += self.f_loss
+            self.total_loss += self.f_loss * self.force_coeff
 
         if self.inputs['regularization']['type'] is not None:
             self.total_loss += tf.losses.get_regularization_loss()
@@ -395,6 +409,17 @@ class Neural_network(object):
                 fdict[self.sparse_indices[item]] = list(range(len(batch['x'][item])))
 
         return fdict 
+
+    def _get_decay_param(self, param):
+        """
+        get tf.exponential_decay or simple float
+        """
+        if isinstance(param, collections.Mapping):
+            tmp_param = param.copy()
+            tmp_param['learning_rate'] = tf.constant(tmp_param['learning_rate'], dtype=tf.float64)
+            return tf.train.exponential_decay(global_step=self.global_step, **tmp_param)
+        else:
+            return tf.constant(param, dtype=tf.float64)
 
     def _generate_lammps_potential(self, sess):
         # TODO: get the parameter info from initial batch generting processs
@@ -447,7 +472,7 @@ class Neural_network(object):
 
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")              
         saver.save(sess, './SAVER')
-        self._generate_lammps_potential(sess)
+        #self._generate_lammps_potential(sess)
 
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
         self.inputs = self.parent.inputs['neural_network']
@@ -509,6 +534,9 @@ class Neural_network(object):
             self.seg_id[item] = tf.placeholder_with_default(tf.constant([0], dtype=tf.int32), [None])
             self.sparse_indices[item] = tf.placeholder_with_default(tf.constant([0], dtype=tf.int32), [None])
 
+        self.force_coeff = self._get_decay_param(self.inputs['force_coeff'])
+        self.energy_coeff = self._get_decay_param(self.inputs['energy_coeff'])
+
         self._make_model()
         self._calc_output()
         self._get_loss()
@@ -546,12 +574,16 @@ class Neural_network(object):
 
                             eloss = sess.run(self.e_loss, feed_dict=valid_fdict)
                             eloss = np.sqrt(eloss)
-                            result += 'E loss = {:6.4e}'.format(eloss)
+                            t_eloss = sess.run(self.e_loss, feed_dict=train_fdict)
+                            t_eloss = np.sqrt(t_eloss)
+                            result += 'E loss(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
 
                             if self.inputs['use_force']:
                                 floss = sess.run(self.f_loss, feed_dict=valid_fdict)
-                                floss = np.sqrt(floss*3/self.inputs['force_coeff'])
-                                result += ', F loss = {:6.4e}'.format(floss)
+                                floss = np.sqrt(floss*3)
+                                t_floss = sess.run(self.f_loss, feed_dict=train_fdict)
+                                t_floss = np.sqrt(t_floss*3)
+                                result += ', F loss(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
 
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
@@ -580,7 +612,7 @@ class Neural_network(object):
                     test_save['NN_F'] = sess.run(self.F, feed_dict=test_fdict)
 
                     floss = sess.run(self.f_loss, feed_dict=test_fdict)
-                    floss = np.sqrt(floss*3/self.inputs['force_coeff'])
+                    floss = np.sqrt(floss*3)
 
                 with open('./test_result', 'wb') as fil:
                     pickle.dump(test_save, fil, pickle.HIGHEST_PROTOCOL)
