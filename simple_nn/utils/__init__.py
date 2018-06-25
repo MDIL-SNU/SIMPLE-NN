@@ -63,6 +63,10 @@ def _generate_scale_file(feature_list, atom_types, inp_size):
         if len(feature_list[item]) > 0:
             scale[item][0,:] = 0.5*(np.amax(feature_list[item], axis=0) + np.amin(feature_list[item], axis=0))
             scale[item][1,:] = 0.5*(np.amax(feature_list[item], axis=0) - np.amin(feature_list[item], axis=0))
+
+            #scale[item][0,:] = np.mean(feature_list[item], axis=0)
+            #scale[item][1,:] = np.std(feature_list[item], axis=0)
+
             scale[item][1, scale[item][1,:] < 1e-15] = 1.
         else:
             scale[item][1,:] = 1.
