@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import division
 import os, sys
+import tensorflow as tf
 import numpy as np
 import six
 from six.moves import cPickle as pickle
@@ -58,6 +59,42 @@ class Symmetry_function(object):
         self.structure_list = './str_list'
         self.train_data_list = './train_list'
 
+    def _write_tfrecords(self, res, sess, record_name):
+        # TODO: after stabilize overall tfrecord related part,
+        # this part will replace the part of original 'res' dict
+         
+        def _bytes_feature(value):
+            return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+        
+        def _int64_feature(value):
+            return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+        feature = {
+            'E':_bytes_feature(np.array([res['E']]).tobytes()),
+            'F':_bytes_feature(res['F'].tobytes())
+        }
+
+        for item in self.parent.inputs['atom_types']:
+            feature['x_'+item] = _bytes_feature(np.array(res['x'][item]))
+            feature['N_'+item] = _int64_feature(res['N'][item])
+            feature['params_'+item] = _bytes_feature(res['params'][item])
+
+            dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item])
+            
+            feature['dx_indices_'+item] = _bytes_feature(sess.run(dx_sparse.indices).tobytes())
+            feature['dx_values_'+item] = _bytes_feature(sess.run(dx_sparse.values).tobytes())
+            feature['dx_dense_shape_'+item] = _bytes_feature(sess.run(dx_sparse.dense_shape).tobytes())
+
+        example = tf.train.Example(
+            features=tf.train.Features(
+                feature=feature
+            )
+        )
+
+        with tf.python_io.TFRecordWriter(record_name) as writer:
+            writer.write(example.SerializeToString())
+
+
     def generate(self):
         self.inputs = self.parent.inputs['symmetry_function']
 
@@ -75,6 +112,7 @@ class Symmetry_function(object):
 
         if comm.rank == 0:
             train_dir = open(self.train_data_list, 'w')
+            sess = tf.Session()
 
         # Get structure list to calculate  
         structures = list()
@@ -188,9 +226,13 @@ class Symmetry_function(object):
                     data_dir = "./data/"
                     if not os.path.exists(data_dir):
                         os.makedirs(data_dir)
-                    tmp_filename = os.path.join(data_dir, "data{}.pickle".format(data_idx))
-                    with open(tmp_filename, "wb") as fil:
-                        pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
+                    #tmp_filename = os.path.join(data_dir, "data{}.pickle".format(data_idx))
+                    tmp_filename = os.path.join(data_dir, "data{}.tfrecord".format(data_idx))
+
+                    # TODO: add tfrecord writing part
+                    self._write_tfrecords(res, sess, tmp_filename)
+                    #with open(tmp_filename, "wb") as fil:
+                    #    pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 
                     train_dir.write('{}\n'.format(tmp_filename))
                     tmp_endfile = tmp_filename
@@ -201,3 +243,4 @@ class Symmetry_function(object):
 
         if comm.rank == 0:
             train_dir.close()
+            sess.close()
