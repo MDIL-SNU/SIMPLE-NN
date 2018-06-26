@@ -75,11 +75,11 @@ class Symmetry_function(object):
         }
 
         for item in self.parent.inputs['atom_types']:
-            feature['x_'+item] = _bytes_feature(np.array(res['x'][item]))
+            feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
             feature['N_'+item] = _int64_feature(res['N'][item])
-            feature['params_'+item] = _bytes_feature(res['params'][item])
+            feature['params_'+item] = _bytes_feature(res['params'][item].tobytes())
 
-            dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item])
+            dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item].tobytes())
             
             feature['dx_indices_'+item] = _bytes_feature(sess.run(dx_sparse.indices).tobytes())
             feature['dx_values_'+item] = _bytes_feature(sess.run(dx_sparse.values).tobytes())
