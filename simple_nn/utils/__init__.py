@@ -1,8 +1,9 @@
+from __future__ import print_function
 import six
 from six.moves import cPickle as pickle
 import numpy as np
 from cffi import FFI
-import os, sys
+import os, sys, psutil
 import types
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
@@ -180,3 +181,9 @@ def modified_sigmoid(gdf, b=150.0, c=1.0):
     """
     gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
     return gdf
+
+def memory():
+    pid = os.getpid()
+    py = psutil.Process(pid)
+    memory_use = py.memory_info()[0]
+    print('memory_use:', memory_use)

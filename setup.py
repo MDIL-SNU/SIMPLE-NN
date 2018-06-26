@@ -14,7 +14,8 @@ install_requires = [
     'numpy',
     'ase>=3.10.0',
     'pyyaml>=3.10',
-    'cffi>=1.0.0'
+    'cffi>=1.0.0',
+    'psutil'
 ]
 
 # C extension library for calculating symmetry function

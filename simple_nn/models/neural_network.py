@@ -265,7 +265,7 @@ class Neural_network(object):
 
         #acti_func = 'selu'
         #acti_func = 'elu'
-        #acti_func = 'sigmoid'
+        acti_func = 'sigmoid'
         #acti_func = 'tanh'
 
         self.nodes = dict()
@@ -447,7 +447,56 @@ class Neural_network(object):
 
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")              
         saver.save(sess, './SAVER')
-        #self._generate_lammps_potential(sess)
+        self._generate_lammps_potential(sess)
+
+    def _parse_data(self, serialized, preprocess=False):
+        features = {
+            'E': tf.FixedLenFeature([], dtype=tf.string),
+            'F': tf.FixedLenFeature([], dtype=tf.string),
+        }
+
+        for item in self.parent.inputs['atom_types']:
+            features['x_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            features['N_'+item] = tf.VarLenFeature(tf.int64)
+            features['params_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            features['dx_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            features['dx_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+
+        read_data = tf.parse_single_example(serialized=serialized, features=features)
+
+        if preprocess:
+            res = dict()
+
+            for item in self.parent.inputs['atom_types']:
+                res['x_'+item] = tf.reshape(tf.decode_raw(read_data['x'], tf.float64), [-1, self.inp_size[item]])
+
+            return res
+        else:
+            padded_res = dict()
+            sparse_res = dict()
+
+            padded_res['E'] = tf.decode_raw(read_data['E'], tf.float64)
+            padded_res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
+            for item in self.parent.inputs['atom_types']:
+                padded_res['x_'+item] = tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, self.inp_size[item]])
+                padded_res['N_'+item] = read_data['N_'+item]
+
+                sparse_res['dx_'+item] = tf.SparseTensor(
+                    indices=np.frombuffer(read_data['dx_indices_'+item], dtype=np.uint32).astype(np.int64),
+                    values=tf.decode_raw(read_data['dx_values_'+item], tf.float64),
+                    dense_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int64)
+                )
+
+            # TODO: seg_id, dynamic_partition_id, 
+
+            return padded_res, sparse_res
+
+    def _tfrecord_input_fn(self, filename_queue, batch_size, preprocess=False):
+
+        return 0#iterator
+        
+
 
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
         self.inputs = self.parent.inputs['neural_network']
