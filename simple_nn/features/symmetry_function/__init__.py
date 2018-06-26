@@ -79,9 +79,9 @@ class Symmetry_function(object):
             feature['N_'+item] = _int64_feature(res['N'][item])
             feature['params_'+item] = _bytes_feature(res['params'][item].tobytes())
 
-            dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item].tobytes())
+            dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item].reshape([-1]))
             
-            feature['dx_indices_'+item] = _bytes_feature(sess.run(dx_sparse.indices).tobytes())
+            feature['dx_indices_'+item] = _bytes_feature(sess.run(dx_sparse.indices).astype(np.uint32).tobytes())
             feature['dx_values_'+item] = _bytes_feature(sess.run(dx_sparse.values).tobytes())
             feature['dx_dense_shape_'+item] = _bytes_feature(sess.run(dx_sparse.dense_shape).tobytes())
 
