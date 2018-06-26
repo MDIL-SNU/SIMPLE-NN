@@ -265,7 +265,7 @@ class Neural_network(object):
 
         #acti_func = 'selu'
         #acti_func = 'elu'
-        acti_func = 'sigmoid'
+        #acti_func = 'sigmoid'
         #acti_func = 'tanh'
 
         self.nodes = dict()
