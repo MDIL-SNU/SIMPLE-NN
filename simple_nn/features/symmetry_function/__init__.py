@@ -7,7 +7,7 @@ import six
 from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
-from ...utils import _gen_2Darray_for_ffi, compress_outcar
+from ...utils import _gen_2Darray_for_ffi, compress_outcar, memory
 
 class DummyMPI(object):
     rank = 0
@@ -79,13 +79,11 @@ class Symmetry_function(object):
             feature['N_'+item] = _int64_feature(res['N'][item])
             feature['params_'+item] = _bytes_feature(res['params'][item].tobytes())
 
-            dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item].reshape([-1]))
+            dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item].tobytes())
             
-            feature['dx_indices_'+item] = _bytes_feature(sess.run(dx_sparse.indices).astype(np.uint32).tobytes())
+            feature['dx_indices_'+item] = _bytes_feature(sess.run(dx_sparse.indices).tobytes())
             feature['dx_values_'+item] = _bytes_feature(sess.run(dx_sparse.values).tobytes())
             feature['dx_dense_shape_'+item] = _bytes_feature(sess.run(dx_sparse.dense_shape).tobytes())
-
-            del dx_sparse
 
         example = tf.train.Example(
             features=tf.train.Features(
@@ -233,6 +231,7 @@ class Symmetry_function(object):
 
                     # TODO: add tfrecord writing part
                     self._write_tfrecords(res, sess, tmp_filename)
+                    memory()
                     #with open(tmp_filename, "wb") as fil:
                     #    pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 
