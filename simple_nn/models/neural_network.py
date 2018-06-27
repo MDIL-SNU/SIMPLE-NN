@@ -447,7 +447,7 @@ class Neural_network(object):
 
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")              
         saver.save(sess, './SAVER')
-        #self._generate_lammps_potential(sess)
+        self._generate_lammps_potential(sess)
 
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
         self.inputs = self.parent.inputs['neural_network']
