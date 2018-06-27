@@ -68,32 +68,32 @@ class Symmetry_function(object):
         
         def _int64_feature(value):
             return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-
+        memory()
         feature = {
             'E':_bytes_feature(np.array([res['E']]).tobytes()),
             'F':_bytes_feature(res['F'].tobytes())
         }
-
+        memory()
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
             feature['N_'+item] = _int64_feature(res['N'][item])
             feature['params_'+item] = _bytes_feature(res['params'][item].tobytes())
 
             dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item].reshape([-1]))
-            
+            memory()
             feature['dx_indices_'+item] = _bytes_feature(sess.run(dx_sparse.indices).astype(np.uint32).tobytes())
             feature['dx_values_'+item] = _bytes_feature(sess.run(dx_sparse.values).tobytes())
             feature['dx_dense_shape_'+item] = _bytes_feature(sess.run(dx_sparse.dense_shape).tobytes())
-
+        memory()
         example = tf.train.Example(
             features=tf.train.Features(
                 feature=feature
             )
         )
-
+        memory()
         with tf.python_io.TFRecordWriter(record_name) as writer:
             writer.write(example.SerializeToString())
-
+        memory()
 
     def generate(self):
         self.inputs = self.parent.inputs['symmetry_function']
@@ -232,6 +232,7 @@ class Symmetry_function(object):
                     # TODO: add tfrecord writing part
                     self._write_tfrecords(res, sess, tmp_filename)
                     memory()
+                    print('---')
                     #with open(tmp_filename, "wb") as fil:
                     #    pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 
