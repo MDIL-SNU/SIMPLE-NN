@@ -7,7 +7,7 @@ import six
 from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
-from ...utils import _gen_2Darray_for_ffi, compress_outcar, memory
+from ...utils import _gen_2Darray_for_ffi, compress_outcar
 
 class DummyMPI(object):
     rank = 0
@@ -46,6 +46,7 @@ def _read_params(filename):
 
     return params_i, params_d
 
+
 class Symmetry_function(object):
     def __init__(self, inputs=None):
         self.parent = None
@@ -59,7 +60,7 @@ class Symmetry_function(object):
         self.structure_list = './str_list'
         self.train_data_list = './train_list'
 
-    def _write_tfrecords(self, res, sess, record_name):
+    def _write_tfrecords(self, res, record_name):
         # TODO: after stabilize overall tfrecord related part,
         # this part will replace the part of original 'res' dict
          
@@ -68,32 +69,35 @@ class Symmetry_function(object):
         
         def _int64_feature(value):
             return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-        memory()
+
+        def _gen_1dsparse(arr):
+            non_zero = (arr != 0)
+            return np.arange(arr.shape[0])[non_zero].astype(np.uint32), arr[non_zero], np.array(arr.shape)
+        
         feature = {
             'E':_bytes_feature(np.array([res['E']]).tobytes()),
             'F':_bytes_feature(res['F'].tobytes())
         }
-        memory()
+        
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
             feature['N_'+item] = _int64_feature(res['N'][item])
             feature['params_'+item] = _bytes_feature(res['params'][item].tobytes())
 
-            dx_sparse = tf.contrib.layers.dense_to_sparse(res['dx'][item].reshape([-1]))
-            memory()
-            feature['dx_indices_'+item] = _bytes_feature(sess.run(dx_sparse.indices).astype(np.uint32).tobytes())
-            feature['dx_values_'+item] = _bytes_feature(sess.run(dx_sparse.values).tobytes())
-            feature['dx_dense_shape_'+item] = _bytes_feature(sess.run(dx_sparse.dense_shape).tobytes())
-        memory()
+            dx_indices, dx_values, dx_dense_shape = _gen_1dsparse(res['dx'][item].reshape([-1]))
+            
+            feature['dx_indices_'+item] = _bytes_feature(dx_indices.tobytes())
+            feature['dx_values_'+item] = _bytes_feature(dx_values.tobytes())
+            feature['dx_dense_shape_'+item] = _bytes_feature(dx_dense_shape.tobytes())
+
         example = tf.train.Example(
             features=tf.train.Features(
                 feature=feature
             )
         )
-        memory()
+        
         with tf.python_io.TFRecordWriter(record_name) as writer:
             writer.write(example.SerializeToString())
-        memory()
 
     def generate(self):
         self.inputs = self.parent.inputs['symmetry_function']
@@ -112,7 +116,6 @@ class Symmetry_function(object):
 
         if comm.rank == 0:
             train_dir = open(self.train_data_list, 'w')
-            sess = tf.Session()
 
         # Get structure list to calculate  
         structures = list()
@@ -230,9 +233,8 @@ class Symmetry_function(object):
                     tmp_filename = os.path.join(data_dir, "data{}.tfrecord".format(data_idx))
 
                     # TODO: add tfrecord writing part
-                    self._write_tfrecords(res, sess, tmp_filename)
-                    memory()
-                    print('---')
+                    #_write_tfrecords(res, self.parent.inputs['atom_types'], sess, tmp_filename)
+                    self._write_tfrecords(res, tmp_filename)
                     #with open(tmp_filename, "wb") as fil:
                     #    pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 
@@ -245,4 +247,3 @@ class Symmetry_function(object):
 
         if comm.rank == 0:
             train_dir.close()
-            sess.close()
