@@ -7,7 +7,7 @@ import six
 from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
-from ...utils import _gen_2Darray_for_ffi, compress_outcar
+from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file
 
 class DummyMPI(object):
     rank = 0
@@ -60,7 +60,7 @@ class Symmetry_function(object):
         self.structure_list = './str_list'
         self.train_data_list = './train_list'
 
-    def _write_tfrecords(self, res, record_name):
+    def _write_tfrecords(self, res, record_name, atomic_weights=False):
         # TODO: after stabilize overall tfrecord related part,
         # this part will replace the part of original 'res' dict
          
@@ -72,12 +72,15 @@ class Symmetry_function(object):
 
         def _gen_1dsparse(arr):
             non_zero = (arr != 0)
-            return np.arange(arr.shape[0])[non_zero].astype(np.uint32), arr[non_zero], np.array(arr.shape)
+            return np.arange(arr.shape[0])[non_zero].astype(np.int32), arr[non_zero], np.array(arr.shape).astype(np.int32)
         
         feature = {
             'E':_bytes_feature(np.array([res['E']]).tobytes()),
             'F':_bytes_feature(res['F'].tobytes())
         }
+    
+        if atomic_weights:
+            feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
@@ -98,6 +101,152 @@ class Symmetry_function(object):
         
         with tf.python_io.TFRecordWriter(record_name) as writer:
             writer.write(example.SerializeToString())
+
+
+    def _parse_data(self, serialized, inp_size, valid=False, serialized_aw=None):
+        features = {
+            'E': tf.FixedLenFeature([], dtype=tf.string),
+            'F': tf.FixedLenFeature([], dtype=tf.string),
+        }
+ 
+        for item in self.parent.inputs['atom_types']:
+            features['x_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            features['N_'+item] = tf.VarLenFeature(tf.int64)
+            features['params_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            features['dx_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            features['dx_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+ 
+        read_data = tf.parse_single_example(serialized=serialized, features=features)
+ 
+        res = dict()
+ 
+        res['E'] = tf.decode_raw(read_data['E'], tf.float64)
+        res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
+        res['tot_num'] = 0.
+        for item in self.parent.inputs['atom_types']:
+            res['x_'+item] = tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, inp_size[item]])
+            #res['N_'+item] = read_data['N_'+item]
+            res['N_'+item] = tf.shape(res['x_'+item])[0]
+            res['tot_num'] += tf.cast(tf.shape(res['x_'+item])[0], tf.float64)
+ 
+            res['dx_'+item] = tf.sparse_to_dense(
+                sparse_indices=tf.decode_raw(read_data['dx_indices_'+item], tf.int32),
+                output_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int32),
+                sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)
+            )
+            res['dx_'+item] = tf.reshape(res['dx_'+item], [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3])
+            res['partition_'+item] = tf.ones([tf.shape(res['x_'+item])[0]])
+ 
+        # TODO: seg_id, dynamic_partition_id, 
+        #res['tot_num'] = tf.sparse_reduce_sum(tf.sparse_concat(0, res['tot_num']))
+        res['partition'] = tf.ones([tf.cast(res['tot_num'], tf.int32)])
+
+        if serialized_aw is not None:
+            if valid:
+                res['atomic_weights'] = tf.ones([tf.cast(res['tot_num'], tf.float64)])
+            else:
+                features_aw = {'atomic_weights':tf.FizedLenFeature([], dtype=tf.string)}
+                read_data_aw = tf.parse_single_example(serialized=serialized_aw, features=features_aw)
+                res['atomic_weights'] = tf.decode_raw(read_data_aw['atomic_weights'], tf.float64)
+ 
+        return res
+
+
+    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, valid=False, atomic_weights=False):
+        dataset = tf.data.TFRecordDataset(filename_queue)
+
+        if (valid == False) and (atomic_weights == True):
+            aw_filename_queue = [item.replace('.tfrecord', '_atomic_weights.tfrecord') for item in filename_queue]
+            dataset = tf.data.Dataset.zip((dataset, tf.data.TFRecordDataset(aw_filename_queue)))
+            dataset = dataset.map(lambda x, y: self._parse_data(x, inp_size, valid=False, serialized_aw=y))
+        else:
+            dataset = dataset.map(lambda x: self._parse_data(x, inp_size, valid=False, serialized_aw=None))
+
+        batch_dict = dict()
+        batch_dict['E'] = [None]
+        batch_dict['F'] = [None, 3]
+        batch_dict['tot_num'] = []
+        batch_dict['partition'] = [None]
+
+        if atomic_weights:
+            batch_dict['atomic_weights'] = [None]
+
+        for item in self.parent.inputs['atom_types']:
+            batch_dict['x_'+item] = [None, inp_size[item]]
+            batch_dict['N_'+item] = []
+            batch_dict['dx_'+item] = [None, inp_size[item], None, 3]
+            batch_dict['partition_'+item] = [None]
+ 
+        if valid:
+            dataset = dataset.padded_batch(1, batch_dict)
+            iterator = dataset.make_initializable_iterator()
+        else:
+            dataset = dataset.shuffle(buffer_size=200)
+            # order of repeat and batch?
+            dataset = dataset.repeat()
+            dataset = dataset.padded_batch(batch_size, batch_dict)
+            iterator = dataset.make_initializable_iterator()
+            
+        return iterator  
+
+
+    def preprocess(self, filename_queue, inp_size, calc_scale=True, get_atomic_weights=None, **kwargs):
+        
+        def _bytes_feature(value):
+            return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+        aw_tag = False
+        train_iter = self._tfrecord_input_fn(filename_queue, inp_size, valid=True, atomic_weights=False)
+        next_elem = train_iter.get_next()        
+
+        feature_list = dict()
+        idx_list = dict()
+        for item in self.parent.inputs['atom_types']:
+            feature_list[item] = list()
+            idx_list[item] = list()
+
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        with tf.Session(config=config) as sess:
+            sess.run(train_iter.initializer)
+            while True:
+                try:
+                    tmp_features = sess.run(next_elem)
+                    for item in self.parent.inputs['atom_types']:
+                        feature_list[item].append(tmp_features['x_'+item][0])
+                        idx_list[item].append(np.ones(tmp_features['N_'+item][0]))
+                except tf.errors.OutOfRangeError:
+                    break
+
+        for item in self.parent.inputs['atom_types']:
+            feature_list[item] = np.concatenate(feature_list[item], axis=0)
+            idx_list[item] = np.concatenate(idx_list[item])
+    
+        scale = None
+        if calc_scale:
+            scale = _generate_scale_file(feature_list, self.parent.inputs['atom_types'], inp_size)
+        else:
+            scale = pickle_load('./scale_factor')
+        
+        if callable(get_atomic_weights):
+            aw_tag = True
+            atomic_weights = get_atomic_weights(feature_list, scale, atom_types, idx_list, **kwarg)
+            for i,item in enumerate(filename_queue):
+                tmp_name = item.replace('.tfrecord', '_atomic_weights.tfrecord')
+
+                aw_idx = (atomic_weights[1,:] == i)
+                example = tf.train.Example(
+                    features=tf.train.Features(
+                        feature={'atomic_weights': _byte_feature(atomic_weights[0, aw_idx].tobytes())}
+                    )
+                )                
+
+                with tf.python_io.TFRecordWriter(tmp_name) as writer:
+                    writer.write(example.SerializeToString())
+                   
+        return scale, aw_tag
+ 
 
     def generate(self):
         self.inputs = self.parent.inputs['symmetry_function']

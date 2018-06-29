@@ -449,53 +449,12 @@ class Neural_network(object):
         saver.save(sess, './SAVER')
         self._generate_lammps_potential(sess)
 
-    def _parse_data(self, serialized, preprocess=False):
-        features = {
-            'E': tf.FixedLenFeature([], dtype=tf.string),
-            'F': tf.FixedLenFeature([], dtype=tf.string),
-        }
 
-        for item in self.parent.inputs['atom_types']:
-            features['x_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-            features['N_'+item] = tf.VarLenFeature(tf.int64)
-            features['params_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-            features['dx_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-            features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-            features['dx_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-
-        read_data = tf.parse_single_example(serialized=serialized, features=features)
-
-        if preprocess:
-            res = dict()
-
-            for item in self.parent.inputs['atom_types']:
-                res['x_'+item] = tf.reshape(tf.decode_raw(read_data['x'], tf.float64), [-1, self.inp_size[item]])
-
-            return res
-        else:
-            padded_res = dict()
-            sparse_res = dict()
-
-            padded_res['E'] = tf.decode_raw(read_data['E'], tf.float64)
-            padded_res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
-            for item in self.parent.inputs['atom_types']:
-                padded_res['x_'+item] = tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, self.inp_size[item]])
-                padded_res['N_'+item] = read_data['N_'+item]
-
-                sparse_res['dx_'+item] = tf.SparseTensor(
-                    indices=np.frombuffer(read_data['dx_indices_'+item], dtype=np.uint32).astype(np.int64),
-                    values=tf.decode_raw(read_data['dx_values_'+item], tf.float64),
-                    dense_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int64)
-                )
-
-            # TODO: seg_id, dynamic_partition_id, 
-
-            return padded_res, sparse_res
-
-    def _tfrecord_input_fn(self, filename_queue, batch_size, preprocess=False):
-
-        return 0#iterator
-        
+    def _make_iterator_from_handle(self, training_dataset):
+        self.handle = tf.placeholder(tf.string, shape=[])
+        iterator = tf.data.Iterator.from_string_handle(
+            handle, training_dataset.output_types, training_dataset.output_shapes)
+        self.next_element = iterator.get_next()
 
 
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
@@ -518,6 +477,35 @@ class Neural_network(object):
             get_atomic_weights = None
 
         self._set_params('symmetry_function')
+
+        ####
+        train_filequeue = _make_data_list(self.train_data_list)
+        valid_filequeue = _make_data_list(self.valid_data_list)
+
+        self.scale, aw_tag = \
+            self.parent.descriptor.preprocess(train_filequeue,
+                                              self.inp_size, 
+                                              calc_scale=self.inputs['scale'], 
+                                              get_atomic_weights=get_atomic_weights, 
+                                              **self.inputs['atomic_weights']['params'])
+
+        train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, 
+                                                               batch_size=self.inputs['batch_size'], atomic_weights=aw_tag)
+        train_next_elem = train_iter.get_next()
+        valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, valid=True, atomic_weights=aw_tag)
+        valid_next_elem = valid_iter.get_next()
+
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        with tf.Session(config=config) as sess:
+            sess.run(train_iter.initializer)
+            sess.run(valid_iter.initializer)
+
+            print sess.run(valid_next_elem['x_Si'])
+
+        assert 0
+        ####
+
 
         # FIXME: Error occur: only test
         if self.inputs['train']:
