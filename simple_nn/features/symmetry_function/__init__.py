@@ -136,11 +136,11 @@ class Symmetry_function(object):
                 sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)
             )
             res['dx_'+item] = tf.reshape(res['dx_'+item], [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3])
-            res['partition_'+item] = tf.ones([tf.shape(res['x_'+item])[0]])
+            res['partition_'+item] = tf.ones([tf.shape(res['x_'+item])[0]], tf.int32)
  
         # TODO: seg_id, dynamic_partition_id, 
         #res['tot_num'] = tf.sparse_reduce_sum(tf.sparse_concat(0, res['tot_num']))
-        res['partition'] = tf.ones([tf.cast(res['tot_num'], tf.int32)])
+        res['partition'] = tf.ones([tf.cast(res['tot_num'], tf.int32)], tf.int32)
 
         if serialized_aw is not None:
             if valid:
@@ -156,7 +156,7 @@ class Symmetry_function(object):
     def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, valid=False, atomic_weights=False):
         dataset = tf.data.TFRecordDataset(filename_queue)
 
-        if (valid == False) and (atomic_weights == True):
+        if (valid is False) and (atomic_weights is True):
             aw_filename_queue = [item.replace('.tfrecord', '_atomic_weights.tfrecord') for item in filename_queue]
             dataset = tf.data.Dataset.zip((dataset, tf.data.TFRecordDataset(aw_filename_queue)))
             dataset = dataset.map(lambda x, y: self._parse_data(x, inp_size, valid=False, serialized_aw=y))

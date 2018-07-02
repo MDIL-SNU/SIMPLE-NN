@@ -6,7 +6,7 @@ from six.moves import cPickle as pickle
 import collections
 import functools
 import timeit
-from ..utils import _make_data_list, pickle_load, preprocessing, _generate_gdf_file, modified_sigmoid
+from ..utils import _make_data_list, pickle_load, preprocessing, _generate_gdf_file, modified_sigmoid, memory
 
 """
 Neural network model with symmetry function as a descriptor
@@ -296,10 +296,10 @@ class Neural_network(object):
             self.nodes[item] = nodes
 
             self.models[item] = model
-            self.ys[item] = self.models[item](self.x[item])
+            self.ys[item] = self.models[item](self.next_elem['x_'+item])
 
             if self.inputs['use_force']:
-                self.dys[item] = tf.gradients(self.ys[item], self.x[item])[0]
+                self.dys[item] = tf.gradients(self.ys[item], self.next_elem['x_'+item])[0]
             else:
                 self.dys[item] = None
 
@@ -309,27 +309,27 @@ class Neural_network(object):
 
         for item in self.parent.inputs['atom_types']:
             #self.E += tf.segment_sum(self.ys[item], self.seg_id[item])
-            self.E += tf.sparse_segment_sum(self.ys[item], self.sparse_indices[item], self.seg_id[item], 
-                                            num_segments=self.num_seg)[1:]
+            self.E += tf.sparse_segment_sum(self.ys[item], self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
+                                            num_segments=self.next_elem['num_seg'])[1:]
 
             if self.inputs['use_force']:
-                tmp_force = self.dx[item] * \
+                tmp_force = self.next_elem['dx_'+item] * \
                             tf.expand_dims(\
                                 tf.expand_dims(self.dys[item], axis=2),
                                 axis=3)
                 tmp_force = tf.reduce_sum(\
-                                tf.sparse_segment_sum(tmp_force, self.sparse_indices[item], self.seg_id[item], 
-                                                      num_segments=self.num_seg)[1:],
+                                tf.sparse_segment_sum(tmp_force, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
+                                                      num_segments=self.next_elem['num_seg'])[1:],
                                 axis=1)
                 self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
-                                                   self.partition, 2)[0]
+                                                   self.next_elem['partition'], 2)[1]
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
-        self.e_loss = tf.reduce_mean(tf.square((self._E - self.E) / self.tot_num))
+        self.e_loss = tf.reduce_mean(tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']))
         self.total_loss = self.e_loss * self.energy_coeff
 
         if self.inputs['use_force']:
-            self.f_loss = tf.square(self._F - self.F)
+            self.f_loss = tf.square(self.next_elem['F'] - self.F)
             if self.inputs['atomic_weights']['type'] is not None:
                 self.f_loss *= self.atomic_weights
             self.f_loss = tf.reduce_mean(self.f_loss)
@@ -452,16 +452,54 @@ class Neural_network(object):
 
     def _make_iterator_from_handle(self, training_dataset):
         self.handle = tf.placeholder(tf.string, shape=[])
-        iterator = tf.data.Iterator.from_string_handle(
-            handle, training_dataset.output_types, training_dataset.output_shapes)
-        self.next_element = iterator.get_next()
+        self.iterator = tf.data.Iterator.from_string_handle(
+            self.handle, training_dataset.output_types, training_dataset.output_shapes)
+        self.next_elem = self.iterator.get_next()
+
+        # which place?
+        self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
+        self.next_elem['F'] = \
+            tf.dynamic_partition(
+                tf.reshape(self.next_elem['F'], [-1, 3]),
+                self.next_elem['partition'], 2
+            )[1]
+        self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
+        for item in self.parent.inputs['atom_types']:
+            self.next_elem['partition_'+item] = tf.reshape(self.next_elem['partition_'+item], [-1])
+
+            self.next_elem['x_'+item] = \
+                tf.dynamic_partition(
+                    tf.reshape(self.next_elem['x_'+item], [-1, self.inp_size[item]]),
+                    self.next_elem['partition_'+item], 2
+                )[1]
+            self.next_elem['x_'+item] -= self.scale[item][0:1,:]
+            self.next_elem['x_'+item] /= self.scale[item][1:2,:]
+
+            dx_shape = tf.shape(self.next_elem['dx_'+item])
+            self.next_elem['dx_'+item] = \
+                tf.dynamic_partition(
+                    tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
+                    self.next_elem['partition_'+item], 2
+                )[1]
+            self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
+
+            self.next_elem['seg_id_'+item] = \
+                tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1])
+            self.next_elem['seg_id_'+item] = \
+                tf.dynamic_partition(
+                    self.next_elem['seg_id_'+item],
+                    self.next_elem['partition_'+item], 2
+                )[1]
+                #tf.concat([tf.tile([item + 1], [self.next_elem['N_'+item]]) for item in range(tf.shape(self.next_elem['N_'+item])[0])], 0)
+
+            self.next_elem['sparse_indices_'+item] = tf.range(tf.reduce_sum(self.next_elem['N_'+item]))
 
 
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
         self.inputs = self.parent.inputs['neural_network']
         # read data?
         
-        train_fileiter, valid_fileiter, test_fileiter = self._make_fileiter()
+        #train_fileiter, valid_fileiter, test_fileiter = self._make_fileiter()
 
         # preprocessing: scale, GDF...
         modifier = None
@@ -479,72 +517,28 @@ class Neural_network(object):
         self._set_params('symmetry_function')
 
         ####
-        train_filequeue = _make_data_list(self.train_data_list)
-        valid_filequeue = _make_data_list(self.valid_data_list)
-
-        self.scale, aw_tag = \
-            self.parent.descriptor.preprocess(train_filequeue,
-                                              self.inp_size, 
-                                              calc_scale=self.inputs['scale'], 
-                                              get_atomic_weights=get_atomic_weights, 
-                                              **self.inputs['atomic_weights']['params'])
-
-        train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, 
-                                                               batch_size=self.inputs['batch_size'], atomic_weights=aw_tag)
-        train_next_elem = train_iter.get_next()
-        valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, valid=True, atomic_weights=aw_tag)
-        valid_next_elem = valid_iter.get_next()
-
-        config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
-        with tf.Session(config=config) as sess:
-            sess.run(train_iter.initializer)
-            sess.run(valid_iter.initializer)
-
-            print sess.run(valid_next_elem['x_Si'])
-
-        assert 0
-        ####
-
-
-        # FIXME: Error occur: only test
         if self.inputs['train']:
-            self.scale, self.atomic_weights_full = \
-                preprocessing(self.train_data_list, self.parent.inputs['atom_types'], 'x', self.inp_size,\
-                            calc_scale=self.inputs['scale'], \
-                            get_atomic_weights=get_atomic_weights, \
-                            **self.inputs['atomic_weights']['params'])
+            train_filequeue = _make_data_list(self.train_data_list)
+            valid_filequeue = _make_data_list(self.valid_data_list)
 
-            #self._get_batch(train_fileiter, 1, initial=True)
-            #self._set_params(train_fileiter)
-            train_fileiter.set_maxiter(self.inputs['batch_size'])
-        else:
-            self.scale, self.atomic_weights_full = \
-                preprocessing(self.test_data_list, self.parent.inputs['atom_types'], 'x', self.inp_size,\
-                            calc_scale=False, get_atomic_weights=None)
-            #self._get_batch(test_fileiter, 1, initial=True, valid=True)
-            #self._set_params(test_fileiter)
+            self.scale, aw_tag = \
+                self.parent.descriptor.preprocess(train_filequeue,
+                                                  self.inp_size, 
+                                                  calc_scale=self.inputs['scale'], 
+                                                  get_atomic_weights=get_atomic_weights, 
+                                                  **self.inputs['atomic_weights']['params'])
+         
+            train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, 
+                                                                   batch_size=self.inputs['batch_size'], atomic_weights=aw_tag)
+            valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, valid=True, atomic_weights=aw_tag)
+            self._make_iterator_from_handle(train_iter)
 
-        # Generate placeholder
-        self._E = tf.placeholder(tf.float64, [None, 1])
-        self._F = tf.placeholder(tf.float64, [None, 3])
-        self.tot_num = tf.placeholder(tf.float64, [None])
-        self.partition = tf.placeholder(tf.int32, [None])
-        self.seg_id = dict()
-        self.sparse_indices = dict()
-        self.x = dict()
-        self.dx = dict()
-        self.num_seg = tf.placeholder(tf.int32, ())
-        self.max_atom_num = tf.placeholder(tf.int32, ())
-        self.atomic_weights = tf.placeholder(tf.float64, [None, 1]) \
-                                if self.inputs['atomic_weights']['type'] != None else None
-        for item in self.parent.inputs['atom_types']:
-            self.x[item] = tf.placeholder_with_default(tf.zeros([1, self.inp_size[item]], dtype=tf.float64), 
-                                                       [None, self.inp_size[item]])
-            self.dx[item] = tf.placeholder_with_default(tf.zeros([1, self.inp_size[item], self.max_atom_num, 3], dtype=tf.float64), 
-                                                        [None, self.inp_size[item], None, 3])
-            self.seg_id[item] = tf.placeholder_with_default(tf.constant([0], dtype=tf.int32), [None])
-            self.sparse_indices[item] = tf.placeholder_with_default(tf.constant([0], dtype=tf.int32), [None])
+        if self.inputs['test']:
+            test_filequeue = _make_data_list(self.test_data_list)
+            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self, inp_size, valid=True, atomic_weights=False)
+            if not self.inputs['train']:
+                self.scale, _ = self.parent.descriptor.preprocess(test_filequeue, self.inp_size, calc_scale=False)
+                self._make_iterator_from_handle(test_iter)
 
         self.force_coeff = self._get_decay_param(self.inputs['force_coeff'])
         self.energy_coeff = self._get_decay_param(self.inputs['energy_coeff'])
@@ -575,13 +569,18 @@ class Neural_network(object):
                     valid_set = self._get_batch(valid_fileiter, valid=True)
                     valid_fdict = self._make_feed_dict(valid_set)
                 elif self.inputs['method'] == 'Adam':
-                    valid_set = self._get_batch(valid_fileiter, valid=True)
-                    valid_fdict = self._make_feed_dict(valid_set)
+                    ###
+                    train_handle = sess.run(train_iter.string_handle())
+                    train_fdict = {self.handle: train_handle}
+                    sess.run(train_iter.initializer)
+
+                    valid_handle = sess.run(valid_iter.string_handle())
+                    valid_fdict = {self.handle: valid_handle}
+                    #sess.run(valid_iter.initializer)
+                    ###
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
-                        train_batch = self._get_batch(train_fileiter)
-                        train_fdict = self._make_feed_dict(train_batch)
                         self.optim.run(feed_dict=train_fdict)
                         time2 = timeit.default_timer()
 
@@ -589,18 +588,26 @@ class Neural_network(object):
                         if (epoch+1) % self.inputs['show_interval'] == 0:
                             result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
 
-                            eloss = sess.run(self.e_loss, feed_dict=valid_fdict)
-                            eloss = np.sqrt(eloss)
                             t_eloss = sess.run(self.e_loss, feed_dict=train_fdict)
                             t_eloss = np.sqrt(t_eloss)
-                            result += 'E loss(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
-
                             if self.inputs['use_force']:
-                                floss = sess.run(self.f_loss, feed_dict=valid_fdict)
-                                floss = np.sqrt(floss*3)
                                 t_floss = sess.run(self.f_loss, feed_dict=train_fdict)
                                 t_floss = np.sqrt(t_floss*3)
-                                result += ', F loss(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
+
+                            eloss = floss = 0
+                            sess.run(valid_iter.initializer)
+                            while True:
+                                try:
+                                    eloss += sess.run(self.e_loss, feed_dict=valid_fdict)
+                                    if self.inputs['use_force']:
+                                        floss += sess.run(self.f_loss, feed_dict=valid_fdict)
+                                except tf.errors.OutOfRangeError:
+                                    eloss = np.sqrt(eloss/len(valid_filequeue))
+                                    result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
+                                    if self.inputs['use_force']:
+                                        floss = np.sqrt(floss*3/len(valid_filequeue))
+                                        result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
+                                    break
 
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
