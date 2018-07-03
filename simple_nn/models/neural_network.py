@@ -329,7 +329,9 @@ class Neural_network(object):
 
             train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, 
                                                                    batch_size=self.inputs['batch_size'], atomic_weights=aw_tag)
-            valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, valid=True, atomic_weights=aw_tag)
+            valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, 
+                                                                   batch_size=self.inputs['batch_size'], valid=True, atomic_weights=aw_tag)
+#                                                                   valid=True, atomic_weights=aw_tag)
             self._make_iterator_from_handle(train_iter)
 
         if self.inputs['test']:
@@ -393,10 +395,16 @@ class Neural_network(object):
                             valid_total = 0
                             while True:
                                 try:
-                                    num_batch = sess.run(self.next_elem['num_seg'], feed_dict=valid_fdict) - 1
-                                    eloss += sess.run(self.e_loss, feed_dict=valid_fdict) * num_batch
                                     if self.inputs['use_force']:
-                                        floss += sess.run(self.f_loss, feed_dict=valid_fdict) * num_batch
+                                        valid_elem, tmp_eloss, tmp_floss = sess.run([self.next_elem, self.e_loss, self.f_loss], feed_dict=valid_fdict)
+                                        num_batch = valid_elem['num_seg'] - 1
+                                        eloss += tmp_eloss * num_batch
+                                        floss += tmp_floss * num_batch
+                                    else:
+                                        valid_elem, tmp_eloss = sess.run([self.next_elem, self.e_loss], feed_dict=valid_fdict)
+                                        num_batch = valid_elem['num_seg'] - 1
+                                        eloss += tmp_eloss * num_batch
+
                                     valid_total += num_batch
                                 except tf.errors.OutOfRangeError:
                                     eloss = np.sqrt(eloss/valid_total)
