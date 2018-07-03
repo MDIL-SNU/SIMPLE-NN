@@ -6,7 +6,7 @@ from six.moves import cPickle as pickle
 import collections
 import functools
 import timeit
-from ..utils import _make_data_list, pickle_load, preprocessing, _generate_gdf_file, modified_sigmoid, memory
+from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory
 
 """
 Neural network model with symmetry function as a descriptor
@@ -36,22 +36,11 @@ class Neural_network(object):
                                       'batch_size': 64,
                                       'loss_scale': 1.,
                                       'double_precision': True,
-                                      'valid_rate': 0.1,
-                                      'generate_valid': True,
-                                      'scale': True,
                                       'learning_rate': 0.01,
                                       'optimizer': dict(),
                                       'nodes': '30-30',
                                       'test': False,
                                       'train': True,
-                                      'atomic_weights': {
-                                          'type': None,
-                                          'params': dict(),
-                                      },
-                                      'weight_modifier': {
-                                          'type': None,
-                                          'params': dict(),
-                                      },
                                       'regularization': {
                                           'type': None,
                                           'params': dict(),
@@ -64,88 +53,6 @@ class Neural_network(object):
         self.valid_data_list = './valid_list'
         self.test_data_list = './test_list'
 
-    def _make_fileiter(self):
-        """
-        function to generate iterator for input data file list.
-        for training set, infinite random iterator is generated and
-        for validation/test set, normal iterator is generated.
-        """
-        # TODO: check tf.data
-        if self.inputs['generate_valid']:
-            with open(self.train_data_list, 'r') as fil:
-                full_data = fil.readlines()
-
-            random.shuffle(full_data)
-            valid_idx = int(len(full_data) * self.inputs['valid_rate'])
-
-            with open(self.valid_data_list, 'w') as fil:
-                for item in full_data[:valid_idx]:
-                    fil.write(item)
-
-            with open(self.train_data_list, 'w') as fil:
-                for item in full_data[valid_idx:]:
-                    fil.write(item)
-
-            self.inputs['generate_valid'] = False
-            self.parent.write_inputs()
-
-        class iterfile(object):
-            def __init__(self, filelist, maxiter=None):
-                self.items = filelist
-                self.index = 0
-
-                if maxiter is None:
-                    self.maxiter = len(filelist)
-                else:
-                    self.maxiter = maxiter
-                
-                self.curiter = 0
-
-            def __iter__(self):
-                self.curiter = 0
-                return self
-            
-            def set_maxiter(self, maxiter):
-                self.maxiter = maxiter
-
-            def _next(self):
-                if self.index == 0:
-                    random.shuffle(self.items)
-        
-                n = self.items[self.index]
-
-                if self.curiter == self.maxiter:
-                    raise StopIteration
-                else:
-                    self.curiter += 1
-
-                self.index += 1
-                self.index = self.index % len(self.items)
-                return n
-
-            if six.PY2:
-                def next(self):
-                    return self._next()
-            elif six.PY3:
-                def __next__(self):
-                    return self._next()
-
-        if self.inputs['train']:
-            train_data = _make_data_list(self.train_data_list)
-            train_data = list(zip(train_data, list(range(len(train_data)))))
-            train_data = iterfile(train_data)
-            valid_data = _make_data_list(self.valid_data_list)
-            valid_data = list(zip(valid_data, list(range(len(valid_data)))))
-        else:
-            train_data = valid_data = None
-
-        if self.inputs['test']:
-            test_data = _make_data_list(self.test_data_list)
-            test_data = list(zip(test_data, list(range(len(test_data)))))
-        else:
-            test_data = None
- 
-        return train_data, valid_data, test_data
 
     def _set_params(self, feature_name):
         self.inp_size = dict()
@@ -162,84 +69,10 @@ class Neural_network(object):
             self.params[item] = np.array(self.params[item])
             self.inp_size[item] = self.params[item].shape[0]
 
-    def _get_batch(self, fileiter, valid=False):
-        batch = {
-            'x': dict(),
-            'dx': dict(),
-            '_E': list(),
-            '_F': list(),
-            'N': dict(),
-            'seg_id': dict()
-        }
-        
-        tag_atomic_weights = self.inputs['atomic_weights']['type']
-        if tag_atomic_weights != None:
-            batch['atomic_weights'] = list()
 
-        for item in self.parent.inputs['atom_types']:
-            batch['x'][item] = list()
-            batch['dx'][item] = list()
-            batch['N'][item] = list()
-        
-        for item in fileiter:
-            loaded_fil = pickle_load(item[0])
-            tmp_atom_types = loaded_fil['x'].keys()
-
-            # TODO: add parameter check part
-            batch['_E'].append(loaded_fil['E'])
-            batch['_F'].append(loaded_fil['F'])
-            for jtem in self.parent.inputs['atom_types']:
-                if jtem in tmp_atom_types:
-                    batch['x'][jtem].append(loaded_fil['x'][jtem])
-                    batch['dx'][jtem].append(loaded_fil['dx'][jtem])
-                    batch['N'][jtem].append(loaded_fil['N'][jtem])
-                    if tag_atomic_weights != None:
-                        if valid:
-                            batch['atomic_weights'].append([1.]*loaded_fil['N'][jtem])
-                        else:
-                            batch['atomic_weights'].\
-                                append(self.atomic_weights_full[jtem][self.atomic_weights_full[jtem][:,1] == item[1],1])
-                else:
-                    batch['x'][jtem].append(np.zeros([0, self.inp_size[jtem]], dtype=np.float64))
-                    batch['dx'][jtem].append(np.zeros([0, self.inp_size[jtem], int(np.sum(list(loaded_fil['N'].values()))), 3], dtype=np.float64))
-                    batch['N'][jtem].append(0)
-
-        batch['_E'] = np.array(batch['_E'], dtype=np.float64).reshape([-1,1])
-        batch['_F'] = np.concatenate(batch['_F']).astype(np.float64)
-        if tag_atomic_weights != None:
-            batch['atomic_weights'] = np.concatenate(batch['atomic_weights']).astype(np.float64).reshape([-1,1])
-
-        batch['tot_num'] = np.sum(list(batch['N'].values()), axis=0)
-        max_atom_num = np.max(batch['tot_num'])
-        batch['max_atom_num'] = max_atom_num
-
-        for item in self.parent.inputs['atom_types']:
-            batch['N'][item] = np.array(batch['N'][item], dtype=np.int)
-            batch['x'][item] = np.concatenate(batch['x'][item], axis=0).astype(np.float64)
-            batch['x'][item] -= self.scale[item][0:1,:]
-            batch['x'][item] /= self.scale[item][1:2,:]
-
-            tmp_dx = np.zeros([np.sum(batch['N'][item]), self.inp_size[item],\
-                               max_atom_num, 3], dtype=np.float64)
-
-            tmp_idx = 0
-            for jtem in batch['dx'][item]:
-                tmp_dx[tmp_idx:tmp_idx+jtem.shape[0],:,:jtem.shape[2],:] = jtem
-                tmp_idx += jtem.shape[0]
-            batch['dx'][item] = tmp_dx / self.scale[item][1:2,:].reshape([1,self.inp_size[item],1,1])
-
-            batch['seg_id'][item] = \
-                np.concatenate([[j]*jtem for j,jtem in enumerate(batch['N'][item])]) + 1.
-
-        batch['partition'] = \
-            np.concatenate([[0]*item + [1]*(max_atom_num - item) for item in batch['tot_num']])
-        
-        return batch
-
-    def _set_scale_parameter(self, scale_file, gdf_file=None):
+    def _set_scale_parameter(self, scale_file):
         self.scale = pickle_load(scale_file)
         # TODO: add the check code for valid scale file
-        self.gdf = pickle_load(gdf_file)
 
     def _make_model(self):
         self.models = dict()
@@ -331,10 +164,13 @@ class Neural_network(object):
         if self.inputs['use_force']:
             self.f_loss = tf.square(self.next_elem['F'] - self.F)
             if self.inputs['atomic_weights']['type'] is not None:
-                self.f_loss *= self.atomic_weights
-            self.f_loss = tf.reduce_mean(self.f_loss)
-        
-            self.total_loss += self.f_loss * self.force_coeff
+                self.aw_f_loss = self.f_loss * self.next_elem['atomic_weights']
+                self.f_loss = tf.reduce_mean(self.f_loss)
+                self.aw_f_loss = tf.reduce_mean(self.aw_f_loss)
+                self.total_loss += self.aw_f_loss * self.force_coeff
+            else:
+                self.f_loss = tf.reduce_mean(self.f_loss)
+                self.total_loss += self.f_loss * self.force_coeff
 
         if self.inputs['regularization']['type'] is not None:
             self.total_loss += tf.losses.get_regularization_loss()
@@ -361,29 +197,6 @@ class Neural_network(object):
             else:
                 raise ValueError
 
-    def _make_feed_dict(self, batch):
-        fdict = {
-            self._E: batch['_E'],
-            self._F: batch['_F'],
-            self.tot_num: batch['tot_num'],
-            self.partition: batch['partition'],
-            self.max_atom_num: batch['max_atom_num']
-        }
-
-        if self.inputs['atomic_weights']['type'] != None:
-            fdict[self.atomic_weights] = batch['atomic_weights']
-
-        fdict[self.num_seg] = len(batch['_E']) + 1
-        #fdict[self.num_seg] = self.inputs['batch_size'] + 1
-
-        for item in self.parent.inputs['atom_types']:
-            if batch['x'][item].shape[0] > 0:
-                fdict[self.x[item]] = batch['x'][item]
-                fdict[self.dx[item]] = batch['dx'][item]
-                fdict[self.seg_id[item]] = batch['seg_id'][item]
-                fdict[self.sparse_indices[item]] = list(range(len(batch['x'][item])))
-
-        return fdict 
 
     def _get_decay_param(self, param):
         """
@@ -501,33 +314,19 @@ class Neural_network(object):
         
         #train_fileiter, valid_fileiter, test_fileiter = self._make_fileiter()
 
-        # preprocessing: scale, GDF...
-        modifier = None
-        if self.inputs['weight_modifier']['type'] == 'modified sigmoid':
-            modifier = functools.partial(modified_sigmoid, **self.inputs['weight_modifier']['params'])
-        if self.inputs['atomic_weights']['type'] == 'gdf':
-            get_atomic_weights = functools.partial(_generate_gdf_file, modifier=modifier)
-        elif self.inputs['atomic_weights']['type'] == 'user':
-            get_atomic_weights = user_atomic_weights_function
-        elif self.inputs['atomic_weights']['type'] == 'file':
-            get_atomic_weights = './atomic_weights'
-        else:
-            get_atomic_weights = None
-
         self._set_params('symmetry_function')
+        self.scale = self._set_scale_parameter('./scale_factor')
 
         ####
         if self.inputs['train']:
             train_filequeue = _make_data_list(self.train_data_list)
             valid_filequeue = _make_data_list(self.valid_data_list)
+        
+            if self.parent.descriptor.inputs['atomic_weights']['type'] == None:
+                aw_tag = False
+            else:
+                aw_tag = True
 
-            self.scale, aw_tag = \
-                self.parent.descriptor.preprocess(train_filequeue,
-                                                  self.inp_size, 
-                                                  calc_scale=self.inputs['scale'], 
-                                                  get_atomic_weights=get_atomic_weights, 
-                                                  **self.inputs['atomic_weights']['params'])
-         
             train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, 
                                                                    batch_size=self.inputs['batch_size'], atomic_weights=aw_tag)
             valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, valid=True, atomic_weights=aw_tag)
@@ -535,9 +334,8 @@ class Neural_network(object):
 
         if self.inputs['test']:
             test_filequeue = _make_data_list(self.test_data_list)
-            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self, inp_size, valid=True, atomic_weights=False)
+            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, valid=True, atomic_weights=False)
             if not self.inputs['train']:
-                self.scale, _ = self.parent.descriptor.preprocess(test_filequeue, self.inp_size, calc_scale=False)
                 self._make_iterator_from_handle(test_iter)
 
         self.force_coeff = self._get_decay_param(self.inputs['force_coeff'])
@@ -564,10 +362,6 @@ class Neural_network(object):
                     # TODO: complete this part
                     raise ValueError
 
-                    train_set = self._get_batch(train_fileiter, valid=True)
-                    train_fdict = self._make_feed_dict(train_set)
-                    valid_set = self._get_batch(valid_fileiter, valid=True)
-                    valid_fdict = self._make_feed_dict(valid_set)
                 elif self.inputs['method'] == 'Adam':
                     ###
                     train_handle = sess.run(train_iter.string_handle())
@@ -598,9 +392,10 @@ class Neural_network(object):
                             sess.run(valid_iter.initializer)
                             while True:
                                 try:
-                                    eloss += sess.run(self.e_loss, feed_dict=valid_fdict)
+                                    num_batch = sess.run(self.next_elem['seg_num']) - 1
+                                    eloss += sess.run(self.e_loss, feed_dict=valid_fdict) * num_batch
                                     if self.inputs['use_force']:
-                                        floss += sess.run(self.f_loss, feed_dict=valid_fdict)
+                                        floss += sess.run(self.f_loss, feed_dict=valid_fdict) * num_batch
                                 except tf.errors.OutOfRangeError:
                                     eloss = np.sqrt(eloss/len(valid_filequeue))
                                     result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
@@ -621,18 +416,18 @@ class Neural_network(object):
                 self._save(sess, saver)
 
             if self.inputs['test']:
-                test_set = self._get_batch(test_fileiter, valid=True)
-                test_fdict = self._make_feed_dict(test_set)
+                test_handle = sess.run(test_iter.string_handle())
+                test_fdict = {self.handle: test_handle}
 
                 test_save = dict()
-                test_save['DFT_E'] = test_set['_E']
-                test_save['NN_E'] = sess.run(self.E, feed_dict=test_fdict)
+                test_save['DFT_E'] = np.squeeze(self.next_elem['E'])
+                test_save['NN_E'] = np.squeeze(sess.run(self.E, feed_dict=test_fdict))
 
                 eloss = sess.run(self.e_loss, feed_dict=test_fdict)
                 eloss = np.sqrt(eloss)
 
                 if self.inputs['use_force']:
-                    test_save['DFT_F'] = test_set['_F']
+                    test_save['DFT_F'] = self.next_elem['F']
                     test_save['NN_F'] = sess.run(self.F, feed_dict=test_fdict)
 
                     floss = sess.run(self.f_loss, feed_dict=test_fdict)

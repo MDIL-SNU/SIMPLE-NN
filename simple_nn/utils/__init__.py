@@ -56,10 +56,11 @@ def _make_full_featurelist(filelist, atom_types, feature_tag):
     return feature_list, idx_list
 
 
-def _generate_scale_file(feature_list, atom_types, inp_size):
+def _generate_scale_file(feature_list, atom_types):
     scale = dict()
     for item in atom_types:
-        scale[item] = np.zeros([2, inp_size[item]])
+        inp_size = feature_list[item].shape[1]
+        scale[item] = np.zeros([2, inp_size])
 
         if len(feature_list[item]) > 0:
             scale[item][0,:] = 0.5*(np.amax(feature_list[item], axis=0) + np.amin(feature_list[item], axis=0))
@@ -102,31 +103,6 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, mo
         pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)
 
     return gdf
-
-def preprocessing(filelist, atom_types, feature_tag, inp_size, \
-                  calc_scale=True, get_atomic_weights=None, **kwarg):
-    """
-    Function for perform preprocessing input data.
-
-    :param get_atomic_weights: if this parameter is function, generate atomic weights using this function.
-                               else if this parameter is string, load atomic weights from file(its name is that string).
-                               otherwise, ValueError
-    :param \**kwarg: parameter for get_atomic_weights
-    """
-    feature_list, idx_list = _make_full_featurelist(filelist, atom_types, feature_tag)
-    scale = None
-    atomic_weights = None
-    if calc_scale:
-        scale = _generate_scale_file(feature_list, atom_types, inp_size)
-    else:
-        scale = pickle_load('./scale_factor')
-    
-    if callable(get_atomic_weights):
-        atomic_weights = get_atomic_weights(feature_list, scale, atom_types, idx_list, **kwarg)
-    elif isinstance(get_atomic_weights, six.string_types):
-        atomic_weights = pickle_load(get_atomic_weights)
-
-    return scale, atomic_weights
 
 def compress_outcar(filename):
     """

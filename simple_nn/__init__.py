@@ -1,5 +1,7 @@
 import yaml 
 import collections
+import functools
+from .utils import modified_sigmoid, _generate_gdf_file
 
 # TODO: logging
 
@@ -38,6 +40,7 @@ class Simple_nn(object):
         """
         self.default_inputs = {
             'generate_features': True,
+            'preprocess': False,
             'train_model': True
             }
 
@@ -99,14 +102,32 @@ class Simple_nn(object):
     #def log(self, message):
     #    self._log.write(message)
 
-    def run(self, user_optimizer=None):
+    def run(self, user_atomic_weights_function=None, user_optimizer=None):
         """
         Function for running simple-nn.
 
         :param user_optimizer: tensorflow optimizer other than AdamOptimizer. 
         """
+
+        modifier = None
+        if self.descriptor.inputs['weight_modifier']['type'] == 'modified sigmoid':
+            modifier = functools.partial(modified_sigmoid, **self.inputs['weight_modifier']['params'])
+        if self.descriptor.inputs['atomic_weights']['type'] == 'gdf':
+            get_atomic_weights = functools.partial(_generate_gdf_file, modifier=modifier)
+        elif self.descriptor.inputs['atomic_weights']['type'] == 'user':
+            get_atomic_weights = user_atomic_weights_function
+        elif self.descriptor.inputs['atomic_weights']['type'] == 'file':
+            get_atomic_weights = './atomic_weights'
+        else:
+            get_atomic_weights = None
+
         if self.inputs['generate_features']:
             self.descriptor.generate()
+            self.descriptor.preprocess(get_atomic_weights=get_atomic_weights,
+                                       **self.descriptor.inputs['atomic_weights']['params'])
+        elif self.inputs['preprocess']:
+            self.descriptor.preprocess(get_atomic_weights=get_atomic_weights, 
+                                       **self.descriptor.inputs['atomic_weights']['params'])
         
         if self.inputs['train_model']:
             self.model.train(user_optimizer=user_optimizer)
