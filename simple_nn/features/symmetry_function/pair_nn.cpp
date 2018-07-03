@@ -451,6 +451,7 @@ void PairNN::read_file(char *fname) {
       double t_cut = atof(strtok(NULL," \t\n\r\f"));
       if (t_cut > cutmax) cutmax = t_cut;
       int slen = strlen(t_elem);
+      nnet = nelements;
       for (i=0; i<nelements; i++) {
         if (strncmp(t_elem,elements[i],slen) == 0) {
           nnet = i;
