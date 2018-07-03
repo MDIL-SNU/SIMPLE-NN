@@ -73,9 +73,11 @@ class Symmetry_function(object):
         self.pickle_list = './pickle_list'
         self.train_data_list = './train_list'
         self.valid_data_list = './valid_list'
+
+    def set_inputs(self):
         self.inputs = self.parent.inputs['symmetry_function']
 
-    def _write_tfrecords(self, res, record_name, atomic_weights=False):
+    def _write_tfrecords(self, res, writer, atomic_weights=False):
         # TODO: after stabilize overall tfrecord related part,
         # this part will replace the part of original 'res' dict
          
@@ -110,7 +112,7 @@ class Symmetry_function(object):
             feature['dx_values_'+item] = _bytes_feature(dx_values.tobytes())
             feature['dx_dense_shape_'+item] = _bytes_feature(dx_dense_shape.tobytes())
 
-            feature['partition_'+item] = _bytes_feature(res['partition'][item].tobytes())
+            feature['partition_'+item] = _bytes_feature(res['partition_'+item].tobytes())
 
         example = tf.train.Example(
             features=tf.train.Features(
@@ -118,14 +120,15 @@ class Symmetry_function(object):
             )
         )
         
-        with tf.python_io.TFRecordWriter(record_name) as writer:
-            writer.write(example.SerializeToString())
+        writer.write(example.SerializeToString())
 
 
-    def _parse_data(self, serialized, inp_size, valid=False, serialized_aw=None):
+    def _parse_data(self, serialized, inp_size, valid=False, atomic_weights=False):
         features = {
             'E': tf.FixedLenFeature([], dtype=tf.string),
             'F': tf.FixedLenFeature([], dtype=tf.string),
+            'tot_num': tf.VarLenFeature(tf.int64),
+            'partition': tf.FixedLenFeature([], dtype=tf.string)
         }
  
         for item in self.parent.inputs['atom_types']:
@@ -135,21 +138,26 @@ class Symmetry_function(object):
             features['dx_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['dx_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
- 
+            features['partition_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+
+        if atomic_weights:
+            features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
+
         read_data = tf.parse_single_example(serialized=serialized, features=features)
+        #read_data = tf.parse_example(serialized=serialized, features=features)
  
         res = dict()
  
         res['E'] = tf.decode_raw(read_data['E'], tf.float64)
         res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
-        #res['tot_num'] = 0.
-        res['tot_num'] = read_data['tot_num']
+        res['tot_num'] = 0.
+        #res['tot_num'] = read_data['tot_num']
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
 
         for item in self.parent.inputs['atom_types']:
             res['x_'+item] = tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, inp_size[item]])
-            res['N_'+item] = read_data['N_'+item]
-            #res['N_'+item] = tf.shape(res['x_'+item])[0]
+            #res['N_'+item] = read_data['N_'+item]
+            res['N_'+item] = tf.shape(res['x_'+item])[0]
             res['tot_num'] += tf.cast(tf.shape(res['x_'+item])[0], tf.float64)
  
             res['dx_'+item] = tf.sparse_to_dense(
@@ -158,32 +166,21 @@ class Symmetry_function(object):
                 sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)
             )
             res['dx_'+item] = tf.reshape(res['dx_'+item], [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3])
-            res['partition_'+item] = tf.ones([tf.shape(res['x_'+item])[0]], tf.int32)
+            res['partition_'+item] = tf.decode_raw(read_data['partition_'+item], tf.int32)
  
         # TODO: seg_id, dynamic_partition_id, 
         #res['tot_num'] = tf.sparse_reduce_sum(tf.sparse_concat(0, res['tot_num']))
-        res['partition'] = tf.ones([tf.cast(res['tot_num'], tf.int32)], tf.int32)
+        #res['partition'] = tf.ones([tf.cast(res['tot_num'], tf.int32)], tf.int32)
 
-        if serialized_aw is not None:
-            if valid:
-                res['atomic_weights'] = tf.ones([tf.cast(res['tot_num'], tf.float64)])
-            else:
-                features_aw = {'atomic_weights':tf.FixedLenFeature([], dtype=tf.string)}
-                read_data_aw = tf.parse_single_example(serialized=serialized_aw, features=features_aw)
-                res['atomic_weights'] = tf.decode_raw(read_data_aw['atomic_weights'], tf.float64)
+        if atomic_weights:
+            res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
         return res
 
 
     def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, valid=False, atomic_weights=False):
         dataset = tf.data.TFRecordDataset(filename_queue)
-
-        if (valid is False) and (atomic_weights is True):
-            aw_filename_queue = [item.replace('.tfrecord', '_atomic_weights.tfrecord') for item in filename_queue]
-            dataset = tf.data.Dataset.zip((dataset, tf.data.TFRecordDataset(aw_filename_queue)))
-            dataset = dataset.map(lambda x, y: self._parse_data(x, inp_size, valid=False, serialized_aw=y))
-        else:
-            dataset = dataset.map(lambda x: self._parse_data(x, inp_size, valid=False, serialized_aw=None))
+        dataset = dataset.map(lambda x: self._parse_data(x, inp_size, valid=False, atomic_weights=atomic_weights))
 
         batch_dict = dict()
         batch_dict['E'] = [None]
@@ -265,29 +262,33 @@ class Symmetry_function(object):
         tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
         tmp_pickle_train_list = np.squeeze(np.dstack((tmp_pickle_train_list, np.arange(len(tmp_pickle_train_list)))))
         num_tmp_pickle_train = len(tmp_pickle_train_list)
+        num_tfrecord_train = int(num_tmp_pickle_train / self.inputs['data_per_tfrecord'])
         train_list = open(self.train_data_list, 'w')
 
-        for i,item in file_list:
+        for i,item in enumerate(tmp_pickle_train_list):
             if i == 0:
-                record_name = 'training_data_{:0>4}_to_{:0>4}.tfrecord'.format(i/self.inputs['data_per_tfrecord'], num_tmp_pickle_train)
+                record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
                 writer = tf.python_io.TFRecordWriter(record_name)
-            else:
+            elif (i % self.inputs['data_per_tfrecord']) == 0:
                 writer.close()
                 self.parent.logfile.write('{} file saved in {}\n'.format(self.inputs['data_per_tfrecord'], record_name))
                 train_list.write(record_name + '\n')
-                record_name = 'training_data_{:0>4}_to_{:0>4}.tfrecord'.format(i/self.inputs['data_per_tfrecord'], num_tmp_pickle_train)
+                record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
                 writer = tf.python_io.TFRecordWriter(record_name)
 
             tmp_res = pickle_load(item[0])
             if atomic_weights is not None:
                 tmp_aw = list()
                 for jtem in self.parent.inputs['atom_types']:
-                    tmp_idx = (atomic_weights[:,1] == item[0])
+                    tmp_idx = (atomic_weights[:,1] == item[1])
                     tmp_aw.append(atomic_weights[jtem][tmp_idx,0])
                 tmp_aw = np.concatenate(tmp_aw)
                 tmp_res['atomic_weights'] = tmp_aw
 
             self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
+
+            if not self.inputs['remain_pickle']:
+                os.remove(item[0])
 
         writer.close()
         self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
@@ -298,24 +299,28 @@ class Symmetry_function(object):
         tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
         tmp_pickle_valid_list = np.squeeze(np.dstack((tmp_pickle_valid_list, np.arange(len(tmp_pickle_valid_list)))))
         num_tmp_pickle_valid = len(tmp_pickle_valid_list)
+        num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
         valid_list = open(self.valid_data_list, 'w')
 
-        for i,item in file_list:
+        for i,item in enumerate(tmp_pickle_valid_list):
             if i == 0:
-                record_name = 'valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(i/self.inputs['data_per_tfrecord'], num_tmp_pickle_valid)
+                record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
                 writer = tf.python_io.TFRecordWriter(record_name)
-            else:
+            elif (i % self.inputs['data_per_tfrecord']) == 0:
                 writer.close()
                 self.parent.logfile.write('{} file saved in {}\n'.format(self.inputs['data_per_tfrecord'], record_name))
                 valid_list.write(record_name + '\n')
-                record_name = 'valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(i/self.inputs['data_per_tfrecord'], num_tmp_pickle_valid)
+                record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
                 writer = tf.python_io.TFRecordWriter(record_name)
 
             tmp_res = pickle_load(item[0])
             if atomic_weights is not None:
-                tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']])
+                tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']]).astype(np.float64)
 
             self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
+
+            if not self.inputs['remain_pickle']:
+                os.remove(item[0])
 
         writer.close()
         self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
@@ -449,7 +454,7 @@ class Symmetry_function(object):
                             res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
                                                 reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
                             res['params'][jtem] = params_set[jtem]['total']
-                            res['partition'][jtem] = np.ones([res['N'][jtem]]).astype(np.int32)
+                            res['partition_'+jtem] = np.ones([type_num[jtem]]).astype(np.int32)
 
                 if comm.rank == 0:
                     data_dir = "./data/"

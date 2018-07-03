@@ -109,6 +109,7 @@ class Simple_nn(object):
         :param user_optimizer: tensorflow optimizer other than AdamOptimizer. 
         """
 
+        self.descriptor.set_inputs()
         modifier = None
         if self.descriptor.inputs['weight_modifier']['type'] == 'modified sigmoid':
             modifier = functools.partial(modified_sigmoid, **self.inputs['weight_modifier']['params'])

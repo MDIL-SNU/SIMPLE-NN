@@ -163,7 +163,7 @@ class Neural_network(object):
 
         if self.inputs['use_force']:
             self.f_loss = tf.square(self.next_elem['F'] - self.F)
-            if self.inputs['atomic_weights']['type'] is not None:
+            if self.parent.descriptor.inputs['atomic_weights']['type'] is not None:
                 self.aw_f_loss = self.f_loss * self.next_elem['atomic_weights']
                 self.f_loss = tf.reduce_mean(self.f_loss)
                 self.aw_f_loss = tf.reduce_mean(self.aw_f_loss)
@@ -315,7 +315,7 @@ class Neural_network(object):
         #train_fileiter, valid_fileiter, test_fileiter = self._make_fileiter()
 
         self._set_params('symmetry_function')
-        self.scale = self._set_scale_parameter('./scale_factor')
+        self._set_scale_parameter('./scale_factor')
 
         ####
         if self.inputs['train']:
@@ -390,17 +390,19 @@ class Neural_network(object):
 
                             eloss = floss = 0
                             sess.run(valid_iter.initializer)
+                            valid_total = 0
                             while True:
                                 try:
-                                    num_batch = sess.run(self.next_elem['seg_num']) - 1
+                                    num_batch = sess.run(self.next_elem['num_seg'], feed_dict=valid_fdict) - 1
                                     eloss += sess.run(self.e_loss, feed_dict=valid_fdict) * num_batch
                                     if self.inputs['use_force']:
                                         floss += sess.run(self.f_loss, feed_dict=valid_fdict) * num_batch
+                                    valid_total += num_batch
                                 except tf.errors.OutOfRangeError:
-                                    eloss = np.sqrt(eloss/len(valid_filequeue))
+                                    eloss = np.sqrt(eloss/valid_total)
                                     result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
                                     if self.inputs['use_force']:
-                                        floss = np.sqrt(floss*3/len(valid_filequeue))
+                                        floss = np.sqrt(floss*3/valid_total)
                                         result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
                                     break
 
