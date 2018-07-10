@@ -455,8 +455,12 @@ class Symmetry_function(object):
                             res['x'][jtem] = np.concatenate(res['x'][jtem], axis=0).reshape([type_num[jtem], params_set[jtem]['num']])
                             res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
                                                 reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
-                            res['params'][jtem] = params_set[jtem]['total']
                             res['partition_'+jtem] = np.ones([type_num[jtem]]).astype(np.int32)
+                        else:
+                            res['x'][jtem] = np.zeros([0, params_set[jtem]['num']])
+                            res['dx'][jtem] = np.zeros([0, params_set[jtem]['num'], atom_num, 3])
+                            res['partition_'+jtem] = np.ones([0]).astype(np.int32)
+                        res['params'][jtem] = params_set[jtem]['total']
 
                 if comm.rank == 0:
                     data_dir = "./data/"

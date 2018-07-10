@@ -277,6 +277,7 @@ class Neural_network(object):
                 self.next_elem['partition'], 2
             )[1]
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
+        self.next_elem['tot_num'] = tf.expand_dims(self.next_elem['tot_num'], 1)
         for item in self.parent.inputs['atom_types']:
             self.next_elem['partition_'+item] = tf.reshape(self.next_elem['partition_'+item], [-1])
 
