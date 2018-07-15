@@ -95,7 +95,7 @@ class Symmetry_function(object):
         feature = {
             'E':_bytes_feature(np.array([res['E']]).tobytes()),
             'F':_bytes_feature(res['F'].tobytes()),
-            'tot_num':_int64_feature(res['tot_num']),
+            'tot_num':_bytes_feature(res['tot_num'].astype(np.float64).tobytes()),
             'partition':_bytes_feature(res['partition'].tobytes())
         }
     
@@ -104,7 +104,7 @@ class Symmetry_function(object):
         
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
-            feature['N_'+item] = _int64_feature(res['N'][item])
+            feature['N_'+item] = _bytes_feature(res['N'][item].tobytes())
             feature['params_'+item] = _bytes_feature(res['params'][item].tobytes())
 
             dx_indices, dx_values, dx_dense_shape = _gen_1dsparse(res['dx'][item].reshape([-1]))
@@ -128,13 +128,15 @@ class Symmetry_function(object):
         features = {
             'E': tf.FixedLenFeature([], dtype=tf.string),
             'F': tf.FixedLenFeature([], dtype=tf.string),
-            'tot_num': tf.VarLenFeature(tf.int64),
+            #'tot_num': tf.VarLenFeature(tf.int64),
+            'tot_num': tf.FixedLenFeature([], dtype=tf.string),
             'partition': tf.FixedLenFeature([], dtype=tf.string)
         }
  
         for item in self.parent.inputs['atom_types']:
             features['x_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-            features['N_'+item] = tf.VarLenFeature(tf.int64)
+            #features['N_'+item] = tf.VarLenFeature(tf.int64)
+            features['N_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['params_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['dx_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
@@ -151,22 +153,35 @@ class Symmetry_function(object):
  
         res['E'] = tf.decode_raw(read_data['E'], tf.float64)
         res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
-        res['tot_num'] = 0.
-        #res['tot_num'] = read_data['tot_num']
+        #res['tot_num'] = 0.
+        res['tot_num'] = tf.decode_raw(read_data['tot_num'], tf.float64)
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
 
         for item in self.parent.inputs['atom_types']:
-            res['x_'+item] = tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, inp_size[item]])
-            #res['N_'+item] = read_data['N_'+item]
-            res['N_'+item] = tf.shape(res['x_'+item])[0]
-            res['tot_num'] += tf.cast(tf.shape(res['x_'+item])[0], tf.float64)
+            res['N_'+item] = tf.decode_raw(read_data['N_'+item], tf.int64)
+
+            res['x_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
+                                     lambda: tf.zeros([0, inp_size[item]], dtype=tf.float64),
+                                     lambda: tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, inp_size[item]]))
+            #res['x_'+item] = tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, inp_size[item]])
+            #res['N_'+item] = tf.shape(res['x_'+item])[0]
+            #res['tot_num'] += tf.cast(tf.shape(res['x_'+item])[0], tf.float64)
+
+            res['dx_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
+                                      lambda: tf.zeros([0, inp_size[item], 0, 3], dtype=tf.float64),
+                                      lambda: tf.reshape(
+                                        tf.sparse_to_dense(
+                                            sparse_indices=tf.decode_raw(read_data['dx_indices_'+item], tf.int32),
+                                            output_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int32),
+                                            sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)), 
+                                        [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3]))
  
-            res['dx_'+item] = tf.sparse_to_dense(
-                sparse_indices=tf.decode_raw(read_data['dx_indices_'+item], tf.int32),
-                output_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int32),
-                sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)
-            )
-            res['dx_'+item] = tf.reshape(res['dx_'+item], [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3])
+            #res['dx_'+item] = tf.sparse_to_dense(
+            #    sparse_indices=tf.decode_raw(read_data['dx_indices_'+item], tf.int32),
+            #    output_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int32),
+            #    sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)
+            #)
+            #res['dx_'+item] = tf.reshape(res['dx_'+item], [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3])
             res['partition_'+item] = tf.decode_raw(read_data['partition_'+item], tf.int32)
  
         # TODO: seg_id, dynamic_partition_id, 
@@ -187,7 +202,7 @@ class Symmetry_function(object):
         batch_dict = dict()
         batch_dict['E'] = [None]
         batch_dict['F'] = [None, 3]
-        batch_dict['tot_num'] = []
+        batch_dict['tot_num'] = [None]
         batch_dict['partition'] = [None]
 
         if atomic_weights:
@@ -195,7 +210,7 @@ class Symmetry_function(object):
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
-            batch_dict['N_'+item] = []
+            batch_dict['N_'+item] = [None]
             batch_dict['dx_'+item] = [None, inp_size[item], None, 3]
             batch_dict['partition_'+item] = [None]
  
@@ -207,6 +222,8 @@ class Symmetry_function(object):
             # order of repeat and batch?
             dataset = dataset.repeat()
             dataset = dataset.padded_batch(batch_size, batch_dict)
+            # prefetch test
+            dataset = dataset.prefetch(buffer_size=1)
             iterator = dataset.make_initializable_iterator()
             
         return iterator  
@@ -405,7 +422,7 @@ class Symmetry_function(object):
                 for j,jtem in enumerate(self.parent.inputs['atom_types']):
                     tmp = symbols==jtem
                     atom_i[tmp] = j+1
-                    type_num[jtem] = np.sum(tmp)
+                    type_num[jtem] = np.sum(tmp).astype(np.int64)
                     # if atom indexs are sorted by atom type,
                     # indexs are sorted in this part.
                     # if not, it could generate bug in training process for force training

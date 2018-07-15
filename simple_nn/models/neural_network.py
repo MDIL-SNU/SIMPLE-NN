@@ -7,6 +7,7 @@ import collections
 import functools
 import timeit
 from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory
+from tensorflow.python.client import timeline
 
 """
 Neural network model with symmetry function as a descriptor
@@ -154,8 +155,12 @@ class Neural_network(object):
                                 tf.sparse_segment_sum(tmp_force, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
                                                       num_segments=self.next_elem['num_seg'])[1:],
                                 axis=1)
-                self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
-                                                   self.next_elem['partition'], 2)[1]
+                self.F -= tf.cond(tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0),
+                                  lambda: tf.cast(0., tf.float64),
+                                  lambda: tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
+                                                               self.next_elem['partition'], 2)[1])
+                #self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
+                #                                   self.next_elem['partition'], 2)[1]
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         self.e_loss = tf.reduce_mean(tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']))
@@ -279,34 +284,58 @@ class Neural_network(object):
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
         self.next_elem['tot_num'] = tf.expand_dims(self.next_elem['tot_num'], 1)
         for item in self.parent.inputs['atom_types']:
-            self.next_elem['partition_'+item] = tf.reshape(self.next_elem['partition_'+item], [-1])
+            zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
 
-            self.next_elem['x_'+item] = \
-                tf.dynamic_partition(
-                    tf.reshape(self.next_elem['x_'+item], [-1, self.inp_size[item]]),
-                    self.next_elem['partition_'+item], 2
-                )[1]
+            self.next_elem['partition_'+item] = tf.cond(zero_cond, 
+                                                        lambda: tf.zeros([0], tf.int32),
+                                                        lambda: tf.reshape(self.next_elem['partition_'+item], [-1]))
+
+            self.next_elem['x_'+item] = tf.cond(zero_cond, 
+                                                lambda: tf.zeros([0, self.inp_size[item]], dtype=tf.float64),
+                                                lambda: tf.dynamic_partition(
+                                                            tf.reshape(self.next_elem['x_'+item], [-1, self.inp_size[item]]),
+                                                            self.next_elem['partition_'+item], 2)[1])
+
+            #self.next_elem['x_'+item] = \
+            #    tf.dynamic_partition(
+            #        tf.reshape(self.next_elem['x_'+item], [-1, self.inp_size[item]]),
+            #        self.next_elem['partition_'+item], 2
+            #    )[1]
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
 
             dx_shape = tf.shape(self.next_elem['dx_'+item])
-            self.next_elem['dx_'+item] = \
-                tf.dynamic_partition(
-                    tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
-                    self.next_elem['partition_'+item], 2
-                )[1]
+
+            self.next_elem['dx_'+item] = tf.cond(zero_cond, 
+                                                 lambda: tf.zeros([0, dx_shape[2], 0, dx_shape[4]], dtype=tf.float64), 
+                                                 lambda: tf.dynamic_partition(tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
+                                                                              self.next_elem['partition_'+item], 2
+                                                                              )[1])
+            #self.next_elem['dx_'+item] = \
+            #    tf.dynamic_partition(
+            #        tf.concat(tf.map_fn(lambda x: x, self.next_elem['dx_'+item]), axis=0), 
+                    #tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
+            #        self.next_elem['partition_'+item], 2
+            #    )[1]
+            #print self.next_elem['dx_'+item]
             self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
 
-            self.next_elem['seg_id_'+item] = \
-                tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1])
-            self.next_elem['seg_id_'+item] = \
-                tf.dynamic_partition(
-                    self.next_elem['seg_id_'+item],
-                    self.next_elem['partition_'+item], 2
-                )[1]
+            self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
+                                                     lambda: tf.zeros([0], tf.int32), 
+                                                     lambda: tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), 
+                                                                                             tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1]),
+                                                                                  self.next_elem['partition_'+item], 2)[1])
+            #self.next_elem['seg_id_'+item] = \
+            #    tf.concat(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), tf.range(tf.shape(self.next_elem['N_'+item])[0])), axis=0)
+                #tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1])
+            #self.next_elem['seg_id_'+item] = \
+            #    tf.dynamic_partition(
+            #        self.next_elem['seg_id_'+item],
+            #        self.next_elem['partition_'+item], 2
+            #    )[1]
                 #tf.concat([tf.tile([item + 1], [self.next_elem['N_'+item]]) for item in range(tf.shape(self.next_elem['N_'+item])[0])], 0)
 
-            self.next_elem['sparse_indices_'+item] = tf.range(tf.reduce_sum(self.next_elem['N_'+item]))
+            self.next_elem['sparse_indices_'+item] = tf.cast(tf.range(tf.reduce_sum(self.next_elem['N_'+item])), tf.int32)
 
 
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
@@ -360,6 +389,9 @@ class Neural_network(object):
             else:
                 sess.run(tf.global_variables_initializer())
 
+            options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
+
             if self.inputs['train']:
                 if self.inputs['method'] == 'L-BFGS-B':
                     # TODO: complete this part
@@ -379,10 +411,17 @@ class Neural_network(object):
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
                         self.optim.run(feed_dict=train_fdict)
+                        #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
                         time2 = timeit.default_timer()
 
                         # Logging
                         if (epoch+1) % self.inputs['show_interval'] == 0:
+                            # Profiling
+                            #fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+                            #chrome_trace = fetched_timeline.generate_chrome_trace_format()
+                            #with open('timeline_test.json', 'w') as fil:
+                            #    fil.write(chrome_trace)
+
                             result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
 
                             t_eloss = sess.run(self.e_loss, feed_dict=train_fdict)
