@@ -14,7 +14,8 @@ install_requires = [
     'numpy',
     'ase>=3.10.0',
     'pyyaml>=3.10',
-    'cffi>=1.0.0'
+    'cffi>=1.0.0',
+    'psutil'
 ]
 
 # C extension library for calculating symmetry function
@@ -45,7 +46,7 @@ extension_libgdf = Extension(
 # FIXME: fill the empty part
 setup(
     name='simple-nn',
-    version='0.1.3',
+    version='0.2.0',
     description='Package for generating atomic potentials using neural network.',
     long_description=long_description,
     long_description_content_type='text/markdown',

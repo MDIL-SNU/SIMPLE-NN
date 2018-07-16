@@ -14,6 +14,8 @@ Welcome to simple_nn's documentation!
    run
    tutorials/tutorial
    modules/modules
+   features/features
+   models/models
 
 Indices and tables
 ==================
