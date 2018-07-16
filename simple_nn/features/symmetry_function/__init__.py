@@ -283,7 +283,7 @@ class Symmetry_function(object):
             if atomic_weights is not None:
                 tmp_aw = list()
                 for jtem in self.parent.inputs['atom_types']:
-                    tmp_idx = (atomic_weights[:,1] == item[1])
+                    tmp_idx = (atomic_weights[jtem][:,1] == item[1])
                     tmp_aw.append(atomic_weights[jtem][tmp_idx,0])
                 tmp_aw = np.concatenate(tmp_aw)
                 tmp_res['atomic_weights'] = tmp_aw
