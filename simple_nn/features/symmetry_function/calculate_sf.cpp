@@ -26,7 +26,7 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
     int bin_range[3], nbins[3], cell_shift[3], max_bin[3], min_bin[3], pbc_bin[3];
     //int bin_i[natoms][4];
     double vol, tmp, cutoff, dradtmp, rRij, rRik, rRjk;
-    double plane_d[3], total_shift[3], precal[11], tmpd[9], dangtmp[3];
+    double plane_d[3], total_shift[3], precal[12], tmpd[9], dangtmp[3];
     double vecij[3], vecik[3], vecjk[3], deljk[3];
     double cross[3][3], reci[3][3];//, powtwo[nsyms];
 
@@ -200,6 +200,7 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
                 precal[8]  = 0.5*(1/rRik + 1/rRij/rRij*(rRjk*rRjk/rRik - rRik));
                 precal[9]  = 0.5*(1/rRij + 1/rRik/rRik*(rRjk*rRjk/rRij - rRij));
                 precal[10] = rRjk/rRij/rRik;
+                precal[11] = rRij*rRij+rRik*rRik;
 
                 for (int s=0; s < nsyms; ++s) {
                     if ((params_i[s][0] == 4) && 
@@ -214,6 +215,39 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
                         precal[5] = dcutf(rRjk, params_d[s][0]);
 
                         symf[ii][s] += G4(rRij, rRik, rRjk, powtwo[s], precal, params_d[s], dangtmp);
+
+                        tmpd[0] = dangtmp[0]*vecij[0];
+                        tmpd[1] = dangtmp[0]*vecij[1];
+                        tmpd[2] = dangtmp[0]*vecij[2];
+                        tmpd[3] = dangtmp[1]*vecik[0];
+                        tmpd[4] = dangtmp[1]*vecik[1];
+                        tmpd[5] = dangtmp[1]*vecik[2];
+                        tmpd[6] = dangtmp[2]*vecjk[0];
+                        tmpd[7] = dangtmp[2]*vecjk[1];
+                        tmpd[8] = dangtmp[2]*vecjk[2];
+
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0] - tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1] - tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2] - tmpd[8];
+
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]     += tmpd[3] + tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1] += tmpd[4] + tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2] += tmpd[5] + tmpd[8];
+
+                        dsymf[ii][s*natoms*3 + i*3]     -= tmpd[0] + tmpd[3];
+                        dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
+                        dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
+                    }
+                    else if ((params_i[s][0] == 5) &&
+                            ((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) ||
+                            ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2]))  ) {
+
+                        precal[0] = cutf(rRij / params_d[s][0]);
+                        precal[1] = dcutf(rRij, params_d[s][0]);
+                        precal[2] = cutf(rRik / params_d[s][0]);
+                        precal[3] = dcutf(rRik, params_d[s][0]);
+
+                        symf[ii][s] += G5(rRij, rRik, powtwo[s], precal, params_d[s], dangtmp);
 
                         tmpd[0] = dangtmp[0]*vecij[0];
                         tmpd[1] = dangtmp[0]*vecij[1];

@@ -21,3 +21,4 @@ double cutf(double);
 double dcutf(double, double);
 double G2(double, double *, double *, double &);
 double G4(double, double, double, double, double *, double *, double *);
+double G5(double, double, double, double *, double *, double *);
