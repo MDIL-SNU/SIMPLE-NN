@@ -282,7 +282,7 @@ class Neural_network(object):
                 self.next_elem['partition'], 2
             )[1]
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
-        self.next_elem['tot_num'] = tf.expand_dims(self.next_elem['tot_num'], 1)
+        #self.next_elem['tot_num'] = tf.expand_dims(self.next_elem['tot_num'], 1)
         for item in self.parent.inputs['atom_types']:
             zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
 
@@ -411,6 +411,15 @@ class Neural_network(object):
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
                         self.optim.run(feed_dict=train_fdict)
+                        #testval, test_f = sess.run([self.next_elem, self.F], feed_dict=train_fdict)
+                        #print test_f
+                        #print self.f_loss
+                        #print testval['E']
+                        #print testval['F']
+                        #print testval['tot_num']
+                        #assert 0
+
+
                         #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
                         time2 = timeit.default_timer()
 
