@@ -265,7 +265,7 @@ class Neural_network(object):
         self._generate_lammps_potential(sess)
         
 
-    def _make_iterator_from_handle(self, training_dataset):
+    def _make_iterator_from_handle(self, training_dataset, atomic_weights=False):
         self.handle = tf.placeholder(tf.string, shape=[])
         self.iterator = tf.data.Iterator.from_string_handle(
             self.handle, training_dataset.output_types, training_dataset.output_shapes)
@@ -280,6 +280,13 @@ class Neural_network(object):
             )[1]
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
         
+        if atomic_weights:
+            self.next_elem['atomic_weights'] = \
+                tf.dynamic_partition(
+                    tf.reshape(self.next_elem['atomic_weights'], [-1, 1]),
+                    self.next_elem['partition'], 2
+                )[1]
+
         for item in self.parent.inputs['atom_types']:
             zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
 
@@ -336,7 +343,7 @@ class Neural_network(object):
             valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, 
                                                                    batch_size=self.inputs['batch_size'], valid=True, atomic_weights=aw_tag)
 #                                                                   valid=True, atomic_weights=aw_tag)
-            self._make_iterator_from_handle(train_iter)
+            self._make_iterator_from_handle(train_iter, aw_tag)
 
         if self.inputs['test']:
             test_filequeue = _make_data_list(self.test_data_list)
