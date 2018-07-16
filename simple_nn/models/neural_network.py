@@ -263,7 +263,7 @@ class Neural_network(object):
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")              
         saver.save(sess, './SAVER')
         self._generate_lammps_potential(sess)
-
+        
 
     def _make_iterator_from_handle(self, training_dataset):
         self.handle = tf.placeholder(tf.string, shape=[])
