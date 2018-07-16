@@ -7,7 +7,7 @@ import collections
 import functools
 import timeit
 from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory
-from tensorflow.python.client import timeline
+#from tensorflow.python.client import timeline
 
 """
 Neural network model with symmetry function as a descriptor
@@ -142,7 +142,6 @@ class Neural_network(object):
         self.E = self.F = 0
 
         for item in self.parent.inputs['atom_types']:
-            #self.E += tf.segment_sum(self.ys[item], self.seg_id[item])
             self.E += tf.sparse_segment_sum(self.ys[item], self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
                                             num_segments=self.next_elem['num_seg'])[1:]
 
@@ -159,8 +158,6 @@ class Neural_network(object):
                                   lambda: tf.cast(0., tf.float64),
                                   lambda: tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                                self.next_elem['partition'], 2)[1])
-                #self.F -= tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
-                #                                   self.next_elem['partition'], 2)[1]
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         self.e_loss = tf.reduce_mean(tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']))
@@ -282,7 +279,7 @@ class Neural_network(object):
                 self.next_elem['partition'], 2
             )[1]
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
-        #self.next_elem['tot_num'] = tf.expand_dims(self.next_elem['tot_num'], 1)
+        
         for item in self.parent.inputs['atom_types']:
             zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
 
@@ -296,11 +293,6 @@ class Neural_network(object):
                                                             tf.reshape(self.next_elem['x_'+item], [-1, self.inp_size[item]]),
                                                             self.next_elem['partition_'+item], 2)[1])
 
-            #self.next_elem['x_'+item] = \
-            #    tf.dynamic_partition(
-            #        tf.reshape(self.next_elem['x_'+item], [-1, self.inp_size[item]]),
-            #        self.next_elem['partition_'+item], 2
-            #    )[1]
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
 
@@ -311,13 +303,7 @@ class Neural_network(object):
                                                  lambda: tf.dynamic_partition(tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
                                                                               self.next_elem['partition_'+item], 2
                                                                               )[1])
-            #self.next_elem['dx_'+item] = \
-            #    tf.dynamic_partition(
-            #        tf.concat(tf.map_fn(lambda x: x, self.next_elem['dx_'+item]), axis=0), 
-                    #tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
-            #        self.next_elem['partition_'+item], 2
-            #    )[1]
-            #print self.next_elem['dx_'+item]
+
             self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
@@ -325,15 +311,6 @@ class Neural_network(object):
                                                      lambda: tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), 
                                                                                              tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1]),
                                                                                   self.next_elem['partition_'+item], 2)[1])
-            #self.next_elem['seg_id_'+item] = \
-            #    tf.concat(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), tf.range(tf.shape(self.next_elem['N_'+item])[0])), axis=0)
-                #tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1])
-            #self.next_elem['seg_id_'+item] = \
-            #    tf.dynamic_partition(
-            #        self.next_elem['seg_id_'+item],
-            #        self.next_elem['partition_'+item], 2
-            #    )[1]
-                #tf.concat([tf.tile([item + 1], [self.next_elem['N_'+item]]) for item in range(tf.shape(self.next_elem['N_'+item])[0])], 0)
 
             self.next_elem['sparse_indices_'+item] = tf.cast(tf.range(tf.reduce_sum(self.next_elem['N_'+item])), tf.int32)
 
@@ -341,13 +318,10 @@ class Neural_network(object):
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
         self.inputs = self.parent.inputs['neural_network']
         # read data?
-        
-        #train_fileiter, valid_fileiter, test_fileiter = self._make_fileiter()
 
         self._set_params('symmetry_function')
         self._set_scale_parameter('./scale_factor')
 
-        ####
         if self.inputs['train']:
             train_filequeue = _make_data_list(self.train_data_list)
             valid_filequeue = _make_data_list(self.valid_data_list)
@@ -389,8 +363,8 @@ class Neural_network(object):
             else:
                 sess.run(tf.global_variables_initializer())
 
-            options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-            run_metadata = tf.RunMetadata()
+            #options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            #run_metadata = tf.RunMetadata()
 
             if self.inputs['train']:
                 if self.inputs['method'] == 'L-BFGS-B':
@@ -398,7 +372,6 @@ class Neural_network(object):
                     raise ValueError
 
                 elif self.inputs['method'] == 'Adam':
-                    ###
                     train_handle = sess.run(train_iter.string_handle())
                     train_fdict = {self.handle: train_handle}
                     sess.run(train_iter.initializer)
@@ -406,20 +379,10 @@ class Neural_network(object):
                     valid_handle = sess.run(valid_iter.string_handle())
                     valid_fdict = {self.handle: valid_handle}
                     #sess.run(valid_iter.initializer)
-                    ###
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
                         self.optim.run(feed_dict=train_fdict)
-                        #testval, test_f = sess.run([self.next_elem, self.F], feed_dict=train_fdict)
-                        #print test_f
-                        #print self.f_loss
-                        #print testval['E']
-                        #print testval['F']
-                        #print testval['tot_num']
-                        #assert 0
-
-
                         #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
                         time2 = timeit.default_timer()
 
