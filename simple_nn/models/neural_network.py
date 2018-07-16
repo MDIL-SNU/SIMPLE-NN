@@ -95,7 +95,6 @@ class Neural_network(object):
             if self.inputs['regularization']['type'] == 'l2':
                 coeff = self.inputs['regularization']['params'].get('coeff', 1e-6)
                 dense_basic_setting['kernel_regularizer'] = tf.keras.regularizers.l2(l=coeff)
-                dense_basic_setting['bias_regularizer'] = tf.keras.regularizers.l2(l=coeff)
 
         #acti_func = 'selu'
         #acti_func = 'elu'
