@@ -263,7 +263,6 @@ class Symmetry_function(object):
 
         # train
         tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
-        tmp_pickle_train_list = np.squeeze(np.dstack((tmp_pickle_train_list, np.arange(len(tmp_pickle_train_list)))))
         num_tmp_pickle_train = len(tmp_pickle_train_list)
         num_tfrecord_train = int(num_tmp_pickle_train / self.inputs['data_per_tfrecord'])
         train_list = open(self.train_data_list, 'w')
@@ -279,11 +278,11 @@ class Symmetry_function(object):
                 record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
                 writer = tf.python_io.TFRecordWriter(record_name)
 
-            tmp_res = pickle_load(item[0])
+            tmp_res = pickle_load(item)
             if atomic_weights is not None:
                 tmp_aw = list()
                 for jtem in self.parent.inputs['atom_types']:
-                    tmp_idx = (atomic_weights[jtem][:,1] == item[1])
+                    tmp_idx = (atomic_weights[jtem][:,1] == i)
                     tmp_aw.append(atomic_weights[jtem][tmp_idx,0])
                 tmp_aw = np.concatenate(tmp_aw)
                 tmp_res['atomic_weights'] = tmp_aw
@@ -291,7 +290,7 @@ class Symmetry_function(object):
             self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
 
             if not self.inputs['remain_pickle']:
-                os.remove(item[0])
+                os.remove(item)
 
         writer.close()
         self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
@@ -300,7 +299,6 @@ class Symmetry_function(object):
 
         # valid
         tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
-        tmp_pickle_valid_list = np.squeeze(np.dstack((tmp_pickle_valid_list, np.arange(len(tmp_pickle_valid_list)))))
         num_tmp_pickle_valid = len(tmp_pickle_valid_list)
         num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
         valid_list = open(self.valid_data_list, 'w')
@@ -316,14 +314,14 @@ class Symmetry_function(object):
                 record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
                 writer = tf.python_io.TFRecordWriter(record_name)
 
-            tmp_res = pickle_load(item[0])
+            tmp_res = pickle_load(item)
             if atomic_weights is not None:
                 tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']]).astype(np.float64)
 
             self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
 
             if not self.inputs['remain_pickle']:
-                os.remove(item[0])
+                os.remove(item)
 
         writer.close()
         self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
