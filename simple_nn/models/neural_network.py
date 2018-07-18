@@ -6,6 +6,7 @@ from six.moves import cPickle as pickle
 import collections
 import functools
 import timeit
+import copy
 from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory
 #from tensorflow.python.client import timeline
 
@@ -90,11 +91,14 @@ class Neural_network(object):
             'kernel_initializer': tf.initializers.truncated_normal(stddev=0.3, dtype=dtype),
             'bias_initializer': tf.initializers.truncated_normal(stddev=0.3, dtype=dtype)
         }
+        dense_last_setting = copy.deepcopy(dense_basic_setting)
 
         if self.inputs['regularization']['type'] is not None:
             if self.inputs['regularization']['type'] == 'l2':
                 coeff = self.inputs['regularization']['params'].get('coeff', 1e-6)
                 dense_basic_setting['kernel_regularizer'] = tf.keras.regularizers.l2(l=coeff)
+                dense_basic_setting['bias_regularizer'] = tf.keras.regularizers.l2(l=coeff)
+                dense_last_setting['kernel_regularizer'] = tf.keras.regularizers.l2(l=coeff)
 
         #acti_func = 'selu'
         #acti_func = 'elu'
@@ -123,7 +127,7 @@ class Neural_network(object):
             model.add(tf.keras.layers.Dense(1, activation='linear', 
                                             #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[-1], dtype=dtype),
                                             #bias_initializer=tf.initializers.random_normal(stddev=0.1, dtype=dtype),
-                                            **dense_basic_setting))
+                                            **dense_last_setting))
 
             nodes.append(1)
             self.nodes[item] = nodes
