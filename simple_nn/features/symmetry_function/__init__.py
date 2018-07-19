@@ -202,9 +202,7 @@ class Symmetry_function(object):
             dataset = dataset.padded_batch(batch_size, batch_dict)
             iterator = dataset.make_initializable_iterator()
         else:
-            dataset = dataset.shuffle(buffer_size=200)
-            # order of repeat and batch?
-            dataset = dataset.repeat()
+            dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(200, None))
             dataset = dataset.padded_batch(batch_size, batch_dict)
             # prefetch test
             dataset = dataset.prefetch(buffer_size=1)
