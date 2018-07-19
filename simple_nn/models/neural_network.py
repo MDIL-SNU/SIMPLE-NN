@@ -36,6 +36,7 @@ class Neural_network(object):
                                       'show_interval': 100,
                                       'max_iteration': 1000,
                                       'batch_size': 64,
+                                      'full_batch': False,
                                       'loss_scale': 1.,
                                       'double_precision': True,
                                       'learning_rate': 0.01,
@@ -190,11 +191,12 @@ class Neural_network(object):
             if isinstance(self.inputs['learning_rate'], collections.Mapping):
                 self.learning_rate = tf.train.exponential_decay(global_step=self.global_step, **self.inputs['learning_rate'])
             else:
-                self.learning_rate = tf.constant(self.inputs['learning_rate'])
+                self.learning_rate = tf.constant(self.inputs['learning_rate'], tf.float64)
 
             self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rate, 
                                                 name='Adam', **self.inputs['optimizer'])
-            self.optim = self.optim.minimize(final_loss, global_step=self.global_step)
+            self.compute_grad = self.optim.compute_gradients(final_loss)
+            self.minim = self.optim.minimize(final_loss, global_step=self.global_step)
         else:
             if user_optimizer != None:
                 self.optim = user_optimizer.minimize(final_loss, global_step=self.global_step)
@@ -342,7 +344,7 @@ class Neural_network(object):
                 aw_tag = True
 
             train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, 
-                                                                   batch_size=self.inputs['batch_size'], atomic_weights=aw_tag)
+                                                                   batch_size=self.inputs['batch_size'], full_batch=self.inputs['full_batch'], atomic_weights=aw_tag)
             valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, 
                                                                    batch_size=self.inputs['batch_size'], valid=True, atomic_weights=aw_tag)
 #                                                                   valid=True, atomic_weights=aw_tag)
@@ -384,7 +386,8 @@ class Neural_network(object):
                 elif self.inputs['method'] == 'Adam':
                     train_handle = sess.run(train_iter.string_handle())
                     train_fdict = {self.handle: train_handle}
-                    sess.run(train_iter.initializer)
+                    if not self.inputs['full_batch']:
+                        sess.run(train_iter.initializer)
 
                     valid_handle = sess.run(valid_iter.string_handle())
                     valid_fdict = {self.handle: valid_handle}
@@ -392,7 +395,18 @@ class Neural_network(object):
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
-                        self.optim.run(feed_dict=train_fdict)
+                        if self.inputs['full_batch']:
+                            sess.run(train_iter.initializer)
+                            grad_and_vars = sess.run(self.compute_grad, feed_dict=train_fdict)
+                            while True:
+                                try:
+                                    grad_and_vars = [(item[0] + jtem[0], item[1]) for item, jtem in zip(grad_and_vars, sess.run(self.compute_grad, feed_dict=train_fdict))]
+                                except tf.errors.OutOfRangeError:
+                                    grad_and_vars = [(item[0]*self.learning_rate, jtem[1]) for item, jtem in zip(grad_and_vars, self.compute_grad)]
+                                    sess.run(self.optim.apply_gradients(grad_and_vars, global_step=self.global_step))
+                                    break
+                        else:
+                            self.minim.run(feed_dict=train_fdict)
                         #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
                         time2 = timeit.default_timer()
 
@@ -404,16 +418,40 @@ class Neural_network(object):
                             #with open('timeline_test.json', 'w') as fil:
                             #    fil.write(chrome_trace)
 
+                            # TODO: need to fix the calculation part for training loss
                             result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
 
-                            t_eloss = sess.run(self.e_loss, feed_dict=train_fdict)
-                            t_eloss = np.sqrt(t_eloss)
-                            if self.inputs['use_force']:
-                                t_floss = sess.run(self.f_loss, feed_dict=train_fdict)
-                                t_floss = np.sqrt(t_floss*3)
+                            if self.inputs['full_batch']:
+                                sess.run(train_iter.initializer)
+                                t_eloss = t_floss = 0
+                                train_total = 0
+                                while True:
+                                    try:
+                                        if self.inputs['use_force']:
+                                            valid_elem, tmp_eloss, tmp_floss = sess.run([self.next_elem, self.e_loss, self.f_loss], feed_dict=train_fdict)
+                                            num_batch = valid_elem['num_seg'] - 1
+                                            t_eloss += tmp_eloss * num_batch
+                                            t_floss += tmp_floss * num_batch
+                                        else:
+                                            valid_elem, tmp_eloss = sess.run([self.next_elem, self.e_loss], feed_dict=train_fdict)
+                                            num_batch = valid_elem['num_seg'] - 1
+                                            t_eloss += tmp_eloss * num_batch
 
-                            eloss = floss = 0
+                                        train_total += num_batch
+                                    except tf.errors.OutOfRangeError:
+                                        t_eloss = np.sqrt(t_eloss/train_total)
+                                        if self.inputs['use_force']:
+                                            t_floss = np.sqrt(t_floss*3/train_total)
+                                        break
+                            else:
+                                t_eloss = sess.run(self.e_loss, feed_dict=train_fdict)
+                                t_eloss = np.sqrt(t_eloss)
+                                if self.inputs['use_force']:
+                                    t_floss = sess.run(self.f_loss, feed_dict=train_fdict)
+                                    t_floss = np.sqrt(t_floss*3)
+
                             sess.run(valid_iter.initializer)
+                            eloss = floss = 0
                             valid_total = 0
                             while True:
                                 try:

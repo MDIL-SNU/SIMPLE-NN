@@ -178,7 +178,7 @@ class Symmetry_function(object):
         return res
 
 
-    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, valid=False, atomic_weights=False):
+    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, valid=False, full_batch=False, atomic_weights=False):
         dataset = tf.data.TFRecordDataset(filename_queue)
         dataset = dataset.map(lambda x: self._parse_data(x, inp_size, valid=False, atomic_weights=atomic_weights), 
                               num_parallel_calls=self.inputs['num_parallel_calls'])
@@ -198,7 +198,7 @@ class Symmetry_function(object):
             batch_dict['dx_'+item] = [None, inp_size[item], None, 3]
             batch_dict['partition_'+item] = [None]
  
-        if valid:
+        if valid or full_batch:
             dataset = dataset.padded_batch(batch_size, batch_dict)
             iterator = dataset.make_initializable_iterator()
         else:
