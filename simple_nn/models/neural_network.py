@@ -404,7 +404,7 @@ class Neural_network(object):
                                 try:
                                     grad_and_vars = [(item[0] + jtem[0], item[1]) for item, jtem in zip(grad_and_vars, sess.run(self.compute_grad, feed_dict=train_fdict))]
                                 except tf.errors.OutOfRangeError:
-                                    grad_and_vars = [(item[0]*self.learning_rate, jtem[1]) for item, jtem in zip(grad_and_vars, self.compute_grad)]
+                                    grad_and_vars = [(item[0], jtem[1]) for item, jtem in zip(grad_and_vars, self.compute_grad)]
                                     sess.run(self.optim.apply_gradients(grad_and_vars, global_step=self.global_step))
                                     break
                         else:
