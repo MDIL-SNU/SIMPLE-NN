@@ -189,8 +189,9 @@ class Neural_network(object):
                                                                 options=self.inputs['optimizer'])
         elif self.inputs['method'] == 'Adam':
             if isinstance(self.inputs['learning_rate'], collections.Mapping):
-                self.inputs['learning_rate']['learning_rate'] = tf.constant(self.inputs['learning_rate']['learning_rate'], tf.float64)
-                self.learning_rate = tf.train.exponential_decay(global_step=self.global_step, **self.inputs['learning_rate'])
+                exponential_decay_inputs = copy.deepcopy(self.inputs['learning_rate'])
+                exponential_decay_inputs['learning_rate'] = tf.constant(exponential_decay_inputs['learning_rate'], tf.float64)
+                self.learning_rate = tf.train.exponential_decay(global_step=self.global_step, **exponential_decay_inputs)
             else:
                 self.learning_rate = tf.constant(self.inputs['learning_rate'], tf.float64)
 
