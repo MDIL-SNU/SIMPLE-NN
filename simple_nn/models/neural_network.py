@@ -198,6 +198,7 @@ class Neural_network(object):
             self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rate, 
                                                 name='Adam', **self.inputs['optimizer'])
             self.compute_grad = self.optim.compute_gradients(final_loss)
+            self.grad_and_vars = [[None, item[1]] for item in self.compute_grad]
             self.minim = self.optim.minimize(final_loss, global_step=self.global_step)
         else:
             if user_optimizer != None:
@@ -388,7 +389,16 @@ class Neural_network(object):
                 elif self.inputs['method'] == 'Adam':
                     train_handle = sess.run(train_iter.string_handle())
                     train_fdict = {self.handle: train_handle}
-                    if not self.inputs['full_batch']:
+                    if self.inputs['full_batch']:
+                        self.grad_ph = list()
+                        full_batch_dict = dict()
+                        for i,item in enumerate(self.compute_grad):
+                            self.grad_ph.append(tf.placeholder(tf.float64, sess.run(tf.shape(item[1]))))
+                            full_batch_dict[self.grad_ph[i]] = None
+
+                        self.apply_grad = self.optim.apply_gradients([(self.grad_ph[i], item[1]) for i,item in enumerate(self.compute_grad)],
+                                                                     global_step=self.global_step)
+                    else:
                         sess.run(train_iter.initializer)
 
                     valid_handle = sess.run(valid_iter.string_handle())
@@ -399,18 +409,30 @@ class Neural_network(object):
                         time1 = timeit.default_timer()
                         if self.inputs['full_batch']:
                             sess.run(train_iter.initializer)
-                            grad_and_vars = sess.run(self.compute_grad, feed_dict=train_fdict)
+                            #grad_and_vars = sess.run(self.compute_grad, feed_dict=train_fdict)
+                            for i,item in enumerate(sess.run(self.compute_grad, feed_dict=train_fdict)):
+                                full_batch_dict[self.grad_ph[i]] = item[0]
                             while True:
                                 try:
-                                    grad_and_vars = [(item[0] + jtem[0], item[1]) for item, jtem in zip(grad_and_vars, sess.run(self.compute_grad, feed_dict=train_fdict))]
+                                    #grad_and_vars = [(item[0] + jtem[0], item[1]) for item, jtem in zip(grad_and_vars, sess.run(self.compute_grad, feed_dict=train_fdict))]
+                                    #grad_and_vars = sess.run(self.compute_grad, feed_dict=train_fdict)
+                                    for i,item in enumerate(sess.run(self.compute_grad, feed_dict=train_fdict)):
+                                        full_batch_dict[self.grad_ph[i]] += item[0]
                                 except tf.errors.OutOfRangeError:
-                                    grad_and_vars = [(item[0], jtem[1]) for item, jtem in zip(grad_and_vars, self.compute_grad)]
-                                    sess.run(self.optim.apply_gradients(grad_and_vars, global_step=self.global_step))
+                                    # FIXME: memory leak?
+                                    #grad_and_vars = [(item[0], jtem[1]) for item, jtem in zip(grad_and_vars, self.compute_grad)]
+                                    #for v,gandv in enumerate(self.grad_and_vars):
+                                    #    gandv[0] = grad_and_vars[v][0]
+
+                                    # FIXME: in this part, new model is builded and not removed
+                                    #sess.run(self.optim.apply_gradients(self.grad_and_vars, global_step=self.global_step))
+                                    sess.run(self.apply_grad, feed_dict=full_batch_dict)
                                     break
                         else:
                             self.minim.run(feed_dict=train_fdict)
                         #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
                         time2 = timeit.default_timer()
+                        print "-----------"
 
                         # Logging
                         if (epoch+1) % self.inputs['show_interval'] == 0:
