@@ -432,7 +432,6 @@ class Neural_network(object):
                             self.minim.run(feed_dict=train_fdict)
                         #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
                         time2 = timeit.default_timer()
-                        print "-----------"
 
                         # Logging
                         if (epoch+1) % self.inputs['show_interval'] == 0:
