@@ -48,6 +48,8 @@ class Neural_network(object):
                                           'type': None,
                                           'params': dict(),
                                       },
+                                      'inter_op_parallelism_threads': 0,
+                                      'intra_op_parallelism_threads': 0,
                                   }
                               }
         self.inputs = dict()
@@ -179,7 +181,8 @@ class Neural_network(object):
                 self.total_loss += self.f_loss * self.force_coeff
 
         if self.inputs['regularization']['type'] is not None:
-            self.total_loss += tf.losses.get_regularization_loss()
+            # FIXME: regularization_loss, which is float32, is casted into float64.
+            self.total_loss += tf.cast(tf.losses.get_regularization_loss(), tf.float64)
 
     def _make_optimizer(self, user_optimizer=None):
         final_loss = self.inputs['loss_scale']*self.total_loss
@@ -368,6 +371,8 @@ class Neural_network(object):
         self._make_optimizer(user_optimizer=user_optimizer)
 
         config = tf.ConfigProto()
+        config.inter_op_parallelism_threads = self.inputs['inter_op_parallelism_threads']
+        config.intra_op_parallelism_threads = self.inputs['intra_op_parallelism_threads']
         config.gpu_options.allow_growth = True
         #config.gpu_options.per_process_gpu_memory_fraction = 0.45
         with tf.Session(config=config) as sess:
