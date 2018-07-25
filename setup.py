@@ -46,7 +46,7 @@ extension_libgdf = Extension(
 # FIXME: fill the empty part
 setup(
     name='simple-nn',
-    version='0.2.4',
+    version='0.2.5',
     description='Package for generating atomic potentials using neural network.',
     long_description=long_description,
     long_description_content_type='text/markdown',
