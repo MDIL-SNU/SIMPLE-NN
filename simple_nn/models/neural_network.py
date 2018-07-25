@@ -322,6 +322,12 @@ class Neural_network(object):
                                                                               self.next_elem['partition_'+item], 2
                                                                               )[1])
 
+            max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
+            self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
+                                                 lambda: self.next_elem['dx_'+item],
+                                                 lambda: tf.pad(self.next_elem['dx_'+item], 
+                                                                [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['dx_'+item])[2]], [0,0]]))
+
             self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,

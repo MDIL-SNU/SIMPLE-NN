@@ -200,6 +200,7 @@ class Symmetry_function(object):
  
         if valid or full_batch:
             dataset = dataset.padded_batch(batch_size, batch_dict)
+            dataset = dataset.prefetch(buffer_size=1)
             iterator = dataset.make_initializable_iterator()
         else:
             dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(200, None))
