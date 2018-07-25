@@ -364,7 +364,7 @@ class Neural_network(object):
 
         if self.inputs['test']:
             test_filequeue = _make_data_list(self.test_data_list)
-            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, valid=True, atomic_weights=False)
+            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, batch_size=self.inputs['batch_size'], valid=True, atomic_weights=False)
             if not self.inputs['train']:
                 self._make_iterator_from_handle(test_iter)
 
@@ -522,26 +522,64 @@ class Neural_network(object):
             if self.inputs['test']:
                 test_handle = sess.run(test_iter.string_handle())
                 test_fdict = {self.handle: test_handle}
+                sess.run(test_iter.initializer)
 
                 test_save = dict()
-                test_save['DFT_E'] = np.squeeze(self.next_elem['E'])
-                test_save['NN_E'] = np.squeeze(sess.run(self.E, feed_dict=test_fdict))
-
-                eloss = sess.run(self.e_loss, feed_dict=test_fdict)
-                eloss = np.sqrt(eloss)
+                test_save['DFT_E'] = list()
+                test_save['NN_E'] = list()
+                test_save['N'] = list()
 
                 if self.inputs['use_force']:
-                    test_save['DFT_F'] = self.next_elem['F']
-                    test_save['NN_F'] = sess.run(self.F, feed_dict=test_fdict)
+                    test_save['DFT_F'] = list()
+                    test_save['NN_F'] = list()
 
-                    floss = sess.run(self.f_loss, feed_dict=test_fdict)
-                    floss = np.sqrt(floss*3)
+                eloss = floss = 0.
+                test_total = 0
+                result = ' Test'
+                while True:
+                    try:
+                        if self.inputs['use_force']:
+                            test_elem, tmp_nne, tmp_nnf, tmp_eloss, tmp_floss = \
+                                sess.run([self.next_elem, self.E, self.F, self.e_loss, self.f_loss], feed_dict=test_fdict)
+                            num_batch = test_elem['num_seg'] - 1
+                            eloss += tmp_eloss * num_batch
+                            floss += tmp_floss * num_batch
 
+                            test_save['DFT_E'].append(test_elem['E'])
+                            test_save['NN_E'].append(tmp_nne)
+                            test_save['N'].append(test_elem['tot_num'])
+                            test_save['DFT_F'].append(test_elem['F'])
+                            test_save['NN_F'].append(tmp_nnf)
+                        else:
+                            test_elem, tmp_nne, tmp_eloss = \
+                                sess.run([self.next_elem, self.E, self.e_loss], feed_dict=test_fdict)
+                            num_batch = valid_elem['num_seg'] - 1
+                            eloss += tmp_eloss * num_batch
+
+                            test_save['DFT_E'].append(test_elem['E'])
+                            test_save['NN_E'].append(tmp_nne)
+                            test_save['N'].append(test_elem['tot_num'])
+
+                        test_total += num_batch
+                    except tf.errors.OutOfRangeError:
+                        eloss = np.sqrt(eloss/test_total)
+                        result += 'E RMSE = {:6.4e}'.format(eloss)
+
+                        test_save['DFT_E'] = np.concatenate(test_save['DFT_E'], axis=0)
+                        test_save['NN_E'] = np.concatenate(test_save['NN_E'], axis=0)
+                        test_save['N'] = np.concatenate(test_save['N'], axis=0)
+                        if self.inputs['use_force']:
+                            floss = np.sqrt(floss*3/test_total)
+                            result += ', F RMSE = {:6.4e}'.format(floss)
+
+                            test_save['DFT_F'] = np.concatenate(test_save['DFT_F'], axis=0)
+                            test_save['NN_F'] = np.concatenate(test_save['NN_F'], axis=0)
+                        break
+                
                 with open('./test_result', 'wb') as fil:
                     pickle.dump(test_save, fil, pickle.HIGHEST_PROTOCOL)
 
                 self.parent.logfile.write('Test result saved..\n')
-                self.parent.logfile.write(' Test E RMSE: {}, F RMSE: {}\n'.format(eloss, floss))
+                self.parent.logfile.write(result + '\n')
 
-                
-    
+
