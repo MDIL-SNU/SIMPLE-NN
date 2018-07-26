@@ -167,8 +167,9 @@ class Neural_network(object):
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num'])
-        self.str_e_loss = tf.segment_mean(sort(dEsq, self.next_elem['struct_ind']),
+        self.str_e_loss = tf.segment_mean(sort(self.e_loss, self.next_elem['struct_ind']),
                                           sort(self.next_elem['struct_ind']))
+        self.str_e_loss = tf.reshape(self.str_e_loss, [-1])
         self.e_loss = tf.reduce_mean(self.e_loss)
         self.total_loss = self.e_loss * self.energy_coeff
 
@@ -176,6 +177,7 @@ class Neural_network(object):
             self.f_loss = tf.square(self.next_elem['F'] - self.F)
             self.str_f_loss = tf.segment_mean(sort(self.f_loss, self.next_elem['struct_ind']),
                                               sort(self.next_elem['struct_ind']))
+            self.str_f_loss = tf.reduce_mean(self.str_f_loss, axis=1)
             if self.parent.descriptor.inputs['atomic_weights']['type'] is not None:
                 self.aw_f_loss = self.f_loss * self.next_elem['atomic_weights']
                 self.f_loss = tf.reduce_mean(self.f_loss)
