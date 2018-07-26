@@ -487,7 +487,7 @@ class Symmetry_function(object):
 def parse_strlist(file_name):
     structures = []
     structure_ind = []
-    structure_names = ["None"]
+    structure_names = []
     name = "None"
     with open(file_name, 'r') as fil:
         for line in fil:
@@ -497,8 +497,9 @@ def parse_strlist(file_name):
                 continue
             if line[0] == "[" and line[-1] == "]":
                 name = line[1:-1]
-                structure_names.append(name)
                 continue
+            if name not in structure_names:
+                structure_names.append(name)
             structures.append(line.split())
             structure_ind.append(structure_names.index(name))
     return structures, structure_ind, structure_names
