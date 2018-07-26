@@ -96,7 +96,8 @@ class Symmetry_function(object):
             'E':_bytes_feature(np.array([res['E']]).tobytes()),
             'F':_bytes_feature(res['F'].tobytes()),
             'tot_num':_bytes_feature(res['tot_num'].astype(np.float64).tobytes()),
-            'partition':_bytes_feature(res['partition'].tobytes())
+            'partition':_bytes_feature(res['partition'].tobytes()),
+            'struct_type':_bytes_feature(six.b(res['struct_type'])),
         }
     
         if atomic_weights:
@@ -154,7 +155,7 @@ class Symmetry_function(object):
         res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
         res['tot_num'] = tf.decode_raw(read_data['tot_num'], tf.float64)
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
-        res['struct_type'] = tf.decode_raw(read_data['struct_type'], tf.string)
+        res['struct_type'] = tf.decode_raw(read_data['struct_type'], tf.int8)
 
         for item in self.parent.inputs['atom_types']:
             res['N_'+item] = tf.decode_raw(read_data['N_'+item], tf.int64)
