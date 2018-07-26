@@ -166,11 +166,16 @@ class Neural_network(object):
                                                                self.next_elem['partition'], 2)[1])
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
-        self.e_loss = tf.reduce_mean(tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']))
+        self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num'])
+        self.str_e_loss = tf.segment_mean(sort(dEsq, self.next_elem['struct_ind']),
+                                          sort(self.next_elem['struct_ind']))
+        self.e_loss = tf.reduce_mean(self.e_loss)
         self.total_loss = self.e_loss * self.energy_coeff
 
         if self.inputs['use_force']:
             self.f_loss = tf.square(self.next_elem['F'] - self.F)
+            self.str_f_loss = tf.segment_mean(sort(self.f_loss, self.next_elem['struct_ind']),
+                                              sort(self.next_elem['struct_ind']))
             if self.parent.descriptor.inputs['atomic_weights']['type'] is not None:
                 self.aw_f_loss = self.f_loss * self.next_elem['atomic_weights']
                 self.f_loss = tf.reduce_mean(self.f_loss)
@@ -322,6 +327,7 @@ class Neural_network(object):
                                                                               self.next_elem['partition_'+item], 2
                                                                               )[1])
 
+            self.next_elem['struct_type_set'], self.next_elem['struct_ind'] = tf.unique(tf.squeeze(self.next_elem['struct_type']))
             max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
             self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
                                                  lambda: self.next_elem['dx_'+item],
@@ -583,3 +589,19 @@ class Neural_network(object):
                 self.parent.logfile.write(result + '\n')
 
 
+def sort(x, y=None, order='asc'):
+    """
+    sort x by y
+
+    if y in not given, sort x by x.
+    order can be 'asc' or 'dsc'.
+    """
+    if y is None:
+        y = x
+    if order == 'asc':
+        y = -y
+    elif order == 'dsc':
+        pass
+    else:
+        raise NotImplementedError
+    return tf.gather(x, tf.nn.top_k(y, k=tf.shape(y)[0]).indices)
