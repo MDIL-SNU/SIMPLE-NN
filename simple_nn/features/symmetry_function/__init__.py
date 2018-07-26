@@ -129,7 +129,8 @@ class Symmetry_function(object):
             'E': tf.FixedLenFeature([], dtype=tf.string),
             'F': tf.FixedLenFeature([], dtype=tf.string),
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
-            'partition': tf.FixedLenFeature([], dtype=tf.string)
+            'partition': tf.FixedLenFeature([], dtype=tf.string),
+            'struct_type': tf.FixedLenFeature([], dtype=tf.string),
         }
  
         for item in self.parent.inputs['atom_types']:
@@ -153,6 +154,7 @@ class Symmetry_function(object):
         res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
         res['tot_num'] = tf.decode_raw(read_data['tot_num'], tf.float64)
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
+        res['struct_type'] = tf.decode_raw(read_data['struct_type'], tf.string)
 
         for item in self.parent.inputs['atom_types']:
             res['N_'+item] = tf.decode_raw(read_data['N_'+item], tf.int64)
@@ -188,6 +190,7 @@ class Symmetry_function(object):
         batch_dict['F'] = [None, 3]
         batch_dict['tot_num'] = [None]
         batch_dict['partition'] = [None]
+        batch_dict['struct_type'] = [None]
 
         if atomic_weights:
             batch_dict['atomic_weights'] = [None]
@@ -346,10 +349,7 @@ class Symmetry_function(object):
             train_dir = open(self.pickle_list, 'w')
 
         # Get structure list to calculate  
-        structures = list()
-        with open(self.structure_list, 'r') as fil:
-            for line in fil:
-                structures.append(line.strip().split())
+        structures, structure_ind, structure_names = parse_strlist(self.structure_list)
 
         # Get parameter list for each atom types
         params_set = dict()
@@ -363,7 +363,7 @@ class Symmetry_function(object):
             params_set[item]['num'] = len(params_set[item]['total'])
             
         data_idx = 1
-        for item in structures:
+        for item, ind in zip(structures, structure_ind):
             # FIXME: add another input type
             
             if len(item) == 1:
@@ -419,6 +419,7 @@ class Symmetry_function(object):
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
+                res['struct_type'] = structure_names[ind]
 
                 for j,jtem in enumerate(self.parent.inputs['atom_types']):
                     q = type_num[jtem] // comm.size
@@ -481,3 +482,23 @@ class Symmetry_function(object):
 
         if comm.rank == 0:
             train_dir.close()
+
+
+def parse_strlist(file_name):
+    structures = []
+    structure_ind = []
+    structure_names = ["None"]
+    name = "None"
+    with open(file_name, 'r') as fil:
+        for line in fil:
+            line = line.strip()
+            if len(line) == 0 or line.isspace():
+                name = "None"
+                continue
+            if line[0] == "[" and line[-1] == "]":
+                name = line[1:-1]
+                structure_names.append(name)
+                continue
+            structures.append(line.split())
+            structure_ind.append(structure_names.index(name))
+    return structures, structure_ind, structure_names
