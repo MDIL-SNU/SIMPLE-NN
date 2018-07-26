@@ -131,7 +131,7 @@ class Symmetry_function(object):
             'F': tf.FixedLenFeature([], dtype=tf.string),
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
             'partition': tf.FixedLenFeature([], dtype=tf.string),
-            'struct_type': tf.FixedLenFeature([], dtype=tf.string),
+            'struct_type': tf.FixedLenSequenceFeature([], dtype=tf.string, allow_missing=True),
         }
  
         for item in self.parent.inputs['atom_types']:
@@ -155,7 +155,7 @@ class Symmetry_function(object):
         res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
         res['tot_num'] = tf.decode_raw(read_data['tot_num'], tf.float64)
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
-        res['struct_type'] = tf.decode_raw(read_data['struct_type'], tf.int8)
+        res['struct_type'] = read_data['struct_type']
 
         for item in self.parent.inputs['atom_types']:
             res['N_'+item] = tf.decode_raw(read_data['N_'+item], tf.int64)
