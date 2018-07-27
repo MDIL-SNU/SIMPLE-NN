@@ -527,7 +527,7 @@ class Neural_network(object):
                                             str_eloss[struct] += tmp_str_eloss[i] * valid_elem['struct_N'][i]
                                             # FIXME: use num_atom instead of num_batch for f_loss
                                             str_floss[struct] += tmp_str_floss[i] * valid_elem['struct_N'][i]
-                                            str_total[struct] += 1
+                                            str_total[struct] += valid_elem['struct_N'][i]
                                     else:
                                         valid_elem, tmp_eloss, tmp_str_eloss = sess.run([self.next_elem, self.e_loss, self.str_e_loss], feed_dict=valid_fdict)
                                         num_batch = valid_elem['num_seg'] - 1
@@ -538,7 +538,7 @@ class Neural_network(object):
                                             if struct not in str_total:
                                                 str_total[struct] = 0
                                             str_eloss[struct] += tmp_str_eloss[i] * valid_elem['struct_N'][i]
-                                            str_total[struct] += 1
+                                            str_total[struct] += valid_elem['struct_N'][i]
 
                                     valid_total += num_batch
                                 except tf.errors.OutOfRangeError:
@@ -550,7 +550,7 @@ class Neural_network(object):
                                         floss = np.sqrt(floss*3/valid_total)
                                         result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
                                         for struct in str_floss.keys():
-                                            str_floss[struct] = np.sqrt(str_floss[struct]*3/valid_total)
+                                            str_floss[struct] = np.sqrt(str_floss[struct]*3/str_total[struct])
                                     break
 
                             lr = sess.run(self.learning_rate)
