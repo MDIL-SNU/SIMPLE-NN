@@ -167,16 +167,14 @@ class Neural_network(object):
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num'])
-        self.str_e_loss = tf.segment_mean(sort(self.e_loss, self.next_elem['struct_ind']),
-                                          sort(self.next_elem['struct_ind']))
+        self.str_e_loss = tf.unsorted_segment_mean(self.e_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
         self.str_e_loss = tf.reshape(self.str_e_loss, [-1])
         self.e_loss = tf.reduce_mean(self.e_loss)
         self.total_loss = self.e_loss * self.energy_coeff
 
         if self.inputs['use_force']:
             self.f_loss = tf.square(self.next_elem['F'] - self.F)
-            self.str_f_loss = tf.segment_mean(sort(self.f_loss, self.next_elem['struct_ind']),
-                                              sort(self.next_elem['struct_ind']))
+            self.str_f_loss = tf.unsorted_segment_mean(self.f_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
             self.str_f_loss = tf.reduce_mean(self.str_f_loss, axis=1)
             if self.parent.descriptor.inputs['atomic_weights']['type'] is not None:
                 self.aw_f_loss = self.f_loss * self.next_elem['atomic_weights']
@@ -329,7 +327,7 @@ class Neural_network(object):
                                                                               self.next_elem['partition_'+item], 2
                                                                               )[1])
 
-            self.next_elem['struct_type_set'], self.next_elem['struct_ind'] = tf.unique(tf.squeeze(self.next_elem['struct_type']))
+            self.next_elem['struct_type_set'], self.next_elem['struct_ind'] = tf.unique(tf.reshape(self.next_elem['struct_type'], [-1]))
             max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
             self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
                                                  lambda: self.next_elem['dx_'+item],
@@ -486,11 +484,14 @@ class Neural_network(object):
                                             t_floss = np.sqrt(t_floss*3/train_total)
                                         break
                             else:
-                                t_eloss = sess.run(self.e_loss, feed_dict=train_fdict)
+                                t_eloss, t_str_eloss, str_set = sess.run([self.e_loss, self.str_e_loss, 
+                                    self.next_elem['struct_type_set']], feed_dict=train_fdict)
                                 t_eloss = np.sqrt(t_eloss)
+                                t_str_eloss = np.sqrt(t_str_eloss)
                                 if self.inputs['use_force']:
-                                    t_floss = sess.run(self.f_loss, feed_dict=train_fdict)
+                                    t_floss, t_str_floss = sess.run([self.f_loss, self.str_f_loss], feed_dict=train_fdict)
                                     t_floss = np.sqrt(t_floss*3)
+                                    t_str_floss = np.sqrt(t_str_floss*3)
 
                             sess.run(valid_iter.initializer)
                             eloss = floss = 0
@@ -519,6 +520,13 @@ class Neural_network(object):
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
                             result += ', elapsed: {:4.2e}\n'.format(time2-time1)
+
+                            result += '---------------------\n'
+                            result += 'structural breakdown:\n'
+                            result += '  label          E RMSE(T)   F RMSE(T)\n'
+                            print(str_set, t_str_eloss, t_str_floss)
+                            for i, label in enumerate(str_set):
+                                result += '  {:<12} {:>11.4e} {:>11.4e}\n'.format(label, t_str_eloss[i], t_str_floss[i])
                             self.parent.logfile.write(result)
 
                         # Temp saving
@@ -589,21 +597,3 @@ class Neural_network(object):
 
                 self.parent.logfile.write('Test result saved..\n')
                 self.parent.logfile.write(result + '\n')
-
-
-def sort(x, y=None, order='asc'):
-    """
-    sort x by y
-
-    if y in not given, sort x by x.
-    order can be 'asc' or 'dsc'.
-    """
-    if y is None:
-        y = x
-    if order == 'asc':
-        y = -y
-    elif order == 'dsc':
-        pass
-    else:
-        raise NotImplementedError
-    return tf.gather(x, tf.nn.top_k(y, k=tf.shape(y)[0]).indices)
