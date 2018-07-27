@@ -7,7 +7,7 @@ import collections
 import functools
 import timeit
 import copy
-from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory
+from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory, repeat
 #from tensorflow.python.client import timeline
 
 """
@@ -173,8 +173,11 @@ class Neural_network(object):
         self.total_loss = self.e_loss * self.energy_coeff
 
         if self.inputs['use_force']:
-            self.f_loss = tf.square(self.next_elem['F'] - self.F)
-            self.str_f_loss = tf.unsorted_segment_mean(self.f_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
+            self.f_loss = tf.reshape(tf.square(self.next_elem['F'] - self.F), [-1, 3])
+            ind = repeat(self.next_elem['struct_ind'],
+                         tf.cast(tf.reshape(self.next_elem['tot_num'], shape=[-1]), tf.int32))
+            ind = tf.reshape(ind, [-1])
+            self.str_f_loss = tf.unsorted_segment_mean(self.f_loss, ind, tf.size(self.next_elem['struct_type_set']))
             self.str_f_loss = tf.reduce_mean(self.str_f_loss, axis=1)
             if self.parent.descriptor.inputs['atomic_weights']['type'] is not None:
                 self.aw_f_loss = self.f_loss * self.next_elem['atomic_weights']
