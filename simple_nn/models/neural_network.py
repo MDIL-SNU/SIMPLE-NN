@@ -583,7 +583,7 @@ class Neural_network(object):
                                     veloss = '{:>11.4e}'.format(str_eloss[struct])
                                     if self.inputs['use_force']:
                                         vfloss = '{:>11.4e}'.format(str_floss[struct])
-                                result += '  {:<12} {:} {:}'.format(struct, teloss, veloss)
+                                result += '  {:<16.16} {:} {:}'.format(struct, teloss, veloss)
                                 if self.inputs['use_force']:
                                     result += ' {:} {:}'.format(tfloss, vfloss)
                                 result += '\n'
