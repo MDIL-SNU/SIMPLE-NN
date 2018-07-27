@@ -330,7 +330,8 @@ class Neural_network(object):
                                                                               self.next_elem['partition_'+item], 2
                                                                               )[1])
 
-            self.next_elem['struct_type_set'], self.next_elem['struct_ind'] = tf.unique(tf.reshape(self.next_elem['struct_type'], [-1]))
+            self.next_elem['struct_type_set'], self.next_elem['struct_ind'], self.next_elem['struct_N'] = \
+                    tf.unique_with_counts(tf.reshape(self.next_elem['struct_type'], [-1]))
             max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
             self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
                                                  lambda: self.next_elem['dx_'+item],
@@ -504,6 +505,10 @@ class Neural_network(object):
                             valid_total = 0
                             str_eloss = {}
                             str_floss = {}
+                            str_total = {}
+                            for struct in str_set:
+                                str_eloss[struct] = 0.0
+                                str_floss[struct] = 0.0
                             while True:
                                 try:
                                     if self.inputs['use_force']:
@@ -517,9 +522,12 @@ class Neural_network(object):
                                                 str_eloss[struct] = 0.0
                                             if struct not in str_floss:
                                                 str_floss[struct] = 0.0
-                                            str_eloss[struct] += tmp_str_eloss[i] * num_batch
+                                            if struct not in str_total:
+                                                str_total[struct] = 0
+                                            str_eloss[struct] += tmp_str_eloss[i] * valid_elem['struct_N'][i]
                                             # FIXME: use num_atom instead of num_batch for f_loss
-                                            str_floss[struct] += tmp_str_floss[i] * num_batch
+                                            str_floss[struct] += tmp_str_floss[i] * valid_elem['struct_N'][i]
+                                            str_total[struct] += 1
                                     else:
                                         valid_elem, tmp_eloss, tmp_str_eloss = sess.run([self.next_elem, self.e_loss, self.str_e_loss], feed_dict=valid_fdict)
                                         num_batch = valid_elem['num_seg'] - 1
@@ -527,13 +535,16 @@ class Neural_network(object):
                                         for i, struct in enumerate(valid_elem['struct_type_set']):
                                             if struct not in str_eloss:
                                                 str_eloss[struct] = 0.0
-                                            str_eloss[struct] += tmp_str_eloss[i] * num_batch
+                                            if struct not in str_total:
+                                                str_total[struct] = 0
+                                            str_eloss[struct] += tmp_str_eloss[i] * valid_elem['struct_N'][i]
+                                            str_total[struct] += 1
 
                                     valid_total += num_batch
                                 except tf.errors.OutOfRangeError:
                                     eloss = np.sqrt(eloss/valid_total)
-                                    for struct in str_eloss.keys():
-                                        str_eloss[struct] = np.sqrt(str_eloss[struct]/valid_total)
+                                    for struct in str_total.keys():
+                                        str_eloss[struct] = np.sqrt(str_eloss[struct]/str_total[struct])
                                     result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
                                     if self.inputs['use_force']:
                                         floss = np.sqrt(floss*3/valid_total)
@@ -559,15 +570,22 @@ class Neural_network(object):
                             for struct in str_eloss.keys():
                                 i = np.where(str_set == struct)
                                 if t_str_eloss[i].size == 0:
-                                    tloss = '          -'
-                                    floss = '          -'
+                                    teloss = '          -'
+                                    tfloss = '          -'
                                 else:
-                                    tloss = '{:>11.4e}'.format(t_str_eloss[i][0])
+                                    teloss = '{:>11.4e}'.format(t_str_eloss[i][0])
                                     if self.inputs['use_force']:
-                                        floss = '{:>11.4e}'.format(t_str_floss[i][0])
-                                result += '  {:<12} {:} {:>11.4e}'.format(struct, tloss, str_eloss[struct])
+                                        tfloss = '{:>11.4e}'.format(t_str_floss[i][0])
+                                if struct not in str_total:
+                                    veloss = '          -'
+                                    vfloss = '          -'
+                                else:
+                                    veloss = '{:>11.4e}'.format(str_eloss[struct])
+                                    if self.inputs['use_force']:
+                                        vfloss = '{:>11.4e}'.format(str_floss[struct])
+                                result += '  {:<12} {:} {:}'.format(struct, teloss, veloss)
                                 if self.inputs['use_force']:
-                                    result += ' {:} {:>11.4e}'.format(floss, str_floss[struct])
+                                    result += ' {:} {:}'.format(tfloss, vfloss)
                                 result += '\n'
                             result += cutline + '\n'
                             self.parent.logfile.write(result)
