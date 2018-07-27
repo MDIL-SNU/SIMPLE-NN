@@ -502,37 +502,74 @@ class Neural_network(object):
                             sess.run(valid_iter.initializer)
                             eloss = floss = 0
                             valid_total = 0
+                            str_eloss = {}
+                            str_floss = {}
                             while True:
                                 try:
                                     if self.inputs['use_force']:
-                                        valid_elem, tmp_eloss, tmp_floss = sess.run([self.next_elem, self.e_loss, self.f_loss], feed_dict=valid_fdict)
+                                        valid_elem, tmp_eloss, tmp_floss, tmp_str_eloss, tmp_str_floss = sess.run([
+                                            self.next_elem, self.e_loss, self.f_loss, self.str_e_loss, self.str_f_loss], feed_dict=valid_fdict)
                                         num_batch = valid_elem['num_seg'] - 1
                                         eloss += tmp_eloss * num_batch
                                         floss += tmp_floss * num_batch
+                                        for i, struct in enumerate(valid_elem['struct_type_set']):
+                                            if struct not in str_eloss:
+                                                str_eloss[struct] = 0.0
+                                            if struct not in str_floss:
+                                                str_floss[struct] = 0.0
+                                            str_eloss[struct] += tmp_str_eloss[i] * num_batch
+                                            # FIXME: use num_atom instead of num_batch for f_loss
+                                            str_floss[struct] += tmp_str_floss[i] * num_batch
                                     else:
-                                        valid_elem, tmp_eloss = sess.run([self.next_elem, self.e_loss], feed_dict=valid_fdict)
+                                        valid_elem, tmp_eloss, tmp_str_eloss = sess.run([self.next_elem, self.e_loss, self.str_e_loss], feed_dict=valid_fdict)
                                         num_batch = valid_elem['num_seg'] - 1
                                         eloss += tmp_eloss * num_batch
+                                        for i, struct in enumerate(valid_elem['struct_type_set']):
+                                            if struct not in str_eloss:
+                                                str_eloss[struct] = 0.0
+                                            str_eloss[struct] += tmp_str_eloss[i] * num_batch
 
                                     valid_total += num_batch
                                 except tf.errors.OutOfRangeError:
                                     eloss = np.sqrt(eloss/valid_total)
+                                    for struct in str_eloss.keys():
+                                        str_eloss[struct] = np.sqrt(str_eloss[struct]/valid_total)
                                     result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
                                     if self.inputs['use_force']:
                                         floss = np.sqrt(floss*3/valid_total)
                                         result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
+                                        for struct in str_floss.keys():
+                                            str_floss[struct] = np.sqrt(str_floss[struct]*3/valid_total)
                                     break
 
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
                             result += ', elapsed: {:4.2e}\n'.format(time2-time1)
 
-                            result += '---------------------\n'
+                            # Print structural breakdown of RMSE
+                            cutline = '--------------------------------------'
+                            if self.inputs['use_force']:
+                                cutline += '------------------------'
+                            result += cutline + '\n'
                             result += 'structural breakdown:\n'
-                            result += '  label          E RMSE(T)   F RMSE(T)\n'
-                            print(str_set, t_str_eloss, t_str_floss)
-                            for i, label in enumerate(str_set):
-                                result += '  {:<12} {:>11.4e} {:>11.4e}\n'.format(label, t_str_eloss[i], t_str_floss[i])
+                            result += '  label          E RMSE(T)   E RMSE(V)'
+                            if self.inputs['use_force']:
+                                result += '   F RMSE(T)   F RMSE(V)'
+                            result += '\n'
+                            for struct in str_eloss.keys():
+                                i = np.where(str_set == struct)
+                                if t_str_eloss[i].size == 0:
+                                    tloss = '          -'
+                                    floss = '          -'
+                                else:
+                                    tloss = '{:>11.4e}'.format(t_str_eloss[i][0])
+                                    if self.inputs['use_force']:
+                                        floss = '{:>11.4e}'.format(t_str_floss[i][0])
+                                result += '  {:<12} {:} {:>11.4e}'.format(struct, tloss, str_eloss[struct])
+                                if self.inputs['use_force']:
+                                    result += ' {:} {:>11.4e}'.format(floss, str_floss[struct])
+                                result += '\n'
+                            result += cutline + '\n'
                             self.parent.logfile.write(result)
 
                         # Temp saving
