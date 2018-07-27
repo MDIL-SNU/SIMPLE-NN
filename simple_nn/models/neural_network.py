@@ -424,7 +424,20 @@ class Neural_network(object):
 
                     valid_handle = sess.run(valid_iter.string_handle())
                     valid_fdict = {self.handle: valid_handle}
-                    #sess.run(valid_iter.initializer)
+
+                    # Log validation set statistics.
+                    sess.run(valid_iter.initializer)
+                    str_total = {}
+                    while True:
+                        try:
+                            valid_elem = sess.run(self.next_elem, feed_dict=valid_fdict)
+                            for i, struct in enumerate(valid_elem['struct_type_set']):
+                                if struct not in str_total:
+                                    str_total[struct] = 0
+                                str_total[struct] += valid_elem['struct_N'][i]
+                        except tf.errors.OutOfRangeError:
+                            break
+                    self._log_statistics(str_total)
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
@@ -658,3 +671,14 @@ class Neural_network(object):
 
                 self.parent.logfile.write('Test result saved..\n')
                 self.parent.logfile.write(result + '\n')
+
+
+    def _log_statistics(self, str_total):
+        result = ''
+        result += 'validation set statistics:\n'
+        result += '  label                 count percentage\n'
+        total_count = sum(str_total.values())
+        for struct, count in str_total.items():
+            result += '  {:<20.20} {:>6} {:>8.2f} %\n'.format(struct, count, float(count) / total_count * 100)
+        result += '  {:<20.20} {:>6} {:>8.2f} %\n'.format('TOTAL', total_count, 100.0)
+        self.parent.logfile.write(result)
