@@ -5,6 +5,8 @@ import numpy as np
 from cffi import FFI
 import os, sys, psutil
 import types
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
@@ -78,6 +80,7 @@ def _generate_scale_file(feature_list, atom_types):
 
     return scale
 
+
 def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, modifier=None):
     ffi = FFI()
     ffi.cdef("""void calculate_gdf(double **, int, int, double, double *);""")
@@ -103,6 +106,7 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, mo
         pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)
 
     return gdf
+
 
 def compress_outcar(filename):
     """
@@ -147,6 +151,7 @@ def compress_outcar(filename):
 
     return comp_name
 
+
 def modified_sigmoid(gdf, b=150.0, c=1.0):
     """
     modified sigmoid function for GDF calculation.
@@ -158,6 +163,7 @@ def modified_sigmoid(gdf, b=150.0, c=1.0):
     gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
     return gdf
 
+
 def memory():
     pid = os.getpid()
     py = psutil.Process(pid)
@@ -165,3 +171,31 @@ def memory():
     print('memory_use:', memory_use)
 
 
+def repeat(x, counts):
+    """
+    repeat x repeated by counts (elementwise)
+    counts must be integer tensor.
+
+    example:
+      x = [3.0, 4.0, 5.0, 6.0]
+      counts = [3, 1, 0, 2]
+      repeat(x, counts)
+      >> [3.0, 3.0, 3.0, 4.0, 6.0, 6.0]
+    """
+    def cond(_, i):
+        return i < size
+
+    def body(output, i):
+        value = array_ops.fill(counts[i:i+1], x[i])
+        return (output.write(i, value), i + 1)
+
+    size = array_ops.shape(counts)[0]
+    init_output_array = tensor_array_ops.TensorArray(
+        dtype=x.dtype, size=size, infer_shape=False)
+    output_array, num_writes = control_flow_ops.while_loop(
+        cond, body, loop_vars=[init_output_array, 0])
+
+    return control_flow_ops.cond(
+        num_writes > 0,
+        output_array.concat,
+        lambda: array_ops.zeros(shape=[0], dtype=x.dtype))
