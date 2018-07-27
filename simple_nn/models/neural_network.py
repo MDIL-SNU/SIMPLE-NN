@@ -487,14 +487,17 @@ class Neural_network(object):
                                             t_floss = np.sqrt(t_floss*3/train_total)
                                         break
                             else:
-                                t_eloss, t_str_eloss, str_set = sess.run([self.e_loss, self.str_e_loss, 
-                                    self.next_elem['struct_type_set']], feed_dict=train_fdict)
-                                t_eloss = np.sqrt(t_eloss)
-                                t_str_eloss = np.sqrt(t_str_eloss)
                                 if self.inputs['use_force']:
-                                    t_floss, t_str_floss = sess.run([self.f_loss, self.str_f_loss], feed_dict=train_fdict)
+                                    t_eloss, t_str_eloss, t_floss, t_str_floss, str_set = sess.run(
+                                        [self.e_loss, self.str_e_loss, self.f_loss, self.str_f_loss,
+                                         self.next_elem['struct_type_set']], feed_dict=train_fdict)
                                     t_floss = np.sqrt(t_floss*3)
                                     t_str_floss = np.sqrt(t_str_floss*3)
+                                else:
+                                    t_eloss, t_str_eloss, str_set = sess.run([self.e_loss, self.str_e_loss, 
+                                        self.next_elem['struct_type_set']], feed_dict=train_fdict)
+                                t_eloss = np.sqrt(t_eloss)
+                                t_str_eloss = np.sqrt(t_str_eloss)
 
                             sess.run(valid_iter.initializer)
                             eloss = floss = 0
