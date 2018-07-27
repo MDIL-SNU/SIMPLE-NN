@@ -558,12 +558,12 @@ class Neural_network(object):
                             result += ', elapsed: {:4.2e}\n'.format(time2-time1)
 
                             # Print structural breakdown of RMSE
-                            cutline = '--------------------------------------'
+                            cutline = '----------------------------------------------'
                             if self.inputs['use_force']:
                                 cutline += '------------------------'
                             result += cutline + '\n'
                             result += 'structural breakdown:\n'
-                            result += '  label          E RMSE(T)   E RMSE(V)'
+                            result += '  label                  E RMSE(T)   E RMSE(V)'
                             if self.inputs['use_force']:
                                 result += '   F RMSE(T)   F RMSE(V)'
                             result += '\n'
@@ -583,7 +583,7 @@ class Neural_network(object):
                                     veloss = '{:>11.4e}'.format(str_eloss[struct])
                                     if self.inputs['use_force']:
                                         vfloss = '{:>11.4e}'.format(str_floss[struct])
-                                result += '  {:<16.16} {:} {:}'.format(struct, teloss, veloss)
+                                result += '  {:<20.20} {:} {:}'.format(struct, teloss, veloss)
                                 if self.inputs['use_force']:
                                     result += ' {:} {:}'.format(tfloss, vfloss)
                                 result += '\n'
