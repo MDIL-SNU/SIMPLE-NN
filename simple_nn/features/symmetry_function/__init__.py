@@ -8,7 +8,7 @@ from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
-                     _make_full_featurelist, _make_data_list, pickle_load
+                     _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
 
 class DummyMPI(object):
     rank = 0
@@ -223,16 +223,16 @@ class Symmetry_function(object):
         tmp_pickle_train_open = open(tmp_pickle_train, 'w')
         tmp_pickle_valid = './pickle_valid_list'
         tmp_pickle_valid_open = open(tmp_pickle_valid, 'w')
-        file_list = _make_data_list(self.pickle_list)
-        np.random.shuffle(file_list)
-        num_pickle = len(file_list)
-        num_valid = int(num_pickle * self.inputs['valid_rate'])
+        for file_list in _make_str_data_list(self.pickle_list):
+            np.random.shuffle(file_list)
+            num_pickle = len(file_list)
+            num_valid = int(num_pickle * self.inputs['valid_rate'])
 
-        for i,item in enumerate(file_list):
-            if i < num_valid:
-                tmp_pickle_valid_open.write(item + '\n')
-            else:
-                tmp_pickle_train_open.write(item + '\n')
+            for i,item in enumerate(file_list):
+                if i < num_valid:
+                    tmp_pickle_valid_open.write(item + '\n')
+                else:
+                    tmp_pickle_train_open.write(item + '\n')
             
         tmp_pickle_train_open.close()
         tmp_pickle_valid_open.close()
@@ -474,7 +474,7 @@ class Symmetry_function(object):
                     with open(tmp_filename, "wb") as fil:
                         pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 
-                    train_dir.write('{}\n'.format(tmp_filename))
+                    train_dir.write('{}:{}\n'.format(ind, tmp_filename))
                     tmp_endfile = tmp_filename
                     data_idx += 1
 

@@ -5,6 +5,8 @@ import numpy as np
 from cffi import FFI
 import os, sys, psutil
 import types
+import re
+from collections import OrderedDict
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
 
@@ -26,11 +28,33 @@ def pickle_load(filename):
 
 
 def _make_data_list(filename):
-    data_list = list()
+    return sum(_make_str_data_list(filename), [])
+
+
+def _make_str_data_list(filename):
+    """
+    read pickle_list file to make group of list of pickle files.
+    group id is denoted in front of the line (optional).
+    if group id is not denoted, group id of -1 is assigned.
+
+    example:
+    0:file1.pickle
+    0:file2.pickle
+    14:file3.pickle
+    """
+    h = re.compile("([0-9]+):(.*)")
+    data_list = OrderedDict()
     with open(filename, 'r') as fil:
         for line in fil:
-            data_list.append(line.strip())
-    return data_list
+            m = h.match(line.strip())
+            if m:
+                group_id, file_name = m.group(1), m.group(2)
+            else:
+                group_id, file_name = -1, line.strip()
+            if group_id not in data_list:
+                data_list[group_id] = []
+            data_list[group_id].append(file_name)
+    return data_list.values()
 
 
 def _make_full_featurelist(filelist, atom_types, feature_tag):
