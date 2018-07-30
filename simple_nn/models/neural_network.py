@@ -602,7 +602,6 @@ class Neural_network(object):
                                 else:
                                     veloss = '{:>11.4e}'.format(str_eloss[struct])
                                     if self.inputs['use_force']:
-                                        print("QQQ", struct, str_floss[struct], type(str_floss[struct]))
                                         vfloss = '{:>11.4e}'.format(str_floss[struct])
                                 result += '  {:<20.20} {:} {:}'.format(struct, teloss, veloss)
                                 if self.inputs['use_force']:
