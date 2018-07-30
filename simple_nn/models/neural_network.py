@@ -481,24 +481,26 @@ class Neural_network(object):
                             if self.inputs['full_batch']:
                                 sess.run(train_iter.initializer)
                                 t_eloss = t_floss = 0
-                                train_total = 0
+                                train_tot_struc = train_tot_atom = 0
                                 while True:
                                     try:
                                         if self.inputs['use_force']:
                                             valid_elem, tmp_eloss, tmp_floss = sess.run([self.next_elem, self.e_loss, self.f_loss], feed_dict=train_fdict)
-                                            num_batch = valid_elem['num_seg'] - 1
-                                            t_eloss += tmp_eloss * num_batch
-                                            t_floss += tmp_floss * num_batch
+                                            num_batch_struc = valid_elem['num_seg'] - 1
+                                            num_batch_atom = np.sum(valid_elem['tot_num'])
+                                            t_eloss += tmp_eloss * num_batch_struc
+                                            t_floss += tmp_floss * num_batch_atom
+                                            train_tot_atom += num_batch_atom
                                         else:
                                             valid_elem, tmp_eloss = sess.run([self.next_elem, self.e_loss], feed_dict=train_fdict)
-                                            num_batch = valid_elem['num_seg'] - 1
-                                            t_eloss += tmp_eloss * num_batch
+                                            num_batch_struc = valid_elem['num_seg'] - 1
+                                            t_eloss += tmp_eloss * num_batch_struc
 
-                                        train_total += num_batch
+                                        train_tot_struc += num_batch_struc
                                     except tf.errors.OutOfRangeError:
-                                        t_eloss = np.sqrt(t_eloss/train_total)
+                                        t_eloss = np.sqrt(t_eloss/train_tot_struc)
                                         if self.inputs['use_force']:
-                                            t_floss = np.sqrt(t_floss*3/train_total)
+                                            t_floss = np.sqrt(t_floss*3/train_tot_atom)
                                         break
                             else:
                                 if self.inputs['use_force']:
@@ -515,7 +517,7 @@ class Neural_network(object):
 
                             sess.run(valid_iter.initializer)
                             eloss = floss = 0
-                            valid_total = 0
+                            valid_tot_struc = valid_tot_atom = 0
                             str_eloss = {}
                             str_floss = {}
                             str_total = {}
@@ -527,9 +529,11 @@ class Neural_network(object):
                                     if self.inputs['use_force']:
                                         valid_elem, tmp_eloss, tmp_floss, tmp_str_eloss, tmp_str_floss = sess.run([
                                             self.next_elem, self.e_loss, self.f_loss, self.str_e_loss, self.str_f_loss], feed_dict=valid_fdict)
-                                        num_batch = valid_elem['num_seg'] - 1
-                                        eloss += tmp_eloss * num_batch
-                                        floss += tmp_floss * num_batch
+                                        num_batch_struc = valid_elem['num_seg'] - 1
+                                        num_batch_atom = np.sum(valid_elem['tot_num'])
+                                        eloss += tmp_eloss * num_batch_struc
+                                        floss += tmp_floss * num_batch_atom
+                                        valid_tot_atom += num_batch_atom
                                         for i, struct in enumerate(valid_elem['struct_type_set']):
                                             if struct not in str_eloss:
                                                 str_eloss[struct] = 0.0
@@ -543,8 +547,8 @@ class Neural_network(object):
                                             str_total[struct] += valid_elem['struct_N'][i]
                                     else:
                                         valid_elem, tmp_eloss, tmp_str_eloss = sess.run([self.next_elem, self.e_loss, self.str_e_loss], feed_dict=valid_fdict)
-                                        num_batch = valid_elem['num_seg'] - 1
-                                        eloss += tmp_eloss * num_batch
+                                        num_batch_struc = valid_elem['num_seg'] - 1
+                                        eloss += tmp_eloss * num_batch_struc
                                         for i, struct in enumerate(valid_elem['struct_type_set']):
                                             if struct not in str_eloss:
                                                 str_eloss[struct] = 0.0
@@ -553,14 +557,14 @@ class Neural_network(object):
                                             str_eloss[struct] += tmp_str_eloss[i] * valid_elem['struct_N'][i]
                                             str_total[struct] += valid_elem['struct_N'][i]
 
-                                    valid_total += num_batch
+                                    valid_tot_struc += num_batch_struc
                                 except tf.errors.OutOfRangeError:
-                                    eloss = np.sqrt(eloss/valid_total)
+                                    eloss = np.sqrt(eloss/valid_tot_struc)
                                     for struct in str_total.keys():
                                         str_eloss[struct] = np.sqrt(str_eloss[struct]/str_total[struct])
                                     result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
                                     if self.inputs['use_force']:
-                                        floss = np.sqrt(floss*3/valid_total)
+                                        floss = np.sqrt(floss*3/valid_tot_atom)
                                         result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
                                         for struct in str_floss.keys():
                                             str_floss[struct] = np.sqrt(str_floss[struct]*3/str_total[struct])
@@ -624,42 +628,45 @@ class Neural_network(object):
                     test_save['NN_F'] = list()
 
                 eloss = floss = 0.
-                test_total = 0
+                test_tot_struc = test_tot_atom = 0
                 result = ' Test'
                 while True:
                     try:
                         if self.inputs['use_force']:
                             test_elem, tmp_nne, tmp_nnf, tmp_eloss, tmp_floss = \
                                 sess.run([self.next_elem, self.E, self.F, self.e_loss, self.f_loss], feed_dict=test_fdict)
-                            num_batch = test_elem['num_seg'] - 1
-                            eloss += tmp_eloss * num_batch
-                            floss += tmp_floss * num_batch
+                            num_batch_struc = test_elem['num_seg'] - 1
+                            num_batch_atom = np.sum(test_elem['tot_num'])
+                            eloss += tmp_eloss * num_batch_struc
+                            floss += tmp_floss * num_batch_atom
 
                             test_save['DFT_E'].append(test_elem['E'])
                             test_save['NN_E'].append(tmp_nne)
                             test_save['N'].append(test_elem['tot_num'])
                             test_save['DFT_F'].append(test_elem['F'])
                             test_save['NN_F'].append(tmp_nnf)
+                            
+                            test_tot_struc += num_batch_atom
                         else:
                             test_elem, tmp_nne, tmp_eloss = \
                                 sess.run([self.next_elem, self.E, self.e_loss], feed_dict=test_fdict)
-                            num_batch = valid_elem['num_seg'] - 1
-                            eloss += tmp_eloss * num_batch
+                            num_batch_struc = valid_elem['num_seg'] - 1
+                            eloss += tmp_eloss * num_batch_struc
 
                             test_save['DFT_E'].append(test_elem['E'])
                             test_save['NN_E'].append(tmp_nne)
                             test_save['N'].append(test_elem['tot_num'])
 
-                        test_total += num_batch
+                        test_tot_struc += num_batch_struc
                     except tf.errors.OutOfRangeError:
-                        eloss = np.sqrt(eloss/test_total)
+                        eloss = np.sqrt(eloss/test_tot_struc)
                         result += 'E RMSE = {:6.4e}'.format(eloss)
 
                         test_save['DFT_E'] = np.concatenate(test_save['DFT_E'], axis=0)
                         test_save['NN_E'] = np.concatenate(test_save['NN_E'], axis=0)
                         test_save['N'] = np.concatenate(test_save['N'], axis=0)
                         if self.inputs['use_force']:
-                            floss = np.sqrt(floss*3/test_total)
+                            floss = np.sqrt(floss*3/test_tot_atom)
                             result += ', F RMSE = {:6.4e}'.format(floss)
 
                             test_save['DFT_F'] = np.concatenate(test_save['DFT_F'], axis=0)
