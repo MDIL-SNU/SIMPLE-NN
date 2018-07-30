@@ -339,7 +339,11 @@ class Neural_network(object):
                                                                                              tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1]),
                                                                                   self.next_elem['partition_'+item], 2)[1])
 
-            self.next_elem['sparse_indices_'+item] = tf.cast(tf.range(tf.reduce_sum(self.next_elem['N_'+item])), tf.int32)
+            self.next_elem['sparse_indices_'+item] = tf.cast(tf.range(tf.reduce_sum(
+                tf.cond(zero_cond,
+                        lambda: tf.constant([1], dtype=tf.int64),
+                        lambda: self.next_elem['N_'+item])
+                )), tf.int32)
 
 
     def train(self, user_optimizer=None, user_atomic_weights_function=None):
