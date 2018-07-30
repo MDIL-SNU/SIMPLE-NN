@@ -148,8 +148,11 @@ class Neural_network(object):
         self.E = self.F = 0
 
         for item in self.parent.inputs['atom_types']:
-            self.E += tf.sparse_segment_sum(self.ys[item], self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
-                                            num_segments=self.next_elem['num_seg'])[1:]
+            zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
+            self.E += tf.cond(zero_cond,
+                              lambda: tf.cast(0., tf.float64),
+                              lambda: tf.sparse_segment_sum(self.ys[item], self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
+                                            num_segments=self.next_elem['num_seg'])[1:])
 
             if self.inputs['use_force']:
                 tmp_force = self.next_elem['dx_'+item] * \
@@ -160,7 +163,7 @@ class Neural_network(object):
                                 tf.sparse_segment_sum(tmp_force, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
                                                       num_segments=self.next_elem['num_seg'])[1:],
                                 axis=1)
-                self.F -= tf.cond(tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0),
+                self.F -= tf.cond(zero_cond,
                                   lambda: tf.cast(0., tf.float64),
                                   lambda: tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                                self.next_elem['partition'], 2)[1])
@@ -302,11 +305,11 @@ class Neural_network(object):
             zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
 
             self.next_elem['partition_'+item] = tf.cond(zero_cond, 
-                                                        lambda: tf.zeros([0], tf.int32),
+                                                        lambda: tf.zeros([1], tf.int32),
                                                         lambda: tf.reshape(self.next_elem['partition_'+item], [-1]))
 
             self.next_elem['x_'+item] = tf.cond(zero_cond, 
-                                                lambda: tf.zeros([0, self.inp_size[item]], dtype=tf.float64),
+                                                lambda: tf.zeros([1, self.inp_size[item]], dtype=tf.float64),
                                                 lambda: tf.dynamic_partition(
                                                             tf.reshape(self.next_elem['x_'+item], [-1, self.inp_size[item]]),
                                                             self.next_elem['partition_'+item], 2)[1])
@@ -317,7 +320,7 @@ class Neural_network(object):
             dx_shape = tf.shape(self.next_elem['dx_'+item])
 
             self.next_elem['dx_'+item] = tf.cond(zero_cond, 
-                                                 lambda: tf.zeros([0, dx_shape[2], 0, dx_shape[4]], dtype=tf.float64), 
+                                                 lambda: tf.zeros([1, dx_shape[2], 1, dx_shape[4]], dtype=tf.float64), 
                                                  lambda: tf.dynamic_partition(tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
                                                                               self.next_elem['partition_'+item], 2
                                                                               )[1])
@@ -331,7 +334,7 @@ class Neural_network(object):
             self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
-                                                     lambda: tf.zeros([0], tf.int32), 
+                                                     lambda: tf.zeros([1], tf.int32), 
                                                      lambda: tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), 
                                                                                              tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1]),
                                                                                   self.next_elem['partition_'+item], 2)[1])
