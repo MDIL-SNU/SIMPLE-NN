@@ -428,17 +428,20 @@ class Neural_network(object):
 
                     # Log validation set statistics.
                     sess.run(valid_iter.initializer)
-                    str_total = {}
+                    str_tot_struc = {}
+                    str_tot_atom = {}
                     while True:
                         try:
-                            valid_elem = sess.run(self.next_elem, feed_dict=valid_fdict)
+                            valid_elem, str_num_batch_atom = sess.run([self.next_elem, self.str_num_batch_atom], feed_dict=valid_fdict)
                             for i, struct in enumerate(valid_elem['struct_type_set']):
-                                if struct not in str_total:
-                                    str_total[struct] = 0
-                                str_total[struct] += valid_elem['struct_N'][i]
+                                if struct not in str_tot_struc:
+                                    str_tot_struc[struct] = 0
+                                    str_tot_atom[struct] = 0
+                                str_tot_struc[struct] += valid_elem['struct_N'][i]
+                                str_tot_atom[struct] += str_num_batch_atom[i]
                         except tf.errors.OutOfRangeError:
                             break
-                    self._log_statistics(str_total)
+                    self._log_statistics(str_tot_struc, str_tot_atom)
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
@@ -588,6 +591,7 @@ class Neural_network(object):
                                 result += '   F RMSE(T)   F RMSE(V)'
                             result += '\n'
                             for struct in str_eloss.keys():
+                                label = struct.replace(' ', '_')
                                 i = np.where(str_set == struct)
                                 if t_str_eloss[i].size == 0:
                                     teloss = '          -'
@@ -603,7 +607,7 @@ class Neural_network(object):
                                     veloss = '{:>11.4e}'.format(str_eloss[struct])
                                     if self.inputs['use_force']:
                                         vfloss = '{:>11.4e}'.format(str_floss[struct])
-                                result += '  {:<20.20} {:} {:}'.format(struct, teloss, veloss)
+                                result += '  {:<20.20} {:} {:}'.format(label, teloss, veloss)
                                 if self.inputs['use_force']:
                                     result += ' {:} {:}'.format(tfloss, vfloss)
                                 result += '\n'
@@ -683,12 +687,19 @@ class Neural_network(object):
                 self.parent.logfile.write(result + '\n')
 
 
-    def _log_statistics(self, str_tot_struc):
+    def _log_statistics(self, str_tot_struc, str_tot_atom):
         result = ''
         result += 'validation set statistics:\n'
-        result += '  label                 count percentage\n'
-        total_count = sum(str_tot_struc.values())
-        for struct, count in str_tot_struc.items():
-            result += '  {:<20.20} {:>6} {:>8.2f} %\n'.format(struct, count, float(count) / total_count * 100)
-        result += '  {:<20.20} {:>6} {:>8.2f} %\n'.format('TOTAL', total_count, 100.0)
+        result += '  label                 struct_count percentage atom_count percentage\n'
+        total_count_struc = sum(str_tot_struc.values())
+        total_count_atom = sum(str_tot_atom.values())
+        for struct in str_tot_struc.keys():
+            label = struct.replace(' ', '_')
+            count_struc = str_tot_struc[struct]
+            count_atom = str_tot_atom[struct]
+            result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f}\n'.format(
+                    label, count_struc, float(count_struc) / total_count_struc * 100,
+                    int(count_atom), float(count_atom) / total_count_atom * 100)
+        result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f}\n\n'.format(
+                'TOTAL', total_count_struc, 100.0, int(total_count_atom), 100.0)
         self.parent.logfile.write(result)
