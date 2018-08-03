@@ -218,8 +218,7 @@ void PairNN::compute(int eflag, int vflag)
         Rjk = deljk[0]*deljk[0] + deljk[1]*deljk[1] + deljk[2]*deljk[2];
         rRjk = sqrt(Rjk);
 
-        if (Rjk < 0.0001 || Rik < 0.0001 || \
-            Rik > cutsq[itype][ktype] || Rjk > cutsq[itype][jtype]) { continue; }
+        if (Rjk < 0.0001 || Rik < 0.0001 || Rik > cutsq[itype][ktype]) continue;
         
         vecik[0] = delik[0]/rRik;
         vecik[1] = delik[1]/rRik;
@@ -244,6 +243,7 @@ void PairNN::compute(int eflag, int vflag)
           if ((sym->stype) == 4 && \
               ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
                (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
+            if (Rjk > cutsq[itype][jtype]) continue;
             precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
             precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
             precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
