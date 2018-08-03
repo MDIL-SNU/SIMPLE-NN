@@ -148,6 +148,8 @@ void PairNN::compute(int eflag, int vflag)
       powtwo[tt] = 0;
 
       if (nets[ielem].slists[tt].stype == 4 || nets[ielem].slists[tt].stype == 5)
+        if (ceilf(nets[ielem].slists[tt].coefs[2]) != nets[ielem].slists[tt].coefs[2])
+            error->all(FLERR, "Zeta in G4/G5 must be integer!");
         powtwo[tt] = powint(2, 1-nets[ielem].slists[tt].coefs[2]);
     }
 

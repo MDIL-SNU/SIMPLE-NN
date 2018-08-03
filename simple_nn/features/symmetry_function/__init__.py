@@ -447,6 +447,8 @@ class Symmetry_function(object):
                     comm.barrier()
                     if errno == 1:
                         raise NotImplementedError("Not implemented symmetry function type!")
+                    elif errno == 2:
+                        raise ValueError("Zeta in G4/G5 must be integer!")
                     else:
                         assert errno == 0
 
