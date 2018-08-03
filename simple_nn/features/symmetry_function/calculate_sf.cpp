@@ -219,8 +219,8 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
 
                 for (int s=0; s < nsyms; ++s) {
                     if ((params_i[s][0] == 4) && 
-                        ((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) || 
-                        ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2]))  ) { // FIXME:
+                       (((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) || 
+                        ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2]))) ) { // FIXME:
 
                         precal[0] = cutf(rRij / params_d[s][0]);
                         precal[1] = dcutf(rRij, params_d[s][0]);
@@ -254,8 +254,8 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                         dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
                     }
                     else if ((params_i[s][0] == 5) &&
-                            ((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) ||
-                            ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2]))  ) {
+                           (((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) ||
+                            ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2]))) ) {
 
                         precal[0] = cutf(rRij / params_d[s][0]);
                         precal[1] = dcutf(rRij, params_d[s][0]);
