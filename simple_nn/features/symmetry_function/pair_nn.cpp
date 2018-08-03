@@ -115,6 +115,20 @@ void PairNN::compute(int eflag, int vflag)
     jnum = numneigh[i];
     int numshort = 0;
     nsym = nets[ielem].nnode[0];
+
+    // Check for not implemented symfunc type.
+    for (tt=0; tt<nsym; tt++) {
+        bool implemented = false;
+        sym = &nets[ielem].slists[tt];
+        for (int i=0; i < sizeof(IMPLEMENTED_TYPE) / sizeof(IMPLEMENTED_TYPE[0]); i++) {
+            if ((sym->stype) == IMPLEMENTED_TYPE[i]) {
+                implemented = true;
+                break;
+            }
+        }
+        if (!implemented) error->all(FLERR, "Not implemented symmetry function type!");
+    }
+
     
     double *symvec = new double[nsym];
     double *dsymvec = new double[nsym];
@@ -133,7 +147,7 @@ void PairNN::compute(int eflag, int vflag)
       dsymvec[tt] = 0;
       powtwo[tt] = 0;
 
-      if (nets[ielem].slists[tt].stype == 4)
+      if (nets[ielem].slists[tt].stype == 4 || nets[ielem].slists[tt].stype == 5)
         powtwo[tt] = powint(2, 1-nets[ielem].slists[tt].coefs[2]);
     }
 
