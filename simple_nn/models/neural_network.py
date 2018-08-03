@@ -50,6 +50,7 @@ class Neural_network(object):
                                       },
                                       'inter_op_parallelism_threads': 0,
                                       'intra_op_parallelism_threads': 0,
+                                      'verbose_structure': False,
                                   }
                               }
         self.inputs = dict()
@@ -427,21 +428,22 @@ class Neural_network(object):
                     valid_fdict = {self.handle: valid_handle}
 
                     # Log validation set statistics.
-                    sess.run(valid_iter.initializer)
-                    str_tot_struc = {}
-                    str_tot_atom = {}
-                    while True:
-                        try:
-                            valid_elem, str_num_batch_atom = sess.run([self.next_elem, self.str_num_batch_atom], feed_dict=valid_fdict)
-                            for i, struct in enumerate(valid_elem['struct_type_set']):
-                                if struct not in str_tot_struc:
-                                    str_tot_struc[struct] = 0
-                                    str_tot_atom[struct] = 0
-                                str_tot_struc[struct] += valid_elem['struct_N'][i]
-                                str_tot_atom[struct] += str_num_batch_atom[i]
-                        except tf.errors.OutOfRangeError:
-                            break
-                    self._log_statistics(str_tot_struc, str_tot_atom)
+                    if self.inputs['verbose_structure']:
+                        sess.run(valid_iter.initializer)
+                        str_tot_struc = {}
+                        str_tot_atom = {}
+                        while True:
+                            try:
+                                valid_elem, str_num_batch_atom = sess.run([self.next_elem, self.str_num_batch_atom], feed_dict=valid_fdict)
+                                for i, struct in enumerate(valid_elem['struct_type_set']):
+                                    if struct not in str_tot_struc:
+                                        str_tot_struc[struct] = 0
+                                        str_tot_atom[struct] = 0
+                                    str_tot_struc[struct] += valid_elem['struct_N'][i]
+                                    str_tot_atom[struct] += str_num_batch_atom[i]
+                            except tf.errors.OutOfRangeError:
+                                break
+                        self._log_statistics(str_tot_struc, str_tot_atom)
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
@@ -581,37 +583,39 @@ class Neural_network(object):
                             result += ', elapsed: {:4.2e}\n'.format(time2-time1)
 
                             # Print structural breakdown of RMSE
-                            cutline = '----------------------------------------------'
-                            if self.inputs['use_force']:
-                                cutline += '------------------------'
-                            result += cutline + '\n'
-                            result += 'structural breakdown:\n'
-                            result += '  label                  E RMSE(T)   E RMSE(V)'
-                            if self.inputs['use_force']:
-                                result += '   F RMSE(T)   F RMSE(V)'
-                            result += '\n'
-                            for struct in str_eloss.keys():
-                                label = struct.replace(' ', '_')
-                                i = np.where(str_set == struct)
-                                if t_str_eloss[i].size == 0:
-                                    teloss = '          -'
-                                    tfloss = '          -'
-                                else:
-                                    teloss = '{:>11.4e}'.format(t_str_eloss[i][0])
-                                    if self.inputs['use_force']:
-                                        tfloss = '{:>11.4e}'.format(t_str_floss[i][0])
-                                if struct not in str_tot_struc:
-                                    veloss = '          -'
-                                    vfloss = '          -'
-                                else:
-                                    veloss = '{:>11.4e}'.format(str_eloss[struct])
-                                    if self.inputs['use_force']:
-                                        vfloss = '{:>11.4e}'.format(str_floss[struct])
-                                result += '  {:<20.20} {:} {:}'.format(label, teloss, veloss)
+                            if self.inputs['verbose_structure']:
+                                cutline = '----------------------------------------------'
                                 if self.inputs['use_force']:
-                                    result += ' {:} {:}'.format(tfloss, vfloss)
+                                    cutline += '------------------------'
+                                result += cutline + '\n'
+                                result += 'structural breakdown:\n'
+                                result += '  label                  E RMSE(T)   E RMSE(V)'
+                                if self.inputs['use_force']:
+                                    result += '   F RMSE(T)   F RMSE(V)'
                                 result += '\n'
-                            result += cutline + '\n'
+                                for struct in str_eloss.keys():
+                                    label = struct.replace(' ', '_')
+                                    i = np.where(str_set == struct)
+                                    if t_str_eloss[i].size == 0:
+                                        teloss = '          -'
+                                        tfloss = '          -'
+                                    else:
+                                        teloss = '{:>11.4e}'.format(t_str_eloss[i][0])
+                                        if self.inputs['use_force']:
+                                            tfloss = '{:>11.4e}'.format(t_str_floss[i][0])
+                                    if struct not in str_tot_struc:
+                                        veloss = '          -'
+                                        vfloss = '          -'
+                                    else:
+                                        veloss = '{:>11.4e}'.format(str_eloss[struct])
+                                        if self.inputs['use_force']:
+                                            vfloss = '{:>11.4e}'.format(str_floss[struct])
+                                    result += '  {:<20.20} {:} {:}'.format(label, teloss, veloss)
+                                    if self.inputs['use_force']:
+                                        result += ' {:} {:}'.format(tfloss, vfloss)
+                                    result += '\n'
+                                result += cutline + '\n'
+
                             self.parent.logfile.write(result)
 
                         # Temp saving
