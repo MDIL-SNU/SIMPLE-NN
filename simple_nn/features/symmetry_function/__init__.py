@@ -337,10 +337,10 @@ class Symmetry_function(object):
             comm = DummyMPI()
 
         ffi = FFI()
-        ffi.cdef("""void calculate_sf(double **, double **, double **,
-                                      int *, int, int*, int,
-                                      int**, double **, int, 
-                                      double**, double**);""")
+        ffi.cdef("""int calculate_sf(double **, double **, double **,
+                                     int *, int, int*, int,
+                                     int**, double **, int, 
+                                     double**, double**);""")
         lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libsymf.so"))
 
         if comm.rank == 0:
@@ -440,11 +440,15 @@ class Symmetry_function(object):
                     x_p = _gen_2Darray_for_ffi(x, ffi)
                     dx_p = _gen_2Darray_for_ffi(dx, ffi)
 
-                    lib.calculate_sf(cell_p, cart_p, scale_p, \
+                    errno = lib.calculate_sf(cell_p, cart_p, scale_p, \
                                      atom_i_p, atom_num, cal_atoms_p, cal_num, \
                                      params_set[jtem]['ip'], params_set[jtem]['dp'], params_set[jtem]['num'], \
                                      x_p, dx_p)
                     comm.barrier()
+                    if errno == 1:
+                        raise NotImplementedError("Not implemented symmetry function type!")
+                    else:
+                        assert errno == 0
 
 
                     if comm.rank == 0:

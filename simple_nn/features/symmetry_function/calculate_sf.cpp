@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include "calculate_sf.h"
 
-extern "C" void calculate_sf(double** cell, double** cart, double** scale,
-                             int* atom_i, int natoms, int* cal_atoms, int cal_num,
-                             int** params_i, double** params_d, int nsyms,
-                             double** symf, double** dsymf) {
+extern "C" int calculate_sf(double** cell, double** cart, double** scale,
+                            int* atom_i, int natoms, int* cal_atoms, int cal_num,
+                            int** params_i, double** params_d, int nsyms,
+                            double** symf, double** dsymf) {
     // cell: cell info of structure
     // cart: cartesian coordinates of atoms
     // scale: fractional coordinates of atoms
@@ -29,6 +29,18 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
     double plane_d[3], total_shift[3], precal[12], tmpd[9], dangtmp[3];
     double vecij[3], vecik[3], vecjk[3], deljk[3];
     double cross[3][3], reci[3][3];//, powtwo[nsyms];
+
+    // Check for not implemented symfunc type.
+    for (int s=0; s < nsyms; ++s) {
+        bool implemented = false;
+        for (int i=0; i < sizeof(IMPLEMENTED_TYPE) / sizeof(IMPLEMENTED_TYPE[0]); i++) {
+            if (params_i[s][0] == IMPLEMENTED_TYPE[i]) {
+                implemented = true;
+                break;
+            }
+        }
+        if (!implemented) return 1;
+    }
 
     int **bin_i = new int*[natoms];
     for (int i=0; i<natoms; i++) {
@@ -285,6 +297,7 @@ extern "C" void calculate_sf(double** cell, double** cart, double** scale,
     }
     delete[] bin_i;
     delete[] powtwo;
+    return 0;
 }
 
 void PyInit_libsymf(void) { } // for windows

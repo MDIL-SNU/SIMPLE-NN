@@ -2,6 +2,7 @@
  Code for calculate symmetry function.
  This code is used for both Python and LAMMPS code
  */
+const int IMPLEMENTED_TYPE[] = {2, 4, 5}; // Change this when you implement new symfunc type!
 
 static inline double pow_int(const double &x, const double n) {
     double res,tmp;
