@@ -50,7 +50,7 @@ class Neural_network(object):
                                       },
                                       'inter_op_parallelism_threads': 0,
                                       'intra_op_parallelism_threads': 0,
-                                      'verbose_structure': False,
+                                      'print_structure_rmse': False,
                                   }
                               }
         self.inputs = dict()
@@ -428,22 +428,21 @@ class Neural_network(object):
                     valid_fdict = {self.handle: valid_handle}
 
                     # Log validation set statistics.
-                    if self.inputs['verbose_structure']:
-                        sess.run(valid_iter.initializer)
-                        str_tot_struc = {}
-                        str_tot_atom = {}
-                        while True:
-                            try:
-                                valid_elem, str_num_batch_atom = sess.run([self.next_elem, self.str_num_batch_atom], feed_dict=valid_fdict)
-                                for i, struct in enumerate(valid_elem['struct_type_set']):
-                                    if struct not in str_tot_struc:
-                                        str_tot_struc[struct] = 0
-                                        str_tot_atom[struct] = 0
-                                    str_tot_struc[struct] += valid_elem['struct_N'][i]
-                                    str_tot_atom[struct] += str_num_batch_atom[i]
-                            except tf.errors.OutOfRangeError:
-                                break
-                        self._log_statistics(str_tot_struc, str_tot_atom)
+                    sess.run(valid_iter.initializer)
+                    str_tot_struc = {}
+                    str_tot_atom = {}
+                    while True:
+                        try:
+                            valid_elem, str_num_batch_atom = sess.run([self.next_elem, self.str_num_batch_atom], feed_dict=valid_fdict)
+                            for i, struct in enumerate(valid_elem['struct_type_set']):
+                                if struct not in str_tot_struc:
+                                    str_tot_struc[struct] = 0
+                                    str_tot_atom[struct] = 0
+                                str_tot_struc[struct] += valid_elem['struct_N'][i]
+                                str_tot_atom[struct] += str_num_batch_atom[i]
+                        except tf.errors.OutOfRangeError:
+                            break
+                    self._log_statistics(str_tot_struc, str_tot_atom)
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
@@ -583,7 +582,7 @@ class Neural_network(object):
                             result += ', elapsed: {:4.2e}\n'.format(time2-time1)
 
                             # Print structural breakdown of RMSE
-                            if self.inputs['verbose_structure']:
+                            if self.inputs['print_structure_rmse']:
                                 cutline = '----------------------------------------------'
                                 if self.inputs['use_force']:
                                     cutline += '------------------------'
