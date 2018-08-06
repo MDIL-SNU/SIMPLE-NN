@@ -103,6 +103,13 @@ class Neural_network(object):
                 dense_basic_setting['kernel_regularizer'] = tf.keras.regularizers.l2(l=coeff)
                 dense_basic_setting['bias_regularizer'] = tf.keras.regularizers.l2(l=coeff)
                 dense_last_setting['kernel_regularizer'] = tf.keras.regularizers.l2(l=coeff)
+            elif self.inputs['regularization']['type'] == 'l1':
+                coeff = self.inputs['regularization']['params'].get('coeff', 1e-6)
+                dense_basic_setting['kernel_regularizer'] = tf.keras.regularizers.l1(l=coeff)
+                dense_basic_setting['bias_regularizer'] = tf.keras.regularizers.l1(l=coeff)
+                dense_last_setting['kernel_regularizer'] = tf.keras.regularizers.l1(l=coeff)
+            else:
+                raise NotImplementedError("Not implemented regularizer type!")
 
         #acti_func = 'selu'
         #acti_func = 'elu'
