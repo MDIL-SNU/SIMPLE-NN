@@ -98,6 +98,7 @@ class Symmetry_function(object):
             'tot_num':_bytes_feature(res['tot_num'].astype(np.float64).tobytes()),
             'partition':_bytes_feature(res['partition'].tobytes()),
             'struct_type':_bytes_feature(six.b(res['struct_type'])),
+            'struct_weight': _bytes_feature(np.array([res['struct_weight']]).tobytes())
         }
     
         if atomic_weights:
@@ -132,6 +133,7 @@ class Symmetry_function(object):
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
             'partition': tf.FixedLenFeature([], dtype=tf.string),
             'struct_type': tf.FixedLenSequenceFeature([], dtype=tf.string, allow_missing=True),
+            'struct_weight': tf.FixedLenFeature([], dtype=tf.string),
         }
  
         for item in self.parent.inputs['atom_types']:
@@ -156,6 +158,7 @@ class Symmetry_function(object):
         res['tot_num'] = tf.decode_raw(read_data['tot_num'], tf.float64)
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
         res['struct_type'] = read_data['struct_type']
+        res['struct_weight'] = tf.decode_raw(read_data['struct_weight'], tf.float64)
 
         for item in self.parent.inputs['atom_types']:
             res['N_'+item] = tf.decode_raw(read_data['N_'+item], tf.int64)
@@ -192,6 +195,7 @@ class Symmetry_function(object):
         batch_dict['tot_num'] = [None]
         batch_dict['partition'] = [None]
         batch_dict['struct_type'] = [None]
+        batch_dict['struct_weight'] = [None]
 
         if atomic_weights:
             batch_dict['atomic_weights'] = [None]
@@ -352,7 +356,7 @@ class Symmetry_function(object):
             train_dir = open(self.pickle_list, 'w')
 
         # Get structure list to calculate  
-        structures, structure_ind, structure_names = parse_strlist(self.structure_list)
+        structures, structure_ind, structure_names, structure_weights = _parse_strlist(self.structure_list)
 
         # Get parameter list for each atom types
         params_set = dict()
@@ -423,6 +427,7 @@ class Symmetry_function(object):
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
                 res['struct_type'] = structure_names[ind]
+                res['struct_weight'] = structure_weights[ind]
 
                 for j,jtem in enumerate(self.parent.inputs['atom_types']):
                     q = type_num[jtem] // comm.size
@@ -493,10 +498,11 @@ class Symmetry_function(object):
             train_dir.close()
 
 
-def parse_strlist(file_name):
+def _parse_strlist(file_name):
     structures = []
     structure_ind = []
     structure_names = []
+    structure_weights = []
     name = "None"
     with open(file_name, 'r') as fil:
         for line in fil:
@@ -505,10 +511,18 @@ def parse_strlist(file_name):
                 name = "None"
                 continue
             if line[0] == "[" and line[-1] == "]":
-                name = line[1:-1]
+                tmp = line[1:-1]
+                if ':' in tmp:
+                    tmp = tmp.split(':')
+                    name = tmp[0].strip()
+                    weight = float(tmp[1].strip())
+                else:
+                    name = tmp.strip()
+                    weight = 1.0
                 continue
             if name not in structure_names:
                 structure_names.append(name)
+                structure_weights.append(weight)
             structures.append(line.split())
             structure_ind.append(structure_names.index(name))
-    return structures, structure_ind, structure_names
+    return structures, structure_ind, structure_names, structure_weights

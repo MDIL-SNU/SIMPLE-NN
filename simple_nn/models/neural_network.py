@@ -177,11 +177,14 @@ class Neural_network(object):
                                                                self.next_elem['partition'], 2)[1])
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
-        self.e_loss = tf.reshape(tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']), [-1])
+        self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num'])
+        self.sw_e_loss = self.e_loss * self.next_elem['struct_weight']
+        self.e_loss = tf.reshape(self.e_loss, [-1])
         self.str_e_loss = tf.unsorted_segment_mean(self.e_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
         self.str_e_loss = tf.reshape(self.str_e_loss, [-1])
         self.e_loss = tf.reduce_mean(self.e_loss)
-        self.total_loss = self.e_loss * self.energy_coeff
+        self.sw_e_loss = tf.reduce_mean(self.sw_e_loss)
+        self.total_loss = self.sw_e_loss * self.energy_coeff
 
         self.str_num_batch_atom = tf.reshape(tf.unsorted_segment_sum(self.next_elem['tot_num'], self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set'])), [-1])
         if self.inputs['use_force']:
