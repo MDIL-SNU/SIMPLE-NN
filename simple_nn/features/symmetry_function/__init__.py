@@ -508,6 +508,7 @@ def _parse_strlist(file_name):
     structure_names = []
     structure_weights = []
     name = "None"
+    weight = 1.0
     with open(file_name, 'r') as fil:
         for line in fil:
             line = line.strip()
