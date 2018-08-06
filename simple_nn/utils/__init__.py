@@ -5,6 +5,10 @@ import numpy as np
 from cffi import FFI
 import os, sys, psutil
 import types
+import re
+from collections import OrderedDict
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
@@ -24,11 +28,33 @@ def pickle_load(filename):
 
 
 def _make_data_list(filename):
-    data_list = list()
+    return sum(_make_str_data_list(filename), [])
+
+
+def _make_str_data_list(filename):
+    """
+    read pickle_list file to make group of list of pickle files.
+    group id is denoted in front of the line (optional).
+    if group id is not denoted, group id of -1 is assigned.
+
+    example:
+    0:file1.pickle
+    0:file2.pickle
+    14:file3.pickle
+    """
+    h = re.compile("([0-9]+):(.*)")
+    data_list = OrderedDict()
     with open(filename, 'r') as fil:
         for line in fil:
-            data_list.append(line.strip())
-    return data_list
+            m = h.match(line.strip())
+            if m:
+                group_id, file_name = m.group(1), m.group(2)
+            else:
+                group_id, file_name = -1, line.strip()
+            if group_id not in data_list:
+                data_list[group_id] = []
+            data_list[group_id].append(file_name)
+    return data_list.values()
 
 
 def _make_full_featurelist(filelist, atom_types, feature_tag):
@@ -78,6 +104,7 @@ def _generate_scale_file(feature_list, atom_types):
 
     return scale
 
+
 def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, modifier=None):
     ffi = FFI()
     ffi.cdef("""void calculate_gdf(double **, int, int, double, double *);""")
@@ -103,6 +130,7 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, mo
         pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)
 
     return gdf
+
 
 def compress_outcar(filename):
     """
@@ -147,6 +175,7 @@ def compress_outcar(filename):
 
     return comp_name
 
+
 def modified_sigmoid(gdf, b=150.0, c=1.0):
     """
     modified sigmoid function for GDF calculation.
@@ -158,6 +187,7 @@ def modified_sigmoid(gdf, b=150.0, c=1.0):
     gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
     return gdf
 
+
 def memory():
     pid = os.getpid()
     py = psutil.Process(pid)
@@ -165,3 +195,31 @@ def memory():
     print('memory_use:', memory_use)
 
 
+def repeat(x, counts):
+    """
+    repeat x repeated by counts (elementwise)
+    counts must be integer tensor.
+
+    example:
+      x = [3.0, 4.0, 5.0, 6.0]
+      counts = [3, 1, 0, 2]
+      repeat(x, counts)
+      >> [3.0, 3.0, 3.0, 4.0, 6.0, 6.0]
+    """
+    def cond(_, i):
+        return i < size
+
+    def body(output, i):
+        value = array_ops.fill(counts[i:i+1], x[i])
+        return (output.write(i, value), i + 1)
+
+    size = array_ops.shape(counts)[0]
+    init_output_array = tensor_array_ops.TensorArray(
+        dtype=x.dtype, size=size, infer_shape=False)
+    output_array, num_writes = control_flow_ops.while_loop(
+        cond, body, loop_vars=[init_output_array, 0])
+
+    return control_flow_ops.cond(
+        num_writes > 0,
+        output_array.concat,
+        lambda: array_ops.zeros(shape=[0], dtype=x.dtype))

@@ -8,7 +8,7 @@ from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
-                     _make_full_featurelist, _make_data_list, pickle_load
+                     _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
 
 class DummyMPI(object):
     rank = 0
@@ -96,7 +96,8 @@ class Symmetry_function(object):
             'E':_bytes_feature(np.array([res['E']]).tobytes()),
             'F':_bytes_feature(res['F'].tobytes()),
             'tot_num':_bytes_feature(res['tot_num'].astype(np.float64).tobytes()),
-            'partition':_bytes_feature(res['partition'].tobytes())
+            'partition':_bytes_feature(res['partition'].tobytes()),
+            'struct_type':_bytes_feature(six.b(res['struct_type'])),
         }
     
         if atomic_weights:
@@ -129,7 +130,8 @@ class Symmetry_function(object):
             'E': tf.FixedLenFeature([], dtype=tf.string),
             'F': tf.FixedLenFeature([], dtype=tf.string),
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
-            'partition': tf.FixedLenFeature([], dtype=tf.string)
+            'partition': tf.FixedLenFeature([], dtype=tf.string),
+            'struct_type': tf.FixedLenSequenceFeature([], dtype=tf.string, allow_missing=True),
         }
  
         for item in self.parent.inputs['atom_types']:
@@ -153,6 +155,7 @@ class Symmetry_function(object):
         res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
         res['tot_num'] = tf.decode_raw(read_data['tot_num'], tf.float64)
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
+        res['struct_type'] = read_data['struct_type']
 
         for item in self.parent.inputs['atom_types']:
             res['N_'+item] = tf.decode_raw(read_data['N_'+item], tf.int64)
@@ -188,6 +191,7 @@ class Symmetry_function(object):
         batch_dict['F'] = [None, 3]
         batch_dict['tot_num'] = [None]
         batch_dict['partition'] = [None]
+        batch_dict['struct_type'] = [None]
 
         if atomic_weights:
             batch_dict['atomic_weights'] = [None]
@@ -219,16 +223,16 @@ class Symmetry_function(object):
         tmp_pickle_train_open = open(tmp_pickle_train, 'w')
         tmp_pickle_valid = './pickle_valid_list'
         tmp_pickle_valid_open = open(tmp_pickle_valid, 'w')
-        file_list = _make_data_list(self.pickle_list)
-        np.random.shuffle(file_list)
-        num_pickle = len(file_list)
-        num_valid = int(num_pickle * self.inputs['valid_rate'])
+        for file_list in _make_str_data_list(self.pickle_list):
+            np.random.shuffle(file_list)
+            num_pickle = len(file_list)
+            num_valid = int(num_pickle * self.inputs['valid_rate'])
 
-        for i,item in enumerate(file_list):
-            if i < num_valid:
-                tmp_pickle_valid_open.write(item + '\n')
-            else:
-                tmp_pickle_train_open.write(item + '\n')
+            for i,item in enumerate(file_list):
+                if i < num_valid:
+                    tmp_pickle_valid_open.write(item + '\n')
+                else:
+                    tmp_pickle_train_open.write(item + '\n')
             
         tmp_pickle_train_open.close()
         tmp_pickle_valid_open.close()
@@ -262,6 +266,7 @@ class Symmetry_function(object):
 
         # train
         tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
+        np.random.shuffle(tmp_pickle_train_list)
         num_tmp_pickle_train = len(tmp_pickle_train_list)
         num_tfrecord_train = int(num_tmp_pickle_train / self.inputs['data_per_tfrecord'])
         train_list = open(self.train_data_list, 'w')
@@ -298,6 +303,7 @@ class Symmetry_function(object):
 
         # valid
         tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
+        np.random.shuffle(tmp_pickle_valid_list)
         num_tmp_pickle_valid = len(tmp_pickle_valid_list)
         num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
         valid_list = open(self.valid_data_list, 'w')
@@ -346,10 +352,7 @@ class Symmetry_function(object):
             train_dir = open(self.pickle_list, 'w')
 
         # Get structure list to calculate  
-        structures = list()
-        with open(self.structure_list, 'r') as fil:
-            for line in fil:
-                structures.append(line.strip().split())
+        structures, structure_ind, structure_names = parse_strlist(self.structure_list)
 
         # Get parameter list for each atom types
         params_set = dict()
@@ -363,7 +366,7 @@ class Symmetry_function(object):
             params_set[item]['num'] = len(params_set[item]['total'])
             
         data_idx = 1
-        for item in structures:
+        for item, ind in zip(structures, structure_ind):
             # FIXME: add another input type
             
             if len(item) == 1:
@@ -419,6 +422,7 @@ class Symmetry_function(object):
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
+                res['struct_type'] = structure_names[ind]
 
                 for j,jtem in enumerate(self.parent.inputs['atom_types']):
                     q = type_num[jtem] // comm.size
@@ -478,7 +482,7 @@ class Symmetry_function(object):
                     with open(tmp_filename, "wb") as fil:
                         pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
 
-                    train_dir.write('{}\n'.format(tmp_filename))
+                    train_dir.write('{}:{}\n'.format(ind, tmp_filename))
                     tmp_endfile = tmp_filename
                     data_idx += 1
 
@@ -487,3 +491,24 @@ class Symmetry_function(object):
 
         if comm.rank == 0:
             train_dir.close()
+
+
+def parse_strlist(file_name):
+    structures = []
+    structure_ind = []
+    structure_names = []
+    name = "None"
+    with open(file_name, 'r') as fil:
+        for line in fil:
+            line = line.strip()
+            if len(line) == 0 or line.isspace():
+                name = "None"
+                continue
+            if line[0] == "[" and line[-1] == "]":
+                name = line[1:-1]
+                continue
+            if name not in structure_names:
+                structure_names.append(name)
+            structures.append(line.split())
+            structure_ind.append(structure_names.index(name))
+    return structures, structure_ind, structure_names

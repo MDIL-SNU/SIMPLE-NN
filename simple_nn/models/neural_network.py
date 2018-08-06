@@ -7,7 +7,7 @@ import collections
 import functools
 import timeit
 import copy
-from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory
+from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory, repeat
 #from tensorflow.python.client import timeline
 
 """
@@ -50,6 +50,7 @@ class Neural_network(object):
                                       },
                                       'inter_op_parallelism_threads': 0,
                                       'intra_op_parallelism_threads': 0,
+                                      'print_structure_rmse': False,
                                   }
                               }
         self.inputs = dict()
@@ -169,11 +170,20 @@ class Neural_network(object):
                                                                self.next_elem['partition'], 2)[1])
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
-        self.e_loss = tf.reduce_mean(tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']))
+        self.e_loss = tf.reshape(tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']), [-1])
+        self.str_e_loss = tf.unsorted_segment_mean(self.e_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
+        self.str_e_loss = tf.reshape(self.str_e_loss, [-1])
+        self.e_loss = tf.reduce_mean(self.e_loss)
         self.total_loss = self.e_loss * self.energy_coeff
 
+        self.str_num_batch_atom = tf.reshape(tf.unsorted_segment_sum(self.next_elem['tot_num'], self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set'])), [-1])
         if self.inputs['use_force']:
-            self.f_loss = tf.square(self.next_elem['F'] - self.F)
+            self.f_loss = tf.reshape(tf.square(self.next_elem['F'] - self.F), [-1, 3])
+            ind = repeat(self.next_elem['struct_ind'],
+                         tf.cast(tf.reshape(self.next_elem['tot_num'], shape=[-1]), tf.int32))
+            ind = tf.reshape(ind, [-1])
+            self.str_f_loss = tf.unsorted_segment_mean(self.f_loss, ind, tf.size(self.next_elem['struct_type_set']))
+            self.str_f_loss = tf.reduce_mean(self.str_f_loss, axis=1)
             if self.parent.descriptor.inputs['atomic_weights']['type'] is not None:
                 self.aw_f_loss = self.f_loss * self.next_elem['atomic_weights']
                 self.f_loss = tf.reduce_mean(self.f_loss)
@@ -325,6 +335,8 @@ class Neural_network(object):
                                                                               self.next_elem['partition_'+item], 2
                                                                               )[1])
 
+            self.next_elem['struct_type_set'], self.next_elem['struct_ind'], self.next_elem['struct_N'] = \
+                    tf.unique_with_counts(tf.reshape(self.next_elem['struct_type'], [-1]))
             max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
             self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
                                                  lambda: self.next_elem['dx_'+item],
@@ -421,7 +433,23 @@ class Neural_network(object):
 
                     valid_handle = sess.run(valid_iter.string_handle())
                     valid_fdict = {self.handle: valid_handle}
-                    #sess.run(valid_iter.initializer)
+
+                    # Log validation set statistics.
+                    sess.run(valid_iter.initializer)
+                    str_tot_struc = {}
+                    str_tot_atom = {}
+                    while True:
+                        try:
+                            valid_elem, str_num_batch_atom = sess.run([self.next_elem, self.str_num_batch_atom], feed_dict=valid_fdict)
+                            for i, struct in enumerate(valid_elem['struct_type_set']):
+                                if struct not in str_tot_struc:
+                                    str_tot_struc[struct] = 0
+                                    str_tot_atom[struct] = 0
+                                str_tot_struc[struct] += valid_elem['struct_N'][i]
+                                str_tot_atom[struct] += str_num_batch_atom[i]
+                        except tf.errors.OutOfRangeError:
+                            break
+                    self._log_statistics(str_tot_struc, str_tot_atom)
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
@@ -488,42 +516,112 @@ class Neural_network(object):
                                         break
                             else:
                                 if self.inputs['use_force']:
-                                    t_eloss, t_floss = sess.run([self.e_loss, self.f_loss], feed_dict=train_fdict)
-                                    t_eloss = np.sqrt(t_eloss)
+                                    t_eloss, t_str_eloss, t_floss, t_str_floss, str_set = sess.run(
+                                        [self.e_loss, self.str_e_loss, self.f_loss, self.str_f_loss,
+                                         self.next_elem['struct_type_set']], feed_dict=train_fdict)
                                     t_floss = np.sqrt(t_floss*3)
+                                    t_str_floss = np.sqrt(t_str_floss*3)
                                 else:
-                                    t_eloss = sess.run(self.e_loss, feed_dict=train_fdict)
-                                    t_eloss = np.sqrt(t_eloss)
+                                    t_eloss, t_str_eloss, str_set = sess.run([self.e_loss, self.str_e_loss, 
+                                        self.next_elem['struct_type_set']], feed_dict=train_fdict)
+                                t_eloss = np.sqrt(t_eloss)
+                                t_str_eloss = np.sqrt(t_str_eloss)
 
                             sess.run(valid_iter.initializer)
                             eloss = floss = 0
                             valid_tot_struc = valid_tot_atom = 0
+                            str_eloss = {}
+                            str_floss = {}
+                            str_tot_struc = {}
+                            str_tot_atom = {}
+                            for struct in str_set:
+                                str_eloss[struct] = 0.0
+                                str_floss[struct] = 0.0
                             while True:
                                 try:
                                     if self.inputs['use_force']:
-                                        valid_elem, tmp_eloss, tmp_floss = sess.run([self.next_elem, self.e_loss, self.f_loss], feed_dict=valid_fdict)
+                                        valid_elem, tmp_eloss, tmp_floss, tmp_str_eloss, tmp_str_floss, str_num_batch_atom = sess.run([
+                                            self.next_elem, self.e_loss, self.f_loss, self.str_e_loss, self.str_f_loss, self.str_num_batch_atom], feed_dict=valid_fdict)
                                         num_batch_struc = valid_elem['num_seg'] - 1
                                         num_batch_atom = np.sum(valid_elem['tot_num'])
                                         eloss += tmp_eloss * num_batch_struc
                                         floss += tmp_floss * num_batch_atom
                                         valid_tot_atom += num_batch_atom
+                                        for i, struct in enumerate(valid_elem['struct_type_set']):
+                                            if struct not in str_eloss:
+                                                str_eloss[struct] = 0.0
+                                            if struct not in str_floss:
+                                                str_floss[struct] = 0.0
+                                            if struct not in str_tot_struc:
+                                                str_tot_struc[struct] = 0
+                                                str_tot_atom[struct] = 0
+                                            str_eloss[struct] += tmp_str_eloss[i] * valid_elem['struct_N'][i]
+                                            str_floss[struct] += tmp_str_floss[i] * str_num_batch_atom[i]
+                                            str_tot_struc[struct] += valid_elem['struct_N'][i]
+                                            str_tot_atom[struct] += str_num_batch_atom[i]
                                     else:
-                                        valid_elem, tmp_eloss = sess.run([self.next_elem, self.e_loss], feed_dict=valid_fdict)
+                                        valid_elem, tmp_eloss, tmp_str_eloss = sess.run([self.next_elem, self.e_loss, self.str_e_loss], feed_dict=valid_fdict)
                                         num_batch_struc = valid_elem['num_seg'] - 1
                                         eloss += tmp_eloss * num_batch_struc
+                                        for i, struct in enumerate(valid_elem['struct_type_set']):
+                                            if struct not in str_eloss:
+                                                str_eloss[struct] = 0.0
+                                            if struct not in str_tot_struc:
+                                                str_tot_struc[struct] = 0
+                                            str_eloss[struct] += tmp_str_eloss[i] * valid_elem['struct_N'][i]
+                                            str_tot_struc[struct] += valid_elem['struct_N'][i]
 
                                     valid_tot_struc += num_batch_struc
                                 except tf.errors.OutOfRangeError:
                                     eloss = np.sqrt(eloss/valid_tot_struc)
+                                    for struct in str_tot_struc.keys():
+                                        str_eloss[struct] = np.sqrt(str_eloss[struct]/str_tot_struc[struct])
                                     result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss,eloss)
                                     if self.inputs['use_force']:
                                         floss = np.sqrt(floss*3/valid_tot_atom)
                                         result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
+                                        for struct in str_floss.keys():
+                                            str_floss[struct] = np.sqrt(str_floss[struct]*3/str_tot_atom[struct])
                                     break
 
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
                             result += ', elapsed: {:4.2e}\n'.format(time2-time1)
+
+                            # Print structural breakdown of RMSE
+                            if self.inputs['print_structure_rmse']:
+                                cutline = '----------------------------------------------'
+                                if self.inputs['use_force']:
+                                    cutline += '------------------------'
+                                result += cutline + '\n'
+                                result += 'structural breakdown:\n'
+                                result += '  label                  E RMSE(T)   E RMSE(V)'
+                                if self.inputs['use_force']:
+                                    result += '   F RMSE(T)   F RMSE(V)'
+                                result += '\n'
+                                for struct in str_eloss.keys():
+                                    label = struct.replace(' ', '_')
+                                    i = np.where(str_set == struct)
+                                    if t_str_eloss[i].size == 0:
+                                        teloss = '          -'
+                                        tfloss = '          -'
+                                    else:
+                                        teloss = '{:>11.4e}'.format(t_str_eloss[i][0])
+                                        if self.inputs['use_force']:
+                                            tfloss = '{:>11.4e}'.format(t_str_floss[i][0])
+                                    if struct not in str_tot_struc:
+                                        veloss = '          -'
+                                        vfloss = '          -'
+                                    else:
+                                        veloss = '{:>11.4e}'.format(str_eloss[struct])
+                                        if self.inputs['use_force']:
+                                            vfloss = '{:>11.4e}'.format(str_floss[struct])
+                                    result += '  {:<20.20} {:} {:}'.format(label, teloss, veloss)
+                                    if self.inputs['use_force']:
+                                        result += ' {:} {:}'.format(tfloss, vfloss)
+                                    result += '\n'
+                                result += cutline + '\n'
+
                             self.parent.logfile.write(result)
 
                         # Temp saving
@@ -599,3 +697,19 @@ class Neural_network(object):
                 self.parent.logfile.write(result + '\n')
 
 
+    def _log_statistics(self, str_tot_struc, str_tot_atom):
+        result = ''
+        result += 'validation set statistics:\n'
+        result += '  label                 struct_count percentage atom_count percentage\n'
+        total_count_struc = sum(str_tot_struc.values())
+        total_count_atom = sum(str_tot_atom.values())
+        for struct in str_tot_struc.keys():
+            label = struct.replace(' ', '_')
+            count_struc = str_tot_struc[struct]
+            count_atom = str_tot_atom[struct]
+            result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f}\n'.format(
+                    label, count_struc, float(count_struc) / total_count_struc * 100,
+                    int(count_atom), float(count_atom) / total_count_atom * 100)
+        result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f}\n\n'.format(
+                'TOTAL', total_count_struc, 100.0, int(total_count_atom), 100.0)
+        self.parent.logfile.write(result)
