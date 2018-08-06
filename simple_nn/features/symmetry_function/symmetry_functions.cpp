@@ -40,7 +40,7 @@ double G4(double Rij, double Rik, double Rjk, double powtwo, \
     // cosv: cos(theta)
     // par[0] = cutoff_dist
     // par[1] = eta
-    // par[2] = xi
+    // par[2] = zeta
     // par[3] = lambda
     double expl = exp(-par[1]*precal[6]) * powtwo;
     double cosv = 1 + par[3]*precal[7];
@@ -57,4 +57,27 @@ double G4(double Rij, double Rik, double Rjk, double powtwo, \
                par[2]*par[3]*precal[4]*precal[10]); // jk
 
     return powcos*cosv * expl * precal[0] * precal[2] * precal[4];
+}
+
+double G5(double Rij, double Rik, double powtwo, \
+          double *precal, double *par, double *deriv) {
+    // cosv: cos(theta)
+    // par[0] = cutoff_dist
+    // par[1] = eta
+    // par[2] = zeta
+    // par[3] = lambda
+    double expl = exp(-par[1]*precal[11]) * powtwo;
+    double cosv = 1 + par[3]*precal[7];
+    double powcos = pow_int(cosv, par[2]-1);
+
+    deriv[0] = expl*powcos*precal[2] * \
+               ((-2*par[1]*Rij*precal[0] + precal[1])*cosv + \
+               par[2]*par[3]*precal[0]*precal[8]); // ij
+    deriv[1] = expl*powcos*precal[0] * \
+               ((-2*par[1]*Rik*precal[2] + precal[3])*cosv + \
+               par[2]*par[3]*precal[2]*precal[9]); // ik
+    deriv[2] = expl*powcos*precal[0]*precal[2] * \
+               -par[2]*par[3]*precal[10]; // jk
+
+    return powcos*cosv * expl * precal[0] * precal[2];
 }

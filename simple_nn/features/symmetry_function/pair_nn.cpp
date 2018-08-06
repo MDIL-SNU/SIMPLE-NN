@@ -77,7 +77,7 @@ void PairNN::compute(int eflag, int vflag)
   double xtmp,ytmp,ztmp,evdwl,fpair,dradtmp,tmpc,tmpE;
   double dangtmp[3];
   double tmpd[9];
-  double precal[11];
+  double precal[12];
   // precal: cfij, dcfij, cfik, dcfik, cfjk, dcfjk, dist_square_sum,
   //         cosval, dcosval/dij, dcosval/dik, dcosval/djk
   double delij[3],delik[3],deljk[3],vecij[3],vecik[3],vecjk[3];
@@ -115,6 +115,20 @@ void PairNN::compute(int eflag, int vflag)
     jnum = numneigh[i];
     int numshort = 0;
     nsym = nets[ielem].nnode[0];
+
+    // Check for not implemented symfunc type.
+    for (tt=0; tt<nsym; tt++) {
+        bool implemented = false;
+        sym = &nets[ielem].slists[tt];
+        for (int i=0; i < sizeof(IMPLEMENTED_TYPE) / sizeof(IMPLEMENTED_TYPE[0]); i++) {
+            if ((sym->stype) == IMPLEMENTED_TYPE[i]) {
+                implemented = true;
+                break;
+            }
+        }
+        if (!implemented) error->all(FLERR, "Not implemented symmetry function type!");
+    }
+
     
     double *symvec = new double[nsym];
     double *dsymvec = new double[nsym];
@@ -133,7 +147,9 @@ void PairNN::compute(int eflag, int vflag)
       dsymvec[tt] = 0;
       powtwo[tt] = 0;
 
-      if (nets[ielem].slists[tt].stype == 4)
+      if (nets[ielem].slists[tt].stype == 4 || nets[ielem].slists[tt].stype == 5)
+        if (ceilf(nets[ielem].slists[tt].coefs[2]) != nets[ielem].slists[tt].coefs[2])
+            error->all(FLERR, "Zeta in G4/G5 must be integer!");
         powtwo[tt] = powint(2, 1-nets[ielem].slists[tt].coefs[2]);
     }
 
@@ -202,8 +218,7 @@ void PairNN::compute(int eflag, int vflag)
         Rjk = deljk[0]*deljk[0] + deljk[1]*deljk[1] + deljk[2]*deljk[2];
         rRjk = sqrt(Rjk);
 
-        if (Rjk < 0.0001 || Rik < 0.0001 || \
-            Rik > cutsq[itype][ktype] || Rjk > cutsq[itype][jtype]) { continue; }
+        if (Rjk < 0.0001 || Rik < 0.0001 || Rik > cutsq[itype][ktype]) continue;
         
         vecik[0] = delik[0]/rRik;
         vecik[1] = delik[1]/rRik;
@@ -220,6 +235,7 @@ void PairNN::compute(int eflag, int vflag)
         precal[8] = 0.5*(1/rRik + 1/rRij/rRij*(rRjk*rRjk/rRik - rRik));
         precal[9] = 0.5*(1/rRij + 1/rRik/rRik*(rRjk*rRjk/rRij - rRij));
         precal[10] = rRjk/rRij/rRik;
+        precal[11] = rRij*rRij+rRik*rRik;
 
         // calc angular symfunc
         for (tt=0; tt<nsym; tt++) {
@@ -227,6 +243,7 @@ void PairNN::compute(int eflag, int vflag)
           if ((sym->stype) == 4 && \
               ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
                (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
+            if (Rjk > cutsq[itype][jtype]) continue;
             precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
             precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
             precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
@@ -254,6 +271,38 @@ void PairNN::compute(int eflag, int vflag)
             tmpf[tt*(jnum+1)*3 + kk*3 + 1] += tmpd[4] + tmpd[7];
             tmpf[tt*(jnum+1)*3 + kk*3 + 2] += tmpd[5] + tmpd[8];
        
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 0] -= tmpd[0] + tmpd[3];
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1] + tmpd[4];
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
+          }
+          else if ((sym->stype) == 5 && \
+              ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
+               (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
+            precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
+            precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
+            precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
+            precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
+
+            symvec[tt] += G5(rRij, rRik, powtwo[tt], precal, sym->coefs, dangtmp);
+
+            tmpd[0] = dangtmp[0]*vecij[0];
+            tmpd[1] = dangtmp[0]*vecij[1];
+            tmpd[2] = dangtmp[0]*vecij[2];
+            tmpd[3] = dangtmp[1]*vecik[0];
+            tmpd[4] = dangtmp[1]*vecik[1];
+            tmpd[5] = dangtmp[1]*vecik[2];
+            tmpd[6] = dangtmp[2]*vecjk[0];
+            tmpd[7] = dangtmp[2]*vecjk[1];
+            tmpd[8] = dangtmp[2]*vecjk[2];
+
+            tmpf[tt*(jnum+1)*3 + jj*3 + 0] += tmpd[0] - tmpd[6];
+            tmpf[tt*(jnum+1)*3 + jj*3 + 1] += tmpd[1] - tmpd[7];
+            tmpf[tt*(jnum+1)*3 + jj*3 + 2] += tmpd[2] - tmpd[8];
+
+            tmpf[tt*(jnum+1)*3 + kk*3 + 0] += tmpd[3] + tmpd[6];
+            tmpf[tt*(jnum+1)*3 + kk*3 + 1] += tmpd[4] + tmpd[7];
+            tmpf[tt*(jnum+1)*3 + kk*3 + 2] += tmpd[5] + tmpd[8];
+
             tmpf[tt*(jnum+1)*3 + jnum*3 + 0] -= tmpd[0] + tmpd[3];
             tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1] + tmpd[4];
             tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
