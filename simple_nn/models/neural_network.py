@@ -521,7 +521,7 @@ class Neural_network(object):
                                 if self.inputs['use_force']:
                                     result += '   F_RMSE(T)   F_RMSE(V)'
                                 result += '\n'
-                                for struct in self.str_set:
+                                for struct in sorted(self.str_set):
                                     label = struct.replace(' ', '_')
                                     if t_str_eloss[struct] == 0.:
                                         teloss = '          -'
