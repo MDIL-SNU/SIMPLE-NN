@@ -609,11 +609,11 @@ class Neural_network(object):
                                     cutline += '------------------------'
                                 result += cutline + '\n'
                                 result += 'structural breakdown:\n'
-                                result += '  label                  E RMSE(T)   E RMSE(V)'
+                                result += '  label                  E_RMSE(T)   E_RMSE(V)'
                                 if self.inputs['use_force']:
-                                    result += '   F RMSE(T)   F RMSE(V)'
+                                    result += '   F_RMSE(T)   F_RMSE(V)'
                                 result += '\n'
-                                for struct in str_eloss.keys():
+                                for struct in sorted(str_eloss.keys()):
                                     label = struct.replace(' ', '_')
                                     i = np.where(str_set == struct)
                                     if t_str_eloss[i].size == 0:
@@ -717,7 +717,7 @@ class Neural_network(object):
         result += '  label                 struct_count percentage atom_count percentage      weight\n'
         total_count_struc = sum(str_tot_struc.values())
         total_count_atom = sum(str_tot_atom.values())
-        for struct in str_tot_struc.keys():
+        for struct in sorted(str_tot_struc.keys()):
             label = struct.replace(' ', '_')
             count_struc = str_tot_struc[struct]
             count_atom = str_tot_atom[struct]
