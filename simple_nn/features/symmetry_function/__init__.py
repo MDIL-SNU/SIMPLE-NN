@@ -514,17 +514,25 @@ def _parse_strlist(file_name):
             line = line.strip()
             if len(line) == 0 or line.isspace():
                 name = "None"
+                weight = 1.0
                 continue
             if line[0] == "[" and line[-1] == "]":
                 tmp = line[1:-1]
                 if ':' in tmp:
-                    tmp = tmp.split(':')
-                    name = tmp[0].strip()
-                    weight = float(tmp[1].strip())
+                    sp = tmp.rsplit(':', 1)
+                    try:
+                        weight = float(sp[1].strip())
+                        name = sp[0].strip()
+                    except ValueError:
+                        name = tmp.strip()
+                        weight = 1.0
                 else:
                     name = tmp.strip()
                     weight = 1.0
                 continue
+            # If the same structure tags are given multiple times with different weights,
+            # other than first value will be ignored!
+            # TODO: warn about it.
             if name not in structure_names:
                 structure_names.append(name)
                 structure_weights.append(weight)

@@ -448,6 +448,7 @@ class Neural_network(object):
                     sess.run(valid_iter.initializer)
                     str_tot_struc = {}
                     str_tot_atom = {}
+                    str_weight = {}
                     while True:
                         try:
                             valid_elem, str_num_batch_atom = sess.run([self.next_elem, self.str_num_batch_atom], feed_dict=valid_fdict)
@@ -457,9 +458,12 @@ class Neural_network(object):
                                     str_tot_atom[struct] = 0
                                 str_tot_struc[struct] += valid_elem['struct_N'][i]
                                 str_tot_atom[struct] += str_num_batch_atom[i]
+                            for struct, weight in zip(valid_elem['struct_type'].reshape([-1]),
+                                                      valid_elem['struct_weight'].reshape([-1])):
+                                str_weight[struct] = weight
                         except tf.errors.OutOfRangeError:
                             break
-                    self._log_statistics(str_tot_struc, str_tot_atom)
+                    self._log_statistics(str_tot_struc, str_tot_atom, str_weight)
 
                     for epoch in range(self.inputs['total_epoch']):
                         time1 = timeit.default_timer()
@@ -590,7 +594,7 @@ class Neural_network(object):
                                     if self.inputs['use_force']:
                                         floss = np.sqrt(floss*3/valid_tot_atom)
                                         result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss,floss)
-                                        for struct in str_floss.keys():
+                                        for struct in str_tot_struc.keys():
                                             str_floss[struct] = np.sqrt(str_floss[struct]*3/str_tot_atom[struct])
                                     break
 
@@ -605,11 +609,11 @@ class Neural_network(object):
                                     cutline += '------------------------'
                                 result += cutline + '\n'
                                 result += 'structural breakdown:\n'
-                                result += '  label                  E RMSE(T)   E RMSE(V)'
+                                result += '  label                  E_RMSE(T)   E_RMSE(V)'
                                 if self.inputs['use_force']:
-                                    result += '   F RMSE(T)   F RMSE(V)'
+                                    result += '   F_RMSE(T)   F_RMSE(V)'
                                 result += '\n'
-                                for struct in str_eloss.keys():
+                                for struct in sorted(str_eloss.keys()):
                                     label = struct.replace(' ', '_')
                                     i = np.where(str_set == struct)
                                     if t_str_eloss[i].size == 0:
@@ -707,19 +711,19 @@ class Neural_network(object):
                 self.parent.logfile.write(result + '\n')
 
 
-    def _log_statistics(self, str_tot_struc, str_tot_atom):
+    def _log_statistics(self, str_tot_struc, str_tot_atom, str_weight):
         result = ''
         result += 'validation set statistics:\n'
-        result += '  label                 struct_count percentage atom_count percentage\n'
+        result += '  label                 struct_count percentage atom_count percentage      weight\n'
         total_count_struc = sum(str_tot_struc.values())
         total_count_atom = sum(str_tot_atom.values())
-        for struct in str_tot_struc.keys():
+        for struct in sorted(str_tot_struc.keys()):
             label = struct.replace(' ', '_')
             count_struc = str_tot_struc[struct]
             count_atom = str_tot_atom[struct]
-            result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f}\n'.format(
+            result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f} {:>11.4e}\n'.format(
                     label, count_struc, float(count_struc) / total_count_struc * 100,
-                    int(count_atom), float(count_atom) / total_count_atom * 100)
-        result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f}\n\n'.format(
-                'TOTAL', total_count_struc, 100.0, int(total_count_atom), 100.0)
+                    int(count_atom), float(count_atom) / total_count_atom * 100, str_weight[struct])
+        result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f} {:>11}\n\n'.format(
+                'TOTAL', total_count_struc, 100.0, int(total_count_atom), 100.0, '-')
         self.parent.logfile.write(result)
