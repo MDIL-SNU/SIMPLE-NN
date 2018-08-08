@@ -651,8 +651,8 @@ class Neural_network(object):
                         floss += tmp_floss * num_batch_atom
                         num_tot_atom += num_batch_atom
                     else:
-                        next_elem, tmp_eloss, tmp_str_eloss = sess.run(
-                            [self.next_elem, self.e_loss, self.str_e_loss], feed_dict=fdict)
+                        next_elem, tmp_eloss, tmp_str_eloss, tmp_str_atom = sess.run(
+                            [self.next_elem, self.e_loss, self.str_e_loss, self.str_num_batch_atom], feed_dict=fdict)
                     num_batch_struc = next_elem['num_seg'] - 1
                     eloss += tmp_eloss * num_batch_struc
                     num_tot_struc += num_batch_struc
@@ -667,9 +667,9 @@ class Neural_network(object):
 
                         str_eloss[struct] += tmp_str_eloss[i] * next_elem['struct_N'][i]
                         str_tot_struc[struct] += next_elem['struct_N'][i]
+                        str_tot_atom[struct] += tmp_str_atom[i]
                         if self.inputs['use_force']:
                             str_floss[struct] += tmp_str_floss[i] * tmp_str_atom[i]
-                            str_tot_atom[struct] += tmp_str_atom[i]
 
                 except tf.errors.OutOfRangeError:
                     eloss = np.sqrt(eloss/num_tot_struc)
