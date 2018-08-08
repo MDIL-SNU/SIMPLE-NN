@@ -487,9 +487,9 @@ class Neural_network(object):
 
                             full_str_set = list(set(t_str_set + str_set))
 
-                            result += 'E RMSE(T V) = {:6.4e} {:6.4e}, '.format(t_eloss, eloss)
+                            result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss, eloss)
                             if self.inputs['use_force']:
-                                result += 'F RMSE(T V) = {:6.4e} {:6.4e}, '.format(t_floss, floss)
+                                result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss, floss)
 
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
@@ -573,7 +573,7 @@ class Neural_network(object):
                         else:
                             test_elem, tmp_nne, tmp_eloss = \
                                 sess.run([self.next_elem, self.E, self.e_loss], feed_dict=test_fdict)
-                            num_batch_struc = valid_elem['num_seg'] - 1
+                            num_batch_struc = test_elem['num_seg'] - 1
                             eloss += tmp_eloss * num_batch_struc
 
                             test_save['DFT_E'].append(test_elem['E'])
