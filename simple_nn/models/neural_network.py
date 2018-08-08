@@ -569,7 +569,7 @@ class Neural_network(object):
                             test_save['DFT_F'].append(test_elem['F'])
                             test_save['NN_F'].append(tmp_nnf)
                             
-                            test_tot_struc += num_batch_atom
+                            test_tot_atom += num_batch_atom
                         else:
                             test_elem, tmp_nne, tmp_eloss = \
                                 sess.run([self.next_elem, self.E, self.e_loss], feed_dict=test_fdict)
