@@ -279,7 +279,11 @@ class Symmetry_function(object):
         num_tfrecord_train = int(num_tmp_pickle_train / self.inputs['data_per_tfrecord'])
         train_list = open(self.train_data_list, 'w')
 
-        for i,item in enumerate(tmp_pickle_train_list):
+        random_idx = np.arange(num_tmp_pickle_train)        
+        np.random.shuffle(random_idx)
+
+        for i,item in enumerate(random_idx):
+            ptem = tmp_pickle_train_list[item]
             if i == 0:
                 record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
                 writer = tf.python_io.TFRecordWriter(record_name)
@@ -290,11 +294,11 @@ class Symmetry_function(object):
                 record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
                 writer = tf.python_io.TFRecordWriter(record_name)
 
-            tmp_res = pickle_load(item)
+            tmp_res = pickle_load(ptem)
             if atomic_weights is not None:
                 tmp_aw = list()
                 for jtem in self.parent.inputs['atom_types']:
-                    tmp_idx = (atomic_weights[jtem][:,1] == i)
+                    tmp_idx = (atomic_weights[jtem][:,1] == item)
                     tmp_aw.append(atomic_weights[jtem][tmp_idx,0])
                 tmp_aw = np.concatenate(tmp_aw)
                 tmp_res['atomic_weights'] = tmp_aw
