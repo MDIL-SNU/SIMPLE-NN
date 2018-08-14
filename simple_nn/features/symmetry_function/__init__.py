@@ -271,10 +271,10 @@ class Symmetry_function(object):
             aw_tag = False
         else:
             aw_tag = True
-
+        
         # train
         tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
-        np.random.shuffle(tmp_pickle_train_list)
+        #np.random.shuffle(tmp_pickle_train_list)
         num_tmp_pickle_train = len(tmp_pickle_train_list)
         num_tfrecord_train = int(num_tmp_pickle_train / self.inputs['data_per_tfrecord'])
         train_list = open(self.train_data_list, 'w')
@@ -298,7 +298,7 @@ class Symmetry_function(object):
                     tmp_aw.append(atomic_weights[jtem][tmp_idx,0])
                 tmp_aw = np.concatenate(tmp_aw)
                 tmp_res['atomic_weights'] = tmp_aw
-
+            
             self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
 
             if not self.inputs['remain_pickle']:
