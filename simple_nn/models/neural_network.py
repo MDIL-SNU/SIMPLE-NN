@@ -210,9 +210,12 @@ class Neural_network(object):
     def _make_optimizer(self, user_optimizer=None):
         final_loss = self.inputs['loss_scale']*self.total_loss
         if self.inputs['method'] == 'L-BFGS-B':
-            self.optim = tf.contrib.opt.ScipyOptimizerInterface(final_loss, 
-                                                                method=self.inputs['method'], 
-                                                                options=self.inputs['optimizer'])
+            self.optim = tf.train.GradientDescentOptimizer(learning_rate=1.)
+            self.compute_grad = self.optim.compute_gradients(final_loss)
+            self.grad_and_vars = [[None, item[1]] for item in self.compute_grad]
+            self.flat_grad = tf.reshape(tf.concat([], axis=0), [-1, 1])
+            self.minim = self.optim.minimize(final_loss, global_step=self.global_step)
+            
         elif self.inputs['method'] == 'Adam':
             if isinstance(self.inputs['learning_rate'], collections.Mapping):
                 exponential_decay_inputs = copy.deepcopy(self.inputs['learning_rate'])
