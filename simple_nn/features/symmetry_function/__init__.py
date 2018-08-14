@@ -311,7 +311,7 @@ class Symmetry_function(object):
 
         # valid
         tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
-        np.random.shuffle(tmp_pickle_valid_list)
+        #np.random.shuffle(tmp_pickle_valid_list)
         num_tmp_pickle_valid = len(tmp_pickle_valid_list)
         num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
         valid_list = open(self.valid_data_list, 'w')

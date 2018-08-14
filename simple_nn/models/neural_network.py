@@ -663,13 +663,17 @@ class Neural_network(object):
                             str_floss[struct] = 0.
                             str_tot_struc[struct] = 0
                             str_tot_atom[struct] = 0
-                            str_weight[struct] = next_elem['struct_weight'][i][0]
+                            #str_weight[struct] = next_elem['struct_weight'][i][0]
 
                         str_eloss[struct] += tmp_str_eloss[i] * next_elem['struct_N'][i]
                         str_tot_struc[struct] += next_elem['struct_N'][i]
                         str_tot_atom[struct] += tmp_str_atom[i]
                         if self.inputs['use_force']:
                             str_floss[struct] += tmp_str_floss[i] * tmp_str_atom[i]
+
+                    for struct, weight in zip(next_elem['struct_type'].reshape([-1]),
+                                              next_elem['struct_weight'].reshape([-1])):
+                        str_weight[struct] = weight
 
                 except tf.errors.OutOfRangeError:
                     eloss = np.sqrt(eloss/num_tot_struc)
@@ -699,10 +703,14 @@ class Neural_network(object):
                     str_floss[struct] = 0.
                     str_tot_struc[struct] = 0
                     str_tot_atom[struct] = 0
-                    str_weight[struct] = next_elem['struct_weight'][i][0]
+                    #str_weight[struct] = next_elem['struct_weight'][i][0]
 
                 str_eloss[struct] = tmp_str_eloss[i]
                 if self.inputs['use_force']:
                     str_floss[struct] = tmp_str_floss[i]
+
+            for struct, weight in zip(next_elem['struct_type'].reshape([-1]),
+                                      next_elem['struct_weight'].reshape([-1])):
+                str_weight[struct] = weight
 
         return eloss, floss, str_eloss, str_floss, str_tot_struc, str_tot_atom, str_weight, str_eloss.keys()
