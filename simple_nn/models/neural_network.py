@@ -8,6 +8,7 @@ import functools
 import timeit
 import copy
 from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory, repeat
+from ..utils.lbfgs import L_BFGS
 #from tensorflow.python.client import timeline
 
 """
@@ -209,11 +210,12 @@ class Neural_network(object):
 
     def _make_optimizer(self, user_optimizer=None):
         final_loss = self.inputs['loss_scale']*self.total_loss
-        if self.inputs['method'] == 'L-BFGS-B':
+
+        if self.inputs['method'] == 'L-BFGS':
             self.optim = tf.train.GradientDescentOptimizer(learning_rate=1.)
             self.compute_grad = self.optim.compute_gradients(final_loss)
             self.grad_and_vars = [[None, item[1]] for item in self.compute_grad]
-            self.flat_grad = tf.reshape(tf.concat([], axis=0), [-1, 1])
+            self.flat_grad = tf.reshape(tf.concat([tf.reshape(item[0], [-1]) for item in self.compute_grad], axis=0), [-1, 1])
             self.minim = self.optim.minimize(final_loss, global_step=self.global_step)
             
         elif self.inputs['method'] == 'Adam':
@@ -228,6 +230,7 @@ class Neural_network(object):
                                                 name='Adam', **self.inputs['optimizer'])
             self.compute_grad = self.optim.compute_gradients(final_loss)
             self.grad_and_vars = [[None, item[1]] for item in self.compute_grad]
+            self.flat_grad = tf.reshape(tf.concat([tf.reshape(item[0], [-1]) for item in self.compute_grad], axis=0), [-1, 1])
             self.minim = self.optim.minimize(final_loss, global_step=self.global_step)
         else:
             if user_optimizer != None:
@@ -425,117 +428,141 @@ class Neural_network(object):
             #run_metadata = tf.RunMetadata()
 
             if self.inputs['train']:
-                if self.inputs['method'] == 'L-BFGS-B':
+                train_handle = sess.run(train_iter.string_handle())
+                train_fdict = {self.handle: train_handle}
+                if self.inputs['full_batch']:
+                    self.grad_ph = list()
+                    #full_batch_dict = dict()
+                    self.grad_shape = list()
+                    for i,item in enumerate(self.compute_grad):
+                        self.grad_shape.append(sess.run(tf.shape(item[1])))
+                        self.grad_ph.append(tf.placeholder(tf.float64, self.grad_shape[-1]))
+                        #full_batch_dict[self.grad_ph[i]] = None
+
+                    self.apply_grad = self.optim.apply_gradients([(self.grad_ph[i], item[1]) for i,item in enumerate(self.compute_grad)],
+                                                                 global_step=self.global_step)
+                    self.tmp_apply_grad = self.optim.apply_gradients([(self.grad_ph[i], item[1]) for i,item in enumerate(self.compute_grad)])
+                else:
+                    sess.run(train_iter.initializer)
+
+                valid_handle = sess.run(valid_iter.string_handle())
+                valid_fdict = {self.handle: valid_handle}
+
+                # Log validation set statistics.
+                _, _, _, _, str_tot_struc, str_tot_atom, str_weight, str_set = self._get_loss_for_print(
+                    sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter)
+
+                self._log_statistics(str_tot_struc, str_tot_atom, str_weight)
+                """
+                if self.inputs['method'] == 'L-BFGS':
                     # TODO: complete this part
                     raise ValueError
 
                 elif self.inputs['method'] == 'Adam':
-                    train_handle = sess.run(train_iter.string_handle())
-                    train_fdict = {self.handle: train_handle}
+                """
+                if self.inputs['method'] == 'L-BFGS':
+                    lbfgs = L_BFGS()
+
+                for epoch in range(self.inputs['total_epoch']):
+                    time1 = timeit.default_timer()
                     if self.inputs['full_batch']:
-                        self.grad_ph = list()
-                        full_batch_dict = dict()
-                        for i,item in enumerate(self.compute_grad):
-                            self.grad_ph.append(tf.placeholder(tf.float64, sess.run(tf.shape(item[1]))))
-                            full_batch_dict[self.grad_ph[i]] = None
+                        if self.inputs['method'] == 'Adam':
+                            [flat_grad] = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=False)
+                            sess.run(self.apply_grad, feed_dict=self._get_grad_dict(flat_grad))
+                        elif self.inputs['method'] == 'L-BFGS':
+                            # calculate the direction
+                            #zero_vals = _get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
+                            if epoch == 0:
+                                zero_vals = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
+                                z = zero_vals[0]
+                            else:
+                                zero_vals = [np.copy(alpha_vals[0]), np.copy(alpha_vals[1])]
+                                z = lbfgs.find_direction(zero_vals[0])
 
-                        self.apply_grad = self.optim.apply_gradients([(self.grad_ph[i], item[1]) for i,item in enumerate(self.compute_grad)],
-                                                                     global_step=self.global_step)
+                            lbfgs.initialize_line_search()
+                            sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(z*lbfgs.step))
+                            alpha_vals = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
+                            sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(-z*lbfgs.step))
+                            while lbfgs.wolfe_line_search_iter(zero_vals, alpha_vals, z):
+                                sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(z*lbfgs.step))
+                                alpha_vals = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
+                                sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(-z*lbfgs.step))
+
+                            sess.run(self.apply_grad, feed_dict=self._get_grad_dict(z*lbfgs.step))
+                            alpha_vals = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
+                            lbfgs.update_lists(np.copy(alpha_vals[0] - zero_vals[0]), np.copy(z))
+
                     else:
-                        sess.run(train_iter.initializer)
+                        self.minim.run(feed_dict=train_fdict)
+                    #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
+                    time2 = timeit.default_timer()
 
-                    valid_handle = sess.run(valid_iter.string_handle())
-                    valid_fdict = {self.handle: valid_handle}
+                    # Logging
+                    if (epoch+1) % self.inputs['show_interval'] == 0:
+                        # Profiling
+                        #fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+                        #chrome_trace = fetched_timeline.generate_chrome_trace_format()
+                        #with open('timeline_test.json', 'w') as fil:
+                        #    fil.write(chrome_trace)
 
-                    # Log validation set statistics.
-                    _, _, _, _, str_tot_struc, str_tot_atom, str_weight, str_set = self._get_loss_for_print(
-                        sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter)
+                        # TODO: need to fix the calculation part for training loss
+                        result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
 
-                    self._log_statistics(str_tot_struc, str_tot_atom, str_weight)
+                        t_eloss, t_floss, t_str_eloss, t_str_floss, _, _, _, t_str_set = self._get_loss_for_print(
+                            sess, train_fdict, full_batch=self.inputs['full_batch'], iter_for_initialize=train_iter)
 
-                    for epoch in range(self.inputs['total_epoch']):
-                        time1 = timeit.default_timer()
-                        if self.inputs['full_batch']:
-                            sess.run(train_iter.initializer)
-                            for i,item in enumerate(sess.run(self.compute_grad, feed_dict=train_fdict)):
-                                full_batch_dict[self.grad_ph[i]] = item[0]
-                            while True:
-                                try:
-                                    for i,item in enumerate(sess.run(self.compute_grad, feed_dict=train_fdict)):
-                                        full_batch_dict[self.grad_ph[i]] += item[0]
-                                except tf.errors.OutOfRangeError:
-                                    sess.run(self.apply_grad, feed_dict=full_batch_dict)
-                                    break
-                        else:
-                            self.minim.run(feed_dict=train_fdict)
-                        #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
-                        time2 = timeit.default_timer()
+                        eloss, floss, str_eloss, str_floss, _, _, _, _ = self._get_loss_for_print(
+                            sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter)
 
-                        # Logging
-                        if (epoch+1) % self.inputs['show_interval'] == 0:
-                            # Profiling
-                            #fetched_timeline = timeline.Timeline(run_metadata.step_stats)
-                            #chrome_trace = fetched_timeline.generate_chrome_trace_format()
-                            #with open('timeline_test.json', 'w') as fil:
-                            #    fil.write(chrome_trace)
+                        full_str_set = list(set(t_str_set + str_set))
 
-                            # TODO: need to fix the calculation part for training loss
-                            result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
+                        result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss, eloss)
+                        if self.inputs['use_force']:
+                            result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss, floss)
 
-                            t_eloss, t_floss, t_str_eloss, t_str_floss, _, _, _, t_str_set = self._get_loss_for_print(
-                                sess, train_fdict, full_batch=self.inputs['full_batch'], iter_for_initialize=train_iter)
-
-                            eloss, floss, str_eloss, str_floss, _, _, _, _ = self._get_loss_for_print(
-                                sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter)
-
-                            full_str_set = list(set(t_str_set + str_set))
-
-                            result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss, eloss)
-                            if self.inputs['use_force']:
-                                result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss, floss)
-
+                        if self.inputs['method'] == 'Adam':
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
-                            result += ', elapsed: {:4.2e}\n'.format(time2-time1)
+                        result += ', elapsed: {:4.2e}\n'.format(time2-time1)
 
-                            # Print structural breakdown of RMSE
-                            if self.inputs['print_structure_rmse']:
-                                cutline = '----------------------------------------------'
-                                if self.inputs['use_force']:
-                                    cutline += '------------------------'
-                                result += cutline + '\n'
-                                result += 'structural breakdown:\n'
-                                result += '  label                  E_RMSE(T)   E_RMSE(V)'
-                                if self.inputs['use_force']:
-                                    result += '   F_RMSE(T)   F_RMSE(V)'
-                                result += '\n'
-                                for struct in sorted(full_str_set):
-                                    label = struct.replace(' ', '_')
-                                    if struct not in t_str_eloss:
-                                        teloss = '          -'
-                                        tfloss = '          -'
-                                    else:
-                                        teloss = '{:>11.4e}'.format(t_str_eloss[struct])
-                                        if self.inputs['use_force']:
-                                            tfloss = '{:>11.4e}'.format(t_str_floss[struct])
-                                    if struct not in str_eloss:
-                                        veloss = '          -'
-                                        vfloss = '          -'
-                                    else:
-                                        veloss = '{:>11.4e}'.format(str_eloss[struct])
-                                        if self.inputs['use_force']:
-                                            vfloss = '{:>11.4e}'.format(str_floss[struct])
-                                    result += '  {:<20.20} {:} {:}'.format(label, teloss, veloss)
+                        # Print structural breakdown of RMSE
+                        if self.inputs['print_structure_rmse']:
+                            cutline = '----------------------------------------------'
+                            if self.inputs['use_force']:
+                                cutline += '------------------------'
+                            result += cutline + '\n'
+                            result += 'structural breakdown:\n'
+                            result += '  label                  E_RMSE(T)   E_RMSE(V)'
+                            if self.inputs['use_force']:
+                                result += '   F_RMSE(T)   F_RMSE(V)'
+                            result += '\n'
+                            for struct in sorted(full_str_set):
+                                label = struct.replace(' ', '_')
+                                if struct not in t_str_eloss:
+                                    teloss = '          -'
+                                    tfloss = '          -'
+                                else:
+                                    teloss = '{:>11.4e}'.format(t_str_eloss[struct])
                                     if self.inputs['use_force']:
-                                        result += ' {:} {:}'.format(tfloss, vfloss)
-                                    result += '\n'
-                                result += cutline + '\n'
+                                        tfloss = '{:>11.4e}'.format(t_str_floss[struct])
+                                if struct not in str_eloss:
+                                    veloss = '          -'
+                                    vfloss = '          -'
+                                else:
+                                    veloss = '{:>11.4e}'.format(str_eloss[struct])
+                                    if self.inputs['use_force']:
+                                        vfloss = '{:>11.4e}'.format(str_floss[struct])
+                                result += '  {:<20.20} {:} {:}'.format(label, teloss, veloss)
+                                if self.inputs['use_force']:
+                                    result += ' {:} {:}'.format(tfloss, vfloss)
+                                result += '\n'
+                            result += cutline + '\n'
 
-                            self.parent.logfile.write(result)
+                        self.parent.logfile.write(result)
 
-                        # Temp saving
-                        if (epoch+1) % self.inputs['save_interval'] == 0:
-                            self._save(sess, saver)
+                    # Temp saving
+                    if (epoch+1) % self.inputs['save_interval'] == 0:
+                        self._save(sess, saver)
 
                 self._save(sess, saver)
 
@@ -709,3 +736,29 @@ class Neural_network(object):
                     str_floss[struct] = tmp_str_floss[i]
 
         return eloss, floss, str_eloss, str_floss, str_tot_struc, str_tot_atom, str_weight, str_eloss.keys()
+
+
+    def _get_grad_dict(self, flat_grad):
+        grad_dict = dict()
+        idx = 0
+        for item, ishape in zip(self.grad_ph, self.grad_shape):
+            size_1d = np.prod(ishape)
+            grad_dict[item] = flat_grad[idx:idx+size_1d].reshape(ishape)
+            idx += size_1d
+ 
+        return grad_dict
+ 
+    def _get_full_batch_values(self, sess, target_iter, target_fdict, need_loss=False):
+        sess.run(target_iter.initializer)
+        res = sess.run(([self.flat_grad, self.total_loss] 
+                        if need_loss 
+                        else [self.flat_grad]), feed_dict=target_fdict)
+        while True:
+            try:
+                for i,item in enumerate(sess.run(([self.flat_grad, self.total_loss] 
+                                                  if need_loss
+                                                  else [self.flat_grad]), feed_dict=target_fdict)):
+                    res[i] += item
+            except tf.errors.OutOfRangeError:
+                break
+        return res
