@@ -306,7 +306,7 @@ class Neural_network(object):
         self._generate_lammps_potential(sess)
         
 
-    def _make_iterator_from_handle(self, training_dataset, atomic_weights=False):
+    def _make_iterator_from_handle(self, training_dataset, use_force=False, atomic_weights=False):
         self.handle = tf.placeholder(tf.string, shape=[])
         self.iterator = tf.data.Iterator.from_string_handle(
             self.handle, training_dataset.output_types, training_dataset.output_shapes)
@@ -314,11 +314,12 @@ class Neural_network(object):
 
         # which place?
         self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
-        self.next_elem['F'] = \
-            tf.dynamic_partition(
-                tf.reshape(self.next_elem['F'], [-1, 3]),
-                self.next_elem['partition'], 2
-            )[1]
+        if use_force:
+            self.next_elem['F'] = \
+                tf.dynamic_partition(
+                    tf.reshape(self.next_elem['F'], [-1, 3]),
+                    self.next_elem['partition'], 2
+                )[1]
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
         
         if atomic_weights:
@@ -335,6 +336,7 @@ class Neural_network(object):
                                                         lambda: tf.zeros([1], tf.int32),
                                                         lambda: tf.reshape(self.next_elem['partition_'+item], [-1]))
 
+            x_shape = tf.shape(self.next_elem['x_'+item])
             self.next_elem['x_'+item] = tf.cond(zero_cond, 
                                                 lambda: tf.zeros([1, self.inp_size[item]], dtype=tf.float64),
                                                 lambda: tf.dynamic_partition(
@@ -344,27 +346,30 @@ class Neural_network(object):
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
 
-            dx_shape = tf.shape(self.next_elem['dx_'+item])
-
-            self.next_elem['dx_'+item] = tf.cond(zero_cond, 
-                                                 lambda: tf.zeros([1, dx_shape[2], 1, dx_shape[4]], dtype=tf.float64), 
-                                                 lambda: tf.dynamic_partition(tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
-                                                                              self.next_elem['partition_'+item], 2
-                                                                              )[1])
+            if use_force:
+                dx_shape = tf.shape(self.next_elem['dx_'+item])
+             
+                self.next_elem['dx_'+item] = tf.cond(zero_cond, 
+                                                     lambda: tf.zeros([1, dx_shape[2], 1, dx_shape[4]], dtype=tf.float64), 
+                                                     lambda: tf.dynamic_partition(tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
+                                                                                  self.next_elem['partition_'+item], 2
+                                                                                  )[1])
 
             self.next_elem['struct_type_set'], self.next_elem['struct_ind'], self.next_elem['struct_N'] = \
                     tf.unique_with_counts(tf.reshape(self.next_elem['struct_type'], [-1]))
             max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
-            self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
-                                                 lambda: self.next_elem['dx_'+item],
-                                                 lambda: tf.pad(self.next_elem['dx_'+item], 
-                                                                [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['dx_'+item])[2]], [0,0]]))
 
-            self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
+            if use_force:
+                self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
+                                                     lambda: self.next_elem['dx_'+item],
+                                                     lambda: tf.pad(self.next_elem['dx_'+item], 
+                                                                    [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['dx_'+item])[2]], [0,0]]))
+             
+                self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
                                                      lambda: tf.zeros([1], tf.int32), 
-                                                     lambda: tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [dx_shape[1]]), 
+                                                     lambda: tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [x_shape[1]]), # dx_shape[1]
                                                                                              tf.range(tf.shape(self.next_elem['N_'+item])[0])), [-1]),
                                                                                   self.next_elem['partition_'+item], 2)[1])
 
@@ -392,15 +397,18 @@ class Neural_network(object):
                 aw_tag = True
 
             train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, 
-                                                                   batch_size=self.inputs['batch_size'], full_batch=self.inputs['full_batch'], atomic_weights=aw_tag)
+                                                                   batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'], 
+                                                                   full_batch=self.inputs['full_batch'], atomic_weights=aw_tag)
             valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, 
-                                                                   batch_size=self.inputs['batch_size'], valid=True, atomic_weights=aw_tag)
+                                                                   batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'],
+                                                                   valid=True, atomic_weights=aw_tag)
 #                                                                   valid=True, atomic_weights=aw_tag)
             self._make_iterator_from_handle(train_iter, aw_tag)
 
         if self.inputs['test']:
             test_filequeue = _make_data_list(self.test_data_list)
-            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, batch_size=self.inputs['batch_size'], valid=True, atomic_weights=False)
+            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, batch_size=self.inputs['batch_size'], 
+                                                                  use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
             if not self.inputs['train']:
                 self._make_iterator_from_handle(test_iter)
 
