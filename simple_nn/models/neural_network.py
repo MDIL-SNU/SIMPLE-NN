@@ -56,6 +56,7 @@ class Neural_network(object):
                               }
         self.inputs = dict()
         self.global_step = tf.Variable(0, trainable=False)
+        self.increment_global_step = tf.assign(self.global_step, self.global_step+1)
         self.train_data_list = './train_list'
         self.valid_data_list = './valid_list'
         self.test_data_list = './test_list'
@@ -480,16 +481,16 @@ class Neural_network(object):
                                 z = lbfgs.find_direction(zero_vals[0])
 
                             lbfgs.initialize_line_search()
+                            old_step = lbfgs.step
                             sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(z*lbfgs.step))
                             alpha_vals = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
-                            sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(-z*lbfgs.step))
                             while lbfgs.wolfe_line_search_iter(zero_vals, alpha_vals, z):
+                                sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(-z*old_step))
                                 sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(z*lbfgs.step))
                                 alpha_vals = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
-                                sess.run(self.tmp_apply_grad, feed_dict=self._get_grad_dict(-z*lbfgs.step))
+                                old_step = lbfgs.step
 
-                            sess.run(self.apply_grad, feed_dict=self._get_grad_dict(z*lbfgs.step))
-                            alpha_vals = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
+                            sess.run(self.increment_global_step)
                             lbfgs.update_lists(np.copy(alpha_vals[0] - zero_vals[0]), np.copy(z))
 
                     else:
