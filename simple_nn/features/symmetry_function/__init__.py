@@ -201,7 +201,7 @@ class Symmetry_function(object):
         dataset = dataset.map(lambda x: self._parse_data(x, inp_size, use_force=use_force, atomic_weights=atomic_weights), 
                               num_parallel_calls=self.inputs['num_parallel_calls'])
         if cache:
-            dataset = dataset.cache() # for test
+            dataset = dataset.take(-1).cache() # for test
 
         batch_dict = dict()
         batch_dict['E'] = [None]
