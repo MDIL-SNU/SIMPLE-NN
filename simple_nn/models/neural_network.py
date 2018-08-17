@@ -409,7 +409,7 @@ class Neural_network(object):
         if self.inputs['test']:
             test_filequeue = _make_data_list(self.test_data_list)
             test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, 
-                                                                  batch_size=self.inputs['batch_size'], cache=self.inputs['cache']
+                                                                  batch_size=self.inputs['batch_size'], cache=self.inputs['cache'],
                                                                   use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
             if not self.inputs['train']:
                 self._make_iterator_from_handle(test_iter)
