@@ -195,10 +195,13 @@ class Symmetry_function(object):
         return res
 
 
-    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, use_force=False, valid=False, full_batch=False, atomic_weights=False):
+    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, use_force=False, valid=False, cache=False, full_batch=False, atomic_weights=False):
         dataset = tf.data.TFRecordDataset(filename_queue)
+        #dataset = dataset.cache() # for test
         dataset = dataset.map(lambda x: self._parse_data(x, inp_size, use_force=use_force, atomic_weights=atomic_weights), 
                               num_parallel_calls=self.inputs['num_parallel_calls'])
+        if cache:
+            dataset = dataset.cache() # for test
 
         batch_dict = dict()
         batch_dict['E'] = [None]

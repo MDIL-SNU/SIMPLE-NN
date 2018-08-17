@@ -52,6 +52,7 @@ class Neural_network(object):
                                       'inter_op_parallelism_threads': 0,
                                       'intra_op_parallelism_threads': 0,
                                       'print_structure_rmse': False,
+                                      'cache': False,
                                   }
                               }
         self.inputs = dict()
@@ -396,10 +397,10 @@ class Neural_network(object):
             else:
                 aw_tag = True
 
-            train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, 
+            train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, cache=self.inputs['cache'],
                                                                    batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'], 
                                                                    full_batch=self.inputs['full_batch'], atomic_weights=aw_tag)
-            valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, 
+            valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, cache=self.inputs['cache'],
                                                                    batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'],
                                                                    valid=True, atomic_weights=aw_tag)
 #                                                                   valid=True, atomic_weights=aw_tag)
@@ -407,7 +408,8 @@ class Neural_network(object):
 
         if self.inputs['test']:
             test_filequeue = _make_data_list(self.test_data_list)
-            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, batch_size=self.inputs['batch_size'], 
+            test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, 
+                                                                  batch_size=self.inputs['batch_size'], cache=self.inputs['cache']
                                                                   use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
             if not self.inputs['train']:
                 self._make_iterator_from_handle(test_iter)
