@@ -78,7 +78,7 @@ class Symmetry_function(object):
     def set_inputs(self):
         self.inputs = self.parent.inputs['symmetry_function']
 
-    def _write_tfrecords(self, res, writer, atomic_weights=False):
+    def _write_tfrecords(self, res, writer, use_force=False, atomic_weights=False):
         # TODO: after stabilize overall tfrecord related part,
         # this part will replace the part of original 'res' dict
          
@@ -94,13 +94,15 @@ class Symmetry_function(object):
         
         feature = {
             'E':_bytes_feature(np.array([res['E']]).tobytes()),
-            'F':_bytes_feature(res['F'].tobytes()),
             'tot_num':_bytes_feature(res['tot_num'].astype(np.float64).tobytes()),
             'partition':_bytes_feature(res['partition'].tobytes()),
             'struct_type':_bytes_feature(six.b(res['struct_type'])),
             'struct_weight': _bytes_feature(np.array([res['struct_weight']]).tobytes())
         }
     
+        if use_force:
+            featire['F'] = _bytes_feature(res['F'].tobytes())
+
         if atomic_weights:
             feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         
@@ -109,11 +111,12 @@ class Symmetry_function(object):
             feature['N_'+item] = _bytes_feature(res['N'][item].tobytes())
             feature['params_'+item] = _bytes_feature(res['params'][item].tobytes())
 
-            dx_indices, dx_values, dx_dense_shape = _gen_1dsparse(res['dx'][item].reshape([-1]))
+            if use_force:
+                dx_indices, dx_values, dx_dense_shape = _gen_1dsparse(res['dx'][item].reshape([-1]))
             
-            feature['dx_indices_'+item] = _bytes_feature(dx_indices.tobytes())
-            feature['dx_values_'+item] = _bytes_feature(dx_values.tobytes())
-            feature['dx_dense_shape_'+item] = _bytes_feature(dx_dense_shape.tobytes())
+                feature['dx_indices_'+item] = _bytes_feature(dx_indices.tobytes())
+                feature['dx_values_'+item] = _bytes_feature(dx_values.tobytes())
+                feature['dx_dense_shape_'+item] = _bytes_feature(dx_dense_shape.tobytes())
 
             feature['partition_'+item] = _bytes_feature(res['partition_'+item].tobytes())
 
@@ -126,10 +129,9 @@ class Symmetry_function(object):
         writer.write(example.SerializeToString())
 
 
-    def _parse_data(self, serialized, inp_size, valid=False, atomic_weights=False):
+    def _parse_data(self, serialized, inp_size, use_force=False, atomic_weights=False):
         features = {
             'E': tf.FixedLenFeature([], dtype=tf.string),
-            'F': tf.FixedLenFeature([], dtype=tf.string),
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
             'partition': tf.FixedLenFeature([], dtype=tf.string),
             'struct_type': tf.FixedLenSequenceFeature([], dtype=tf.string, allow_missing=True),
@@ -140,13 +142,16 @@ class Symmetry_function(object):
             features['x_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['N_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['params_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-            features['dx_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-            features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
-            features['dx_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            if use_force:
+                features['dx_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+                features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+                features['dx_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['partition_'+item] = tf.FixedLenFeature([], dtype=tf.string)
 
-        if atomic_weights:
-            features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
+        if use_force:
+            features['F'] = tf.FixedLenFeature([], dtype=tf.string),
+            if atomic_weights:
+                features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
@@ -154,7 +159,6 @@ class Symmetry_function(object):
         res = dict()
  
         res['E'] = tf.decode_raw(read_data['E'], tf.float64)
-        res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
         res['tot_num'] = tf.decode_raw(read_data['tot_num'], tf.float64)
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
         res['struct_type'] = read_data['struct_type']
@@ -171,48 +175,57 @@ class Symmetry_function(object):
                                      lambda: tf.zeros([0, inp_size[item]], dtype=tf.float64),
                                      lambda: tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, inp_size[item]]))
 
-            res['dx_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
-                                      lambda: tf.zeros([0, inp_size[item], 0, 3], dtype=tf.float64),
-                                      lambda: tf.reshape(
-                                        tf.sparse_to_dense(
-                                            sparse_indices=tf.decode_raw(read_data['dx_indices_'+item], tf.int32),
-                                            output_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int32),
-                                            sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)), 
-                                        [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3]))
+            if use_force:
+                res['dx_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
+                                          lambda: tf.zeros([0, inp_size[item], 0, 3], dtype=tf.float64),
+                                          lambda: tf.reshape(
+                                            tf.sparse_to_dense(
+                                                sparse_indices=tf.decode_raw(read_data['dx_indices_'+item], tf.int32),
+                                                output_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int32),
+                                                sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)), 
+                                            [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3]))
  
             res['partition_'+item] = tf.decode_raw(read_data['partition_'+item], tf.int32)
- 
-        if atomic_weights:
-            res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
+
+        if use_force: 
+            res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
+            if atomic_weights:
+                res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
         return res
 
 
-    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, valid=False, full_batch=False, atomic_weights=False):
+    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, use_force=False, valid=False, cache=False, full_batch=False, atomic_weights=False):
         dataset = tf.data.TFRecordDataset(filename_queue)
-        dataset = dataset.map(lambda x: self._parse_data(x, inp_size, valid=False, atomic_weights=atomic_weights), 
+        #dataset = dataset.cache() # for test
+        dataset = dataset.map(lambda x: self._parse_data(x, inp_size, use_force=use_force, atomic_weights=atomic_weights), 
                               num_parallel_calls=self.inputs['num_parallel_calls'])
+        if cache:
+            dataset = dataset.take(-1).cache() # for test
 
         batch_dict = dict()
         batch_dict['E'] = [None]
-        batch_dict['F'] = [None, 3]
         batch_dict['tot_num'] = [None]
         batch_dict['partition'] = [None]
         batch_dict['struct_type'] = [None]
         batch_dict['struct_weight'] = [None]
 
-        if atomic_weights:
-            batch_dict['atomic_weights'] = [None]
+        if use_force:
+            batch_dict['F'] = [None, 3]
+            if atomic_weights:
+                batch_dict['atomic_weights'] = [None]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
             batch_dict['N_'+item] = [None]
-            batch_dict['dx_'+item] = [None, inp_size[item], None, 3]
+            if use_force:
+                batch_dict['dx_'+item] = [None, inp_size[item], None, 3]
             batch_dict['partition_'+item] = [None]
  
         if valid or full_batch:
             dataset = dataset.padded_batch(batch_size, batch_dict)
             dataset = dataset.prefetch(buffer_size=1)
+            #dataset = dataset.cache()
             iterator = dataset.make_initializable_iterator()
         else:
             dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(200, None))
@@ -224,7 +237,7 @@ class Symmetry_function(object):
         return iterator  
 
 
-    def preprocess(self, calc_scale=True, get_atomic_weights=None, **kwargs):
+    def preprocess(self, calc_scale=True, use_force=False, get_atomic_weights=None, **kwargs):
         
         # pickle list -> train / valid
         tmp_pickle_train = './pickle_train_list'
@@ -303,10 +316,10 @@ class Symmetry_function(object):
                 tmp_aw = np.concatenate(tmp_aw)
                 tmp_res['atomic_weights'] = tmp_aw
             
-            self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
+            self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
 
             if not self.inputs['remain_pickle']:
-                os.remove(item)
+                os.remove(ptem)
 
         writer.close()
         self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
