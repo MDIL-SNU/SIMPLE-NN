@@ -58,6 +58,10 @@ class Simple_nn(object):
 
         if not 'atom_types' in self.inputs:
             raise KeyError
+
+        # TODO: replace hard-coded neural_network.
+        if not self.inputs['neural_network']['use_force'] and self.inputs['symmetry_function']['atomic_weights']['type'] is not None:
+            print("Warning: neural_network.use_force is False but symmetry_function.atomic_weights is set. Atomic weights will be ignored.")
         
         self.logfile = open('LOG', 'w', 10)
 
