@@ -704,7 +704,6 @@ class Neural_network(object):
                             str_floss[struct] = 0.
                             str_tot_struc[struct] = 0
                             str_tot_atom[struct] = 0
-                            #str_weight[struct] = next_elem['struct_weight'][i][0]
 
                         str_eloss[struct] += tmp_str_eloss[i] * next_elem['struct_N'][i]
                         str_tot_struc[struct] += next_elem['struct_N'][i]
@@ -744,7 +743,6 @@ class Neural_network(object):
                     str_floss[struct] = 0.
                     str_tot_struc[struct] = 0
                     str_tot_atom[struct] = 0
-                    #str_weight[struct] = next_elem['struct_weight'][i][0]
 
                 str_eloss[struct] = tmp_str_eloss[i]
                 if self.inputs['use_force']:

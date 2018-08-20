@@ -545,13 +545,20 @@ def _parse_strlist(file_name):
                 else:
                     name = tmp.strip()
                     weight = 1.0
+                # If the same structure tags are given multiple times with different weights,
+                # other than first value will be ignored!
+                # Validate structure weight.
+                if name not in structure_names:
+                    structure_names.append(name)
+                    structure_weights.append(weight)
+                    if weight < 0:
+                        raise ValueError("structure weight must be greater than or equal to zero.")
+                    if np.isclose(weight, 0):
+                        print("Warning: structure weight for '{:}' is set to zero.".format(name))
+                old_weight = structure_weights[structure_names.index(name)]
+                if not np.isclose(old_weight - weight, 0):
+                    print("Warning: structure weight for '{:}' was set to {:}, but it is {:} now. New value will be ignored".format(name, old_weight, weight))
                 continue
-            # If the same structure tags are given multiple times with different weights,
-            # other than first value will be ignored!
-            # TODO: warn about it.
-            if name not in structure_names:
-                structure_names.append(name)
-                structure_weights.append(weight)
             structures.append(line.split())
             structure_ind.append(structure_names.index(name))
     return structures, structure_ind, structure_names, structure_weights
