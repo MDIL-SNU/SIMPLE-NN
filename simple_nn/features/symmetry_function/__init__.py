@@ -102,9 +102,8 @@ class Symmetry_function(object):
     
         if use_force:
             feature['F'] = _bytes_feature(res['F'].tobytes())
-
-        if atomic_weights:
-            feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
+            if atomic_weights:
+                feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
@@ -149,7 +148,7 @@ class Symmetry_function(object):
             features['partition_'+item] = tf.FixedLenFeature([], dtype=tf.string)
 
         if use_force:
-            features['F'] = tf.FixedLenFeature([], dtype=tf.string),
+            features['F'] = tf.FixedLenFeature([], dtype=tf.string)
             if atomic_weights:
                 features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
 
@@ -348,7 +347,7 @@ class Symmetry_function(object):
             if atomic_weights is not None:
                 tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']]).astype(np.float64)
 
-            self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
+            self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
 
             if not self.inputs['remain_pickle']:
                 os.remove(item)

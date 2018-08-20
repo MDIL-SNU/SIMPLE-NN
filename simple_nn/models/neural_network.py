@@ -307,7 +307,7 @@ class Neural_network(object):
         self._generate_lammps_potential(sess)
         
 
-    def _make_iterator_from_handle(self, training_dataset, use_force=False, atomic_weights=False):
+    def _make_iterator_from_handle(self, training_dataset, atomic_weights=False):
         self.handle = tf.placeholder(tf.string, shape=[])
         self.iterator = tf.data.Iterator.from_string_handle(
             self.handle, training_dataset.output_types, training_dataset.output_shapes)
@@ -315,7 +315,7 @@ class Neural_network(object):
 
         # which place?
         self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
-        if use_force:
+        if self.inputs['use_force']:
             self.next_elem['F'] = \
                 tf.dynamic_partition(
                     tf.reshape(self.next_elem['F'], [-1, 3]),
@@ -347,7 +347,7 @@ class Neural_network(object):
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
 
-            if use_force:
+            if self.inputs['use_force']:
                 dx_shape = tf.shape(self.next_elem['dx_'+item])
              
                 self.next_elem['dx_'+item] = tf.cond(zero_cond, 
@@ -360,7 +360,7 @@ class Neural_network(object):
                     tf.unique_with_counts(tf.reshape(self.next_elem['struct_type'], [-1]))
             max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
 
-            if use_force:
+            if self.inputs['use_force']:
                 self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
                                                      lambda: self.next_elem['dx_'+item],
                                                      lambda: tf.pad(self.next_elem['dx_'+item], 
