@@ -101,7 +101,7 @@ class Symmetry_function(object):
         }
     
         if use_force:
-            featire['F'] = _bytes_feature(res['F'].tobytes())
+            feature['F'] = _bytes_feature(res['F'].tobytes())
 
         if atomic_weights:
             feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
