@@ -8,6 +8,9 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+# Read version number.
+exec(open('simple_nn/_version.py').read())
+
 # required module
 # TODO: version check
 install_requires = [
@@ -46,7 +49,7 @@ extension_libgdf = Extension(
 # FIXME: fill the empty part
 setup(
     name='simple-nn',
-    version='0.4.1',
+    version=__version__,
     description='Package for generating atomic potentials using neural network.',
     long_description=long_description,
     long_description_content_type='text/markdown',

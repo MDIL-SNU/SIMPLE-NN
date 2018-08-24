@@ -2,6 +2,7 @@ import yaml
 import collections
 import functools
 from .utils import modified_sigmoid, _generate_gdf_file
+from ._version import __version__
 
 # TODO: logging
 
@@ -61,6 +62,8 @@ class Simple_nn(object):
 
         self.logfile = open('LOG', 'w', 10)
 
+        self._log_header()
+
         if not self.inputs['neural_network']['use_force'] and \
                 self.inputs['symmetry_function']['atomic_weights']['type'] is not None:
             self.logfile.write("Warning: Force training is off but atomic weights are given. Atomic weights will be ignored.\n")
@@ -72,7 +75,7 @@ class Simple_nn(object):
 
     def _log_header(self):
         # TODO: make the log header (low priority)
-        self.logfile.write("SIMPLE_NN\n")
+        self.logfile.write("SIMPLE_NN v{:}\n\n".format(__version__))
 
     def write_inputs(self):
         """
