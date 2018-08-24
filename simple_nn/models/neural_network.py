@@ -619,7 +619,8 @@ class Neural_network(object):
 
                     # Temp saving
                     #if (epoch+1) % self.inputs['save_interval'] == 0:
-                    if save_stack > self.inputs['save_interval'] and prev_eloss > eloss and prev_floss > floss:
+                    if save_stack > self.inputs['save_interval'] and prev_eloss > eloss and \
+                       ((prev_floss > floss) or floss == 0.):
                         self._save(sess, saver)
                         prev_eloss = eloss
                         prev_floss = floss
