@@ -414,7 +414,7 @@ class Symmetry_function(object):
                 snapshots = io.read(item[0], index=index, force_consistent=True) 
 
             for atoms in snapshots:
-                cart = np.copy(atoms.positions, order='C')
+                cart = np.copy(atoms.get_positions(wrap=True), order='C')
                 scale = np.copy(atoms.get_scaled_positions(), order='C')
                 cell = np.copy(atoms.cell, order='C')
 
