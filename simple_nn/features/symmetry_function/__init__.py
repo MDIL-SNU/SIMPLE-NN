@@ -525,8 +525,8 @@ class Symmetry_function(object):
     def _parse_strlist(self):
         structures = []
         structure_ind = []
-        structure_names = []
-        structure_weights = []
+        structure_names = ["None"]
+        structure_weights = [1.0]
         name = "None"
         weight = 1.0
         with open(self.structure_list, 'r') as fil:
