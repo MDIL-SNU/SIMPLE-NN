@@ -2,6 +2,7 @@ import yaml
 import collections
 import functools
 from .utils import modified_sigmoid, _generate_gdf_file
+from ._version import __version__
 
 # TODO: logging
 
@@ -58,12 +59,23 @@ class Simple_nn(object):
 
         if not 'atom_types' in self.inputs:
             raise KeyError
-        
+
         self.logfile = open('LOG', 'w', 10)
+
+        self._log_header()
+
+        if not self.inputs['neural_network']['use_force'] and \
+                self.inputs['symmetry_function']['atomic_weights']['type'] is not None:
+            self.logfile.write("Warning: Force training is off but atomic weights are given. Atomic weights will be ignored.\n")
+
+        if self.inputs['neural_network']['method'] == 'L-BFGS' and \
+                not self.inputs['neural_network']['full_batch']:
+            self.logfile.write("Warning: Optimization method is L-BFGS but full batch mode is off. This might results bad convergence or divergence.\n")
+        
 
     def _log_header(self):
         # TODO: make the log header (low priority)
-        self.logfile.write("SIMPLE_NN\n")
+        self.logfile.write("SIMPLE_NN v{:}\n".format(__version__))
 
     def write_inputs(self):
         """
