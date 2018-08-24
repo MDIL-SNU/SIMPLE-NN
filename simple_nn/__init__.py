@@ -62,6 +62,9 @@ class Simple_nn(object):
         # TODO: replace hard-coded neural_network.
         if not self.inputs['neural_network']['use_force'] and self.inputs['symmetry_function']['atomic_weights']['type'] is not None:
             print("Warning: neural_network.use_force is False but symmetry_function.atomic_weights is set. Atomic weights will be ignored.")
+
+        if self.inputs['neural_network']['method'] == 'L-BFGS' and not self.inptus['neural_network']['full_batch']:
+            print("Warning: Optimization method is L-BFGS but full batch mode is off. This might results bad convergence or divergence.")
         
         self.logfile = open('LOG', 'w', 10)
 
