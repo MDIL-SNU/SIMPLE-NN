@@ -3,7 +3,7 @@ import six
 from six.moves import cPickle as pickle
 import numpy as np
 from cffi import FFI
-import os, sys, psutil
+import os, sys, psutil, shutil
 import types
 import re
 from collections import OrderedDict
@@ -232,6 +232,8 @@ def read_lammps_potential(filename):
                 break
 
         return line
+
+    shutil.copy2(filename, 'potential_read')
 
     weights = dict()
     with open(filename) as fil:
