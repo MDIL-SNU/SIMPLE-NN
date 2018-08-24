@@ -223,3 +223,40 @@ def repeat(x, counts):
         num_writes > 0,
         output_array.concat,
         lambda: array_ops.zeros(shape=[0], dtype=x.dtype))
+
+def read_lammps_potential(filename):
+    def _read_until(fil, stop_tag):
+        while True:
+            line = fil.readline()
+            if stop_tag in line:
+                break
+
+        return line
+
+    weights = dict()
+    with open(filename) as fil:
+        atom_types = fil.readline().replace('\n','').split()[1:]
+        for item in atom_types:
+            weights[item] = list()            
+
+            dims = list()
+            dims.append(int(_read_until(fil, 'SYM').split()[1]))
+
+            hidden_to_out = map(lambda x: int(x), _read_until(fil, 'NET').split()[2:])
+            dims += hidden_to_out
+
+            num_weights = len(dims) - 1
+
+            for j in range(num_weights):
+                tmp_weights = np.zeros([dims[j], dims[j+1]])
+                tmp_bias = np.zeros([dims[j+1]])
+
+                fil.readline()
+                for k in range(dims[j+1]):
+                    tmp_weights[:,k] = map(lambda x: float(x), fil.readline().split()[1:])
+                    tmp_bias[k] = float(fil.readline().split()[1])
+
+                weights[item].append(np.copy(tmp_weights))
+                weights[item].append(np.copy(tmp_bias))
+
+    return weights
