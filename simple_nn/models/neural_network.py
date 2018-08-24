@@ -7,7 +7,7 @@ import collections
 import functools
 import timeit
 import copy
-from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory, repeat
+from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory, repeat, read_lammps_potential
 from ..utils.lbfgs import L_BFGS
 #from tensorflow.python.client import timeline
 
@@ -114,6 +114,9 @@ class Neural_network(object):
             else:
                 raise NotImplementedError("Not implemented regularizer type!")
 
+        if self.inputs['continue'] == 'weights':
+            saved_weights = read_lammps_potential('potential_saved')
+
         #acti_func = 'selu'
         #acti_func = 'elu'
         acti_func = 'sigmoid'
@@ -127,6 +130,11 @@ class Neural_network(object):
                 nodes = list(map(int, self.inputs['nodes'].split('-')))
             nlayers = len(nodes)
             model = tf.keras.models.Sequential()
+
+            if self.inputs['continue'] == 'weights':
+                dense_basic_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][0])
+                dense_basic_setting['bias_initializer'] = tf.constant_initializer(saved_weights[item][1])
+
             model.add(tf.keras.layers.Dense(nodes[0], activation=acti_func, \
                                             input_dim=self.inp_size[item],
                                             #kernel_initializer=tf.initializers.random_normal(stddev=1./self.inp_size[item], dtype=dtype),
@@ -134,10 +142,19 @@ class Neural_network(object):
                                             **dense_basic_setting))
 
             for i in range(1, nlayers):
+                if self.inputs['continue'] == 'weights':
+                    dense_basic_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][2*i+0])
+                    dense_basic_setting['bias_initializer'] = tf.constant_initializer(saved_weights[item][2*i+1])
+
                 model.add(tf.keras.layers.Dense(nodes[i], activation=acti_func,
                                                 #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[i-1], dtype=dtype),
                                                 #use_bias=False,
                                                 **dense_basic_setting))
+
+            if self.inputs['continue'] == 'weights':
+                dense_last_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][-2])
+                dense_last_setting['bias_initializer'] = tf.constant_initializer(saved_weights[item][-1])
+
             model.add(tf.keras.layers.Dense(1, activation='linear', 
                                             #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[-1], dtype=dtype),
                                             #bias_initializer=tf.initializers.random_normal(stddev=0.1, dtype=dtype),
@@ -430,7 +447,7 @@ class Neural_network(object):
         with tf.Session(config=config) as sess:
             # Load or initialize the variables
             saver = tf.train.Saver()
-            if self.inputs['continue']:
+            if self.inputs['continue'] == True:
                 saver.restore(sess, './SAVER')
             else:
                 sess.run(tf.global_variables_initializer())
