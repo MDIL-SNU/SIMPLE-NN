@@ -335,7 +335,14 @@ class Neural_network(object):
             self.inputs['continue'] = True
             self.parent.write_inputs()
 
-        self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")              
+        cutline = '----------------------------------------------'
+        if self.inputs['use_force']:
+            cutline += '------------------------'
+
+        if not self.inputs['print_structure_rmse']:
+            self.parent.logfile.write(cutline + "\n")
+        self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")
+        self.parent.logfile.write(cutline + "\n")
         saver.save(sess, './SAVER')
         self._generate_lammps_potential(sess)
         
@@ -471,6 +478,10 @@ class Neural_network(object):
             #options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
             #run_metadata = tf.RunMetadata()
 
+            prev_eloss = float('inf')
+            prev_floss = float('inf')
+            save_stack = 1
+
             if self.inputs['train']:
                 train_handle = sess.run(train_iter.string_handle())
                 train_fdict = {self.handle: train_handle}
@@ -550,6 +561,8 @@ class Neural_network(object):
                         #    fil.write(chrome_trace)
 
                         # TODO: need to fix the calculation part for training loss
+                        save_stack += self.inputs['show_interval']
+
                         result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
 
                         t_eloss, t_floss, t_str_eloss, t_str_floss, _, _, _, t_str_set = self._get_loss_for_print(
@@ -605,10 +618,14 @@ class Neural_network(object):
                         self.parent.logfile.write(result)
 
                     # Temp saving
-                    if (epoch+1) % self.inputs['save_interval'] == 0:
+                    #if (epoch+1) % self.inputs['save_interval'] == 0:
+                    if save_stack > self.inputs['save_interval'] and prev_eloss > eloss and prev_floss > floss:
                         self._save(sess, saver)
+                        prev_eloss = eloss
+                        prev_floss = floss
+                        save_stack = 1
 
-                self._save(sess, saver)
+                #self._save(sess, saver)
 
             if self.inputs['test']:
                 test_handle = sess.run(test_iter.string_handle())
