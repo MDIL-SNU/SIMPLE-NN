@@ -69,13 +69,13 @@ class Simple_nn(object):
             self.logfile.write("Warning: Force training is off but atomic weights are given. Atomic weights will be ignored.\n")
 
         if self.inputs['neural_network']['method'] == 'L-BFGS' and \
-                not self.inptus['neural_network']['full_batch']:
+                not self.inputs['neural_network']['full_batch']:
             self.logfile.write("Warning: Optimization method is L-BFGS but full batch mode is off. This might results bad convergence or divergence.\n")
         
 
     def _log_header(self):
         # TODO: make the log header (low priority)
-        self.logfile.write("SIMPLE_NN v{:}\n\n".format(__version__))
+        self.logfile.write("SIMPLE_NN v{:}\n".format(__version__))
 
     def write_inputs(self):
         """

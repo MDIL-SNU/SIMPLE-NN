@@ -376,7 +376,7 @@ class Symmetry_function(object):
             train_dir = open(self.pickle_list, 'w')
 
         # Get structure list to calculate  
-        structures, structure_ind, structure_names, structure_weights = _parse_strlist(self.structure_list)
+        structures, structure_ind, structure_names, structure_weights = self._parse_strlist()
 
         # Get parameter list for each atom types
         params_set = dict()
@@ -475,11 +475,11 @@ class Symmetry_function(object):
                     comm.barrier()
                     if errno == 1:
                         err = "Not implemented symmetry function type."
-                        self.logfile.write("Error: {:}\n".format(err))
+                        self.parent.logfile.write("Error: {:}\n".format(err))
                         raise NotImplementedError(err)
                     elif errno == 2:
                         err = "Zeta in G4/G5 must be integer."
-                        self.logfile.write("Error: {:}\n".format(err))
+                        self.parent.logfile.write("Error: {:}\n".format(err))
                         raise ValueError(err)
                     else:
                         assert errno == 0
@@ -522,49 +522,49 @@ class Symmetry_function(object):
             train_dir.close()
 
 
-def _parse_strlist(file_name):
-    structures = []
-    structure_ind = []
-    structure_names = []
-    structure_weights = []
-    name = "None"
-    weight = 1.0
-    with open(file_name, 'r') as fil:
-        for line in fil:
-            line = line.strip()
-            if len(line) == 0 or line.isspace():
-                name = "None"
-                weight = 1.0
-                continue
-            if line[0] == "[" and line[-1] == "]":
-                tmp = line[1:-1]
-                if ':' in tmp:
-                    sp = tmp.rsplit(':', 1)
-                    try:
-                        weight = float(sp[1].strip())
-                        name = sp[0].strip()
-                    except ValueError:
+    def _parse_strlist(self):
+        structures = []
+        structure_ind = []
+        structure_names = []
+        structure_weights = []
+        name = "None"
+        weight = 1.0
+        with open(self.structure_list, 'r') as fil:
+            for line in fil:
+                line = line.strip()
+                if len(line) == 0 or line.isspace():
+                    name = "None"
+                    weight = 1.0
+                    continue
+                if line[0] == "[" and line[-1] == "]":
+                    tmp = line[1:-1]
+                    if ':' in tmp:
+                        sp = tmp.rsplit(':', 1)
+                        try:
+                            weight = float(sp[1].strip())
+                            name = sp[0].strip()
+                        except ValueError:
+                            name = tmp.strip()
+                            weight = 1.0
+                    else:
                         name = tmp.strip()
                         weight = 1.0
-                else:
-                    name = tmp.strip()
-                    weight = 1.0
-                # If the same structure tags are given multiple times with different weights,
-                # other than first value will be ignored!
-                # Validate structure weight (structure weight is not validated on training run).
-                if name not in structure_names:
-                    structure_names.append(name)
-                    structure_weights.append(weight)
-                    if weight < 0:
-                        err = "Structure weight must be greater than or equal to zero."
-                        self.logfile.write("Error: {:}\n".format(err))
-                        raise ValueError(err)
-                    if np.isclose(weight, 0):
-                        self.logfile.write("Warning: Structure weight for '{:}' is set to zero.\n".format(name))
-                old_weight = structure_weights[structure_names.index(name)]
-                if not np.isclose(old_weight - weight, 0):
-                    self.logfile.write("Warning: Structure weight for '{:}' is set to {:} (previously set to {:}). New value will be ignored\n".format(name, weight, old_weight))
-                continue
-            structures.append(line.split())
-            structure_ind.append(structure_names.index(name))
-    return structures, structure_ind, structure_names, structure_weights
+                    # If the same structure tags are given multiple times with different weights,
+                    # other than first value will be ignored!
+                    # Validate structure weight (structure weight is not validated on training run).
+                    if name not in structure_names:
+                        structure_names.append(name)
+                        structure_weights.append(weight)
+                        if weight < 0:
+                            err = "Structure weight must be greater than or equal to zero."
+                            self.parent.logfile.write("Error: {:}\n".format(err))
+                            raise ValueError(err)
+                        if np.isclose(weight, 0):
+                            self.parent.logfile.write("Warning: Structure weight for '{:}' is set to zero.\n".format(name))
+                    old_weight = structure_weights[structure_names.index(name)]
+                    if not np.isclose(old_weight - weight, 0):
+                        self.parent.logfile.write("Warning: Structure weight for '{:}' is set to {:} (previously set to {:}). New value will be ignored\n".format(name, weight, old_weight))
+                    continue
+                structures.append(line.split())
+                structure_ind.append(structure_names.index(name))
+        return structures, structure_ind, structure_names, structure_weights
