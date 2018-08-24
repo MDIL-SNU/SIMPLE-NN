@@ -129,6 +129,22 @@ class Neural_network(object):
             else:
                 nodes = list(map(int, self.inputs['nodes'].split('-')))
             nlayers = len(nodes)
+
+            # Check if network size is the same as that of potential read.
+            if self.inputs['continue'] == 'weights':
+                mismatch = False
+                if (self.inp_size[item], nodes[0]) != saved_weights[item][0].shape:
+                    mismatch = True
+                if not mismatch:
+                    for i in range(1, nlayers):
+                        if (nodes[i-1], nodes[i]) != saved_weights[item][2*i+0].shape:
+                            mismatch = True
+                            break
+                if mismatch:
+                    err = "The network size given as input does not match that of potential read."
+                    self.parent.logfile.write("Error: {:}\n".format(err))
+                    raise ValueError(err)
+
             model = tf.keras.models.Sequential()
 
             if self.inputs['continue'] == 'weights':
