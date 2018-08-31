@@ -246,6 +246,13 @@ class Neural_network(object):
     def _make_optimizer(self, user_optimizer=None):
         final_loss = self.inputs['loss_scale']*self.total_loss
 
+        if isinstance(self.inputs['learning_rate'], collections.Mapping):
+            exponential_decay_inputs = copy.deepcopy(self.inputs['learning_rate'])
+            exponential_decay_inputs['learning_rate'] = tf.constant(exponential_decay_inputs['learning_rate'], tf.float64)
+            self.learning_rate = tf.train.exponential_decay(global_step=self.global_step, **exponential_decay_inputs)
+        else:
+            self.learning_rate = tf.constant(self.inputs['learning_rate'], tf.float64)
+
         if self.inputs['method'] == 'L-BFGS':
             self.optim = tf.train.GradientDescentOptimizer(learning_rate=1.)
             self.compute_grad = self.optim.compute_gradients(final_loss)
@@ -254,13 +261,6 @@ class Neural_network(object):
             self.minim = self.optim.minimize(final_loss, global_step=self.global_step)
             
         elif self.inputs['method'] == 'Adam':
-            if isinstance(self.inputs['learning_rate'], collections.Mapping):
-                exponential_decay_inputs = copy.deepcopy(self.inputs['learning_rate'])
-                exponential_decay_inputs['learning_rate'] = tf.constant(exponential_decay_inputs['learning_rate'], tf.float64)
-                self.learning_rate = tf.train.exponential_decay(global_step=self.global_step, **exponential_decay_inputs)
-            else:
-                self.learning_rate = tf.constant(self.inputs['learning_rate'], tf.float64)
-
             self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rate, 
                                                 name='Adam', **self.inputs['optimizer'])
             self.compute_grad = self.optim.compute_gradients(final_loss)
@@ -269,7 +269,12 @@ class Neural_network(object):
             self.minim = self.optim.minimize(final_loss, global_step=self.global_step)
         else:
             if user_optimizer != None:
-                self.optim = user_optimizer.minimize(final_loss, global_step=self.global_step)
+                self.optim = user_optimizer(learning_rate=self.learning_rate, 
+                                            name='user_optim', **self.inputs['optimizer'])
+                self.compute_grad = self.optim.compute_gradients(final_loss)
+                self.grad_and_vars = [[None, item[1]] for item in self.compute_grad]
+                self.flat_grad = tf.reshape(tf.concat([tf.reshape(item[0], [-1]) for item in self.compute_grad], axis=0), [-1, 1])
+                self.minim = self.optim.minimize(final_loss, global_step=self.global_step)
                 #self.optim = user_optimizer
             else:
                 raise ValueError
