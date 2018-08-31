@@ -582,7 +582,7 @@ class Neural_network(object):
                         if self.inputs['use_force']:
                             result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss, floss)
 
-                        if self.inputs['method'] == 'Adam':
+                        if self.inputs['method'] != 'L-BFGS':
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
                         result += ', elapsed: {:4.2e}\n'.format(time2-time1)
