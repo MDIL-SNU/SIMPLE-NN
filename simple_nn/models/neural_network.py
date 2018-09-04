@@ -588,7 +588,7 @@ class Neural_network(object):
                         if self.inputs['method'] != 'L-BFGS':
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
-                        result += ', elapsed: {:4.2e}\n'.format((time2-time1)/self.inputs['show_interval'] - save_time)
+                        result += ', elapsed: {:4.2e}\n'.format((time2-time1-save_time)/self.inputs['show_interval'])
 
                         # Print structural breakdown of RMSE
                         if self.inputs['print_structure_rmse']:
