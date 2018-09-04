@@ -523,7 +523,7 @@ class Neural_network(object):
                 if self.inputs['method'] == 'L-BFGS':
                     lbfgs = L_BFGS()
 
-                time1 = timeit.defulat_timer()
+                time1 = timeit.default_timer()
                 save_time = 0
 
                 for epoch in range(self.inputs['total_epoch']):
@@ -587,7 +587,7 @@ class Neural_network(object):
                         if self.inputs['method'] != 'L-BFGS':
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
-                        result += ', elapsed: {:4.2e}\n'.format(time2-time1-save_time)
+                        result += ', elapsed: {:4.2e}\n'.format((time2-time1)/self.inputs['show_interval'] - save_time)
 
                         # Print structural breakdown of RMSE
                         if self.inputs['print_structure_rmse']:
@@ -635,6 +635,8 @@ class Neural_network(object):
                         prev_floss = floss
                         save_stack = 1
                         save_time = timeit.default_timer() - temp_time
+                    else:
+                        save_time = 0
 
                 #self._save(sess, saver)
 
