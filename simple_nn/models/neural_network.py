@@ -557,7 +557,6 @@ class Neural_network(object):
                     else:
                         self.minim.run(feed_dict=train_fdict)
                     #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
-                    time2 = timeit.default_timer()
 
                     # Logging
                     if (epoch+1) % self.inputs['show_interval'] == 0:
@@ -566,6 +565,8 @@ class Neural_network(object):
                         #chrome_trace = fetched_timeline.generate_chrome_trace_format()
                         #with open('timeline_test.json', 'w') as fil:
                         #    fil.write(chrome_trace)
+
+                        time2 = timeit.default_timer()
 
                         # TODO: need to fix the calculation part for training loss
                         save_stack += self.inputs['show_interval']
