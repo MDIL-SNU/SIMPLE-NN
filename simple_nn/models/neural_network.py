@@ -182,6 +182,15 @@ class Neural_network(object):
             self.models[item] = model
             self.ys[item] = self.models[item](self.next_elem['x_'+item])
 
+            # Regularization losses of tf.keras.layers.Dense is not automatically added
+            # to tf.GraphKeys.REGULARIZATION_LOSSES, so we add them manually.
+            # To prevent potential bugs when the behaviour of tf.keras.layers.Dense get changed,
+            # we check if losses are already in the graph before adding them.
+            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            for loss in model.losses:
+                if loss not in reg_losses:
+                    tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, loss)
+
             if self.inputs['use_force']:
                 self.dys[item] = tf.gradients(self.ys[item], self.next_elem['x_'+item])[0]
             else:
