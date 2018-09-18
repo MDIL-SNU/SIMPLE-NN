@@ -1,3 +1,4 @@
+import sys
 import yaml 
 import collections
 import functools
@@ -6,19 +7,27 @@ from ._version import __version__
 
 # TODO: logging
 
-def deep_update(source, overrides):
+def deep_update(source, overrides, warn_new_key=False, logfile=None, depth=0, parent="top"):
     """
     Update a nested dictionary or similar mapping.
     Modify ``source`` in place.
 
     :param dict source: base dictionary to be updated
     :param dict overrides: new dictionary
+    :param bool warn_new_key: if true, warn about new keys in overrides
+    :param str logfile: filename to which warnings are written (if not given warnings are written to stdout)
     :returns: updated dictionary source
     """
+    if logfile is None:
+        logfile = sys.stdout
+
     for key in overrides.keys():
         if isinstance(source, collections.Mapping):
+            if warn_new_key and depth < 2 and key not in source:
+                logfile.write("Warning: Unidentified option in {:}: {:}\n".format(parent, key))
             if isinstance(overrides[key], collections.Mapping) and overrides[key]:
-                returned = deep_update(source.get(key, {}), overrides[key])
+                returned = deep_update(source.get(key, {}), overrides[key],
+                                       warn_new_key=warn_new_key, logfile=logfile, depth=depth+1, parent=key)
                 source[key] = returned
             # Need list append?
             else:
@@ -39,10 +48,14 @@ class Simple_nn(object):
         """
         
         """
+        self.logfile = open('LOG', 'w', 10)
+        self._log_header()
+
         self.default_inputs = {
             'generate_features': True,
             'preprocess': False,
-            'train_model': True
+            'train_model': True,
+            'atom_types': []
             }
 
         self.inputs = self.default_inputs
@@ -55,14 +68,11 @@ class Simple_nn(object):
             self.model = model
             self.inputs = deep_update(self.inputs, self.model.default_inputs)
 
-        self.inputs = deep_update(self.inputs, yaml.load(open(inputs)))
+        with open(inputs) as input_file:
+            self.inputs = deep_update(self.inputs, yaml.load(input_file), warn_new_key=True, logfile=self.logfile)
 
-        if not 'atom_types' in self.inputs:
+        if len(self.inputs['atom_types']) == 0:
             raise KeyError
-
-        self.logfile = open('LOG', 'w', 10)
-
-        self._log_header()
 
         if not self.inputs['neural_network']['use_force'] and \
                 self.inputs['symmetry_function']['atomic_weights']['type'] is not None:
