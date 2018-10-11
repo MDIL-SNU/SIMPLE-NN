@@ -53,6 +53,9 @@ class Neural_network(object):
                                       'intra_op_parallelism_threads': 0,
                                       'print_structure_rmse': False,
                                       'cache': False,
+                                      'stddev': 0.3,
+                                      'echeck': True,
+                                      'fcheck': True,
                                   }
                               }
         self.inputs = dict()
@@ -93,10 +96,11 @@ class Neural_network(object):
         else:
             dtype = tf.float32
 
+        # TODO: input validation for stddev.
         dense_basic_setting = {
             'dtype': dtype,
-            'kernel_initializer': tf.initializers.truncated_normal(stddev=0.3, dtype=dtype),
-            'bias_initializer': tf.initializers.truncated_normal(stddev=0.3, dtype=dtype)
+            'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
+            'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
         }
         dense_last_setting = copy.deepcopy(dense_basic_setting)
 
@@ -637,8 +641,9 @@ class Neural_network(object):
 
                     # Temp saving
                     #if (epoch+1) % self.inputs['save_interval'] == 0:
-                        if save_stack > self.inputs['save_interval'] and prev_eloss > eloss and \
-                           ((prev_floss > floss) or floss == 0.):
+                        if save_stack > self.inputs['save_interval'] and \
+                            (prev_eloss > eloss or not self.inputs['echeck']) and \
+                            (prev_floss > floss or not self.inputs['fcheck'] or floss == 0.):
                             temp_time = timeit.default_timer()
                             self._save(sess, saver)
                             prev_eloss = eloss
