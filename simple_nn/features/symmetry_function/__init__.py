@@ -8,8 +8,8 @@ from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
-                     _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load, \
-                     unpack_name_from_nameset
+                     _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
+from braceexpand import braceexpand
 
 class DummyMPI(object):
     rank = 0
@@ -569,7 +569,7 @@ class Symmetry_function(object):
 
                 tmp_split = line.split()
                 if ('{' in tmp_split[0]) and ('}' in tmp_split[0]):
-                    unpack_list = unpack_name_from_nameset(tmp_split[0])
+                    unpack_list = list(braceexpand(tmp_split[0]))
                     for item in unpack_list:
                         structures.append([item, tmp_split[1]])
                         structure_ind.append(structure_names.index(name))

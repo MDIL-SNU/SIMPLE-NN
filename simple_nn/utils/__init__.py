@@ -264,34 +264,3 @@ def read_lammps_potential(filename):
     return weights
 
 
-def unpack_name_from_nameset(string):
-    str_list = list()
-
-    splitted = string.replace('{', '}').split('}')
-    num_range = splitted[1].split('..')
-
-    num_len_st = len(num_range[0])
-    num_len_ed = len(num_range[1])
-    num_st = int(num_range[0])
-    num_ed = int(num_range[1])
-
-    if num_len_st == num_len_ed:
-        zero_pad = True
-    else:
-        zero_pad = False
-
-    for i in range(num_st, num_ed+1):
-        tmp_str = ''
-        for j,jtem in enumerate(splitted):
-            if j == 1:
-                if zero_pad:
-                    tmp_str += str(i).rjust(num_len_ed, '0')
-                else:
-                    tmp_str += str(i)
-            else:
-                tmp_str += jtem
-
-        str_list.append(tmp_str)
-
-    return str_list
-
