@@ -568,13 +568,8 @@ class Symmetry_function(object):
                     continue
 
                 tmp_split = line.split()
-                if ('{' in tmp_split[0]) and ('}' in tmp_split[0]):
-                    unpack_list = list(braceexpand(tmp_split[0]))
-                    for item in unpack_list:
-                        structures.append([item, tmp_split[1]])
-                        structure_ind.append(structure_names.index(name))
-                    
-                else:
-                    structures.append(tmp_split)
+                for item in list(braceexpand(tmp_split[0])):
+                    structures.append([item, tmp_split[1]])
                     structure_ind.append(structure_names.index(name))
+
         return structures, structure_ind, structure_names, structure_weights
