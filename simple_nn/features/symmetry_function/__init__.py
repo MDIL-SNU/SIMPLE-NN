@@ -8,7 +8,8 @@ from six.moves import cPickle as pickle
 from ase import io
 from cffi import FFI
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
-                     _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
+                     _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load, \
+                     unpack_name_from_nameset
 
 class DummyMPI(object):
     rank = 0
@@ -565,6 +566,15 @@ class Symmetry_function(object):
                     if not np.isclose(old_weight - weight, 0):
                         self.parent.logfile.write("Warning: Structure weight for '{:}' is set to {:} (previously set to {:}). New value will be ignored\n".format(name, weight, old_weight))
                     continue
-                structures.append(line.split())
-                structure_ind.append(structure_names.index(name))
+
+                tmp_split = line.split()
+                if ('{' in tmp_split[0]) and ('}' in tmp_split[0]):
+                    unpack_list = unpack_name_from_nameset(tmp_split[0])
+                    for item in unpack_list:
+                        structures.append([item, tmp_split[1]])
+                        structure_ind.append(structure_names.index(name))
+                    
+                else:
+                    structures.append(tmp_split)
+                    structure_ind.append(structure_names.index(name))
         return structures, structure_ind, structure_names, structure_weights
