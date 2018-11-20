@@ -56,6 +56,7 @@ class Neural_network(object):
                                       'stddev': 0.3,
                                       'echeck': True,
                                       'fcheck': True,
+                                      'break_max': 10,
                                   }
                               }
         self.inputs = dict()
@@ -539,7 +540,16 @@ class Neural_network(object):
                 time1 = timeit.default_timer()
                 save_time = 0
 
-                for epoch in range(self.inputs['total_epoch']):
+                if self.inputs['total_epoch'] < 0:
+                    total_epoch = -self.inputs['total_epoch']
+                    break_tag = True
+                    break_count = 1
+                    break_max = self.inputs['break_max']
+                else:
+                    total_epoch = self.inputs['total_epoch']
+                    break_tag = False
+
+                for epoch in range(total_epoch):
                     if self.inputs['full_batch']:
                         if self.inputs['method'] == 'Adam':
                             [flat_grad] = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=False)
@@ -650,10 +660,19 @@ class Neural_network(object):
                             prev_floss = floss
                             save_stack = 1
                             save_time = timeit.default_timer() - temp_time
+                            if break_tag:
+                                break_count = 1
                         else:
                             save_time = 0
+                            if break_tag:
+                                break_count += 1
 
+                    # Stop the training if overfitting is occur
+                    if break_tag:
+                        if (break_count > self.inputs['break_max']):
+                            break
                 #self._save(sess, saver)
+                
 
             if self.inputs['test']:
                 test_handle = sess.run(test_iter.string_handle())
