@@ -660,13 +660,17 @@ class Neural_network(object):
                             prev_floss = floss
                             save_stack = 1
                             save_time = timeit.default_timer() - temp_time
+                            if break_tag:
+                                break_count = 1
                         else:
                             save_time = 0
-                            break_count += 1
+                            if break_tag:
+                                break_count += 1
 
                     # Stop the training if overfitting is occur
-                    if (break_count > self.inputs['break_max']):
-                        break
+                    if break_tag:
+                        if (break_count > self.inputs['break_max']):
+                            break
                 #self._save(sess, saver)
                 
 
