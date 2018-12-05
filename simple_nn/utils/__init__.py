@@ -124,7 +124,11 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, mo
             gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
             if callable(modifier):
                 gdf[item] = modifier(gdf[item])
-            gdf[item][:,0] /= np.mean(gdf[item][:,0])
+            if modifier == 'just give me gdf':
+                # gdf[item][:,0] is 1/GDF, so get the reciprocal and do not scale. (Also multiply 1/M)
+                gdf[item][:,0] = 1 / gdf[item][:,0] / scaled_feature.shape[0]
+            else:
+                gdf[item][:,0] /= np.mean(gdf[item][:,0])
 
     with open('atomic_weights', 'wb') as fil:
         pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)

@@ -135,6 +135,8 @@ class Simple_nn(object):
         modifier = None
         if self.descriptor.inputs['weight_modifier']['type'] == 'modified sigmoid':
             modifier = functools.partial(modified_sigmoid, **self.descriptor.inputs['weight_modifier']['params'])
+        elif self.descriptor.inputs['weight_modifier']['type'] == 'just give me gdf':
+            modifier = 'just give me gdf'
         if self.descriptor.inputs['atomic_weights']['type'] == 'gdf':
             get_atomic_weights = functools.partial(_generate_gdf_file, modifier=modifier)
         elif self.descriptor.inputs['atomic_weights']['type'] == 'user':
