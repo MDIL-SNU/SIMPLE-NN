@@ -78,8 +78,10 @@ The remaining parameters are the coefficients applied to each symmetry function.
 str_list contains the location of reference calculation data. The format is described below:
 
 ```
-/location/of/calculation/data/output_file :
-```
+/location/of/calculation/data/oneshot_output_file :
+/location/of/calculation/data/MDtrajectory_output_file 100:2000:20
+/location/of/calculation/data/same_folder_format{1..10}/oneshot_output_file :
+``` 
 
 ### Script for running SIMPLE-NN
 After preparing input.yaml, params_XX and str_list, one can run SIMPLE-NN using the script below:
@@ -103,4 +105,4 @@ model.run()
 ```
 
 ## Example
-In examples folder, one can find MD trajectories of bulk SiO<sub>2</sub>, corresponding input files (input.yaml, params_Si, params_O and str_list) and python script run.py. To use this example, 
+In examples folder, one can find MD trajectories of bulk SiO<sub>2</sub>, corresponding input files (input.yaml, params_Si, params_O and str_list) and python script run.py. To use this example, one simply change the location in the 'str_list' file and run 'Python run.py' command.
