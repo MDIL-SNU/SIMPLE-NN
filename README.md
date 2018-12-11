@@ -30,18 +30,56 @@ And compile LAMMPS code.
 To use SIMPLE-NN, 3 types of files (input.yaml, params_XX, str_list) are required.
 
 ### input.yaml
-Parameter list to control SIMPLE-NN code is listed in input.yaml. Full parameter list can be found at our online manual().
+Parameter list to control SIMPLE-NN code is listed in input.yaml. Full parameter list can be found at our online manual(http://mtcg.snu.ac.kr/doc/index.html).
 The simplest form of input.yaml is described below:
-```
+```YAML
 # input.yaml
+generate_features: true
+preprocess: true
+train_model: true
+atom_types:
+ - Si
+ - O
 
+symmetry_function:
+  params:
+    Si: params_Si
+    O: params_O
+  # GDF setting
+  #atomic_weights:
+  #  type: gdf
+  
+neural_network:
+  method: Adam
+  nodes: 30-30
 ```
 
 ### params_XX
-params_XX (XX means atom type that is included your target system)
+params_XX (XX means atom type that is included your target system) indicates the coefficients of symmetry functions.
+Each line contains coefficients for one symmetry function. detailed format is described below:
+
+```
+2 1 0 6.0 0.003214 0.0 0.0
+2 1 0 6.0 0.035711 0.0 0.0
+4 1 1 6.0 0.000357 1.0 -1.0
+4 1 1 6.0 0.028569 1.0 -1.0
+4 1 1 6.0 0.089277 1.0 -1.0
+```
+
+First one indicates the type of symmetry function. Currently G2, G4 and G5 is available.
+
+Second and third indicates the type index of neighbor atoms which starts from 1. For radial symmetry function, 1 neighbor atom is need to calculate the symmetry function value. Thus, third parameter is set to zero. For angular symmtery function, 2 neighbor atom is needed. The order of second and third do not affect to the calculation result.
+
+Fourth one means the cutoff radius for cutoff function.
+
+The remaining parameters are the coefficients applied to each symmetry function.
 
 ### str_list
-str_list contains the reference 
+str_list contains the location of reference calculation data. The format is described below:
+
+```
+/location/of/calculation/data/output_file :
+```
 
 ### Script for running SIMPLE-NN
 After preparing input.yaml, params_XX and str_list, one can run SIMPLE-NN using the script below:
@@ -65,5 +103,4 @@ model.run()
 ```
 
 ## Example
-In examples folder, one can find MD trajectories of bulk SiO<sub>2</sub>, corresponding input files (input.yaml, params_Si, params_O and str_list) and python script run.py.
-One can easily test SIMPLE-NN code with this example.
+In examples folder, one can find MD trajectories of bulk SiO<sub>2</sub>, corresponding input files (input.yaml, params_Si, params_O and str_list) and python script run.py. To use this example, 
