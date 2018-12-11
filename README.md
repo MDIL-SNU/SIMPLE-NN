@@ -27,6 +27,24 @@ cp /directory/of/simple-nn/features/symmetry_function/symmetry_function.* /direc
 And compile LAMMPS code.
 
 ## Usage
+To use SIMPLE-NN, 3 types of files (input.yaml, params_XX, str_list) are required.
+
+### input.yaml
+Parameter list to control SIMPLE-NN code is listed in input.yaml. Full parameter list can be found at our online manual().
+The simplest form of input.yaml is described below:
+```
+# input.yaml
+
+```
+
+### params_XX
+params_XX (XX means atom type that is included your target system)
+
+### str_list
+str_list contains the reference 
+
+### Script for running SIMPLE-NN
+After preparing input.yaml, params_XX and str_list, one can run SIMPLE-NN using the script below:
 
 ```python
 """
@@ -46,4 +64,6 @@ model = Simple_nn('input.yaml',
 model.run()
 ```
 
-input.yaml is the input parameter file for run SIMPLE-NN
+## Example
+In examples folder, one can find MD trajectories of bulk SiO<sub>2</sub>, corresponding input files (input.yaml, params_Si, params_O and str_list) and python script run.py.
+One can easily test SIMPLE-NN code with this example.
