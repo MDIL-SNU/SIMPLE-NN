@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "run.py", line 13, in <module>
+    model.run()
+  File "/data/tools/loki/python2.7/lib/python2.7/site-packages/simple_nn-0.6.0-py2.7-linux-x86_64.egg/simple_nn/__init__.py", line 150, in run
+    self.descriptor.generate()
+  File "/data/tools/loki/python2.7/lib/python2.7/site-packages/simple_nn-0.6.0-py2.7-linux-x86_64.egg/simple_nn/features/symmetry_function/__init__.py", line 411, in generate
+    tmp_name = compress_outcar(item[0])
+  File "/data/tools/loki/python2.7/lib/python2.7/site-packages/simple_nn-0.6.0-py2.7-linux-x86_64.egg/simple_nn/utils/__init__.py", line 155, in compress_outcar
+    with open(filename, 'r') as fil, open(comp_name, 'w') as res:
+IOError: [Errno 2] No such file or directory: '/data/khlee1992/SPINN/examples/SiO2/OUTCAR_comp'
+2018-12-12 14:47:23.547062: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1392] Found device 0 with properties: 
+name: TITAN X (Pascal) major: 6 minor: 1 memoryClockRate(GHz): 1.531
+pciBusID: 0000:81:00.0
+totalMemory: 11.90GiB freeMemory: 9.28GiB
+2018-12-12 14:47:23.547694: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1471] Adding visible gpu devices: 0
+2018-12-12 14:47:26.208423: I tensorflow/core/common_runtime/gpu/gpu_device.cc:952] Device interconnect StreamExecutor with strength 1 edge matrix:
+2018-12-12 14:47:26.208475: I tensorflow/core/common_runtime/gpu/gpu_device.cc:958]      0 
+2018-12-12 14:47:26.208481: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 0:   N 
+2018-12-12 14:47:26.208825: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1084] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 8970 MB memory) -> physical GPU (device: 0, name: TITAN X (Pascal), pci bus id: 0000:81:00.0, compute capability: 6.1)
+2018-12-12 14:47:26.213713: I tensorflow/core/common_runtime/process_util.cc:69] Creating new thread pool with default inter op setting: 2. Tune using inter_op_parallelism_threads for best performance.
