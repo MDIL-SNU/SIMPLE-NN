@@ -24,9 +24,9 @@ copyright = '2018, Nanco-L'
 author = 'Nanco-L'
 
 # The short X.Y version
-version = '0.1.3'
+version = '0.6.0'
 # The full version, including alpha/beta/rc tags
-release = '0.1.3.1'
+release = '0.6.0'
 
 
 # -- General configuration ---------------------------------------------------

@@ -11,9 +11,9 @@ Welcome to simple_nn's documentation!
    :caption: Contents:
 
    install
-   run
    tutorials/tutorial
-   modules/modules
+   examples/examples
+   simple_nn/Simple_nn
    features/features
    models/models
 
