@@ -6,6 +6,7 @@ from cffi import FFI
 import os, sys, psutil, shutil
 import types
 import re
+import collections
 from collections import OrderedDict
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
@@ -105,7 +106,7 @@ def _generate_scale_file(feature_list, atom_types):
     return scale
 
 
-def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, modifier=None):
+def _generate_gdf_file(feature_list, scale, atom_types, idx_list, modifier=None, noscale=False, sigma=0.02):
     ffi = FFI()
     ffi.cdef("""void calculate_gdf(double **, int, int, double, double *);""")
     lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libgdf.so"))
@@ -120,11 +121,20 @@ def _generate_gdf_file(feature_list, scale, atom_types, idx_list, sigma=0.02, mo
             temp_gdf = np.zeros([scaled_feature.shape[0]], dtype=np.float64, order='C')
             temp_gdf_p = ffi.cast("double *", temp_gdf.ctypes.data)
 
-            lib.calculate_gdf(scaled_feature_p, scaled_feature.shape[0], scaled_feature.shape[1], sigma, temp_gdf_p)
+            if isinstance(sigma, collections.Mapping):
+                temp_sigma = sigma[item]
+            else:
+                temp_sigma = sigma
+
+            lib.calculate_gdf(scaled_feature_p, scaled_feature.shape[0], scaled_feature.shape[1], temp_sigma, temp_gdf_p)
             gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
-            if callable(modifier):
-                gdf[item] = modifier(gdf[item])
-            gdf[item][:,0] /= np.mean(gdf[item][:,0])
+            gdf[item][:,0] *= float(len(gdf[item][:,0]))
+
+            if callable(modifier[item]):
+                gdf[item] = modifier[item](gdf[item])
+
+            if not noscale:
+                gdf[item][:,0] /= np.mean(gdf[item][:,0])
 
     with open('atomic_weights', 'wb') as fil:
         pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)
@@ -184,7 +194,8 @@ def modified_sigmoid(gdf, b=150.0, c=1.0):
     :param b: float or double, coefficient for modified sigmoid
     :param c: float or double, coefficient for modified sigmoid
     """
-    gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
+    gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * (gdf[:,0] - c)))
+    #gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
     return gdf
 
 

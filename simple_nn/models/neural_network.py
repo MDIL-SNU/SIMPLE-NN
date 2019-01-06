@@ -9,6 +9,7 @@ import timeit
 import copy
 from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory, repeat, read_lammps_potential
 from ..utils.lbfgs import L_BFGS
+from tqdm import tqdm
 #from tensorflow.python.client import timeline
 
 """
@@ -467,11 +468,18 @@ class Neural_network(object):
 
         if self.inputs['test']:
             test_filequeue = _make_data_list(self.test_data_list)
+
+            if self.parent.descriptor.inputs['atomic_weights']['type'] == None:
+                aw_tag = False
+            else:
+                aw_tag = True
+
             test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, 
                                                                   batch_size=self.inputs['batch_size'], cache=self.inputs['cache'],
-                                                                  use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
+                                                                  #use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
+                                                                  use_force=self.inputs['use_force'], valid=True, atomic_weights=aw_tag)
             if not self.inputs['train']:
-                self._make_iterator_from_handle(test_iter)
+                self._make_iterator_from_handle(test_iter, aw_tag)
 
         self.force_coeff = self._get_decay_param(self.inputs['force_coeff'])
         self.energy_coeff = self._get_decay_param(self.inputs['energy_coeff'])
@@ -549,7 +557,7 @@ class Neural_network(object):
                     total_epoch = self.inputs['total_epoch']
                     break_tag = False
 
-                for epoch in range(total_epoch):
+                for epoch in tqdm(range(total_epoch)):
                     if self.inputs['full_batch']:
                         if self.inputs['method'] == 'Adam':
                             [flat_grad] = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=False)
@@ -687,6 +695,10 @@ class Neural_network(object):
                 if self.inputs['use_force']:
                     test_save['DFT_F'] = list()
                     test_save['NN_F'] = list()
+                    if self.parent.inputs['symmetry_function']['add_atom_idx']:
+                        test_save['atom_idx'] = list()
+                    if aw_tag:
+                        test_save['atomic_weights'] = list()
 
                 eloss = floss = 0.
                 test_tot_struc = test_tot_atom = 0
@@ -700,12 +712,19 @@ class Neural_network(object):
                             num_batch_atom = np.sum(test_elem['tot_num'])
                             eloss += tmp_eloss * num_batch_struc
                             floss += tmp_floss * num_batch_atom
-
+                            
                             test_save['DFT_E'].append(test_elem['E'])
                             test_save['NN_E'].append(tmp_nne)
                             test_save['N'].append(test_elem['tot_num'])
                             test_save['DFT_F'].append(test_elem['F'])
                             test_save['NN_F'].append(tmp_nnf)
+                            
+                            if self.parent.inputs['symmetry_function']['add_atom_idx']:
+                                temp_idx = test_elem['atom_idx'].reshape([-1])
+                                temp_idx = temp_idx[temp_idx != 0]                                
+                                test_save['atom_idx'].append(temp_idx)
+                            if aw_tag:
+                                test_save['atomic_weights'].append(test_elem['atomic_weights'])
                             
                             test_tot_atom += num_batch_atom
                         else:
@@ -732,6 +751,10 @@ class Neural_network(object):
 
                             test_save['DFT_F'] = np.concatenate(test_save['DFT_F'], axis=0)
                             test_save['NN_F'] = np.concatenate(test_save['NN_F'], axis=0)
+                            test_save['atom_idx'] = np.concatenate(test_save['atom_idx'], axis=0)
+
+                            if aw_tag:
+                                test_save['atomic_weights'] = np.concatenate(test_save['atomic_weights'], axis=0)
                         break
                 
                 with open('./test_result', 'wb') as fil:

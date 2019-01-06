@@ -60,6 +60,8 @@ class Symmetry_function(object):
                                       'data_per_tfrecord': 150,
                                       'valid_rate': 0.1,
                                       'remain_pickle': False,
+                                      'continue': False,
+                                      'add_atom_idx': True, # For backward compatability
                                       'num_parallel_calls': 5,
                                       'atomic_weights': {
                                           'type': None,
@@ -103,6 +105,8 @@ class Symmetry_function(object):
     
         if use_force:
             feature['F'] = _bytes_feature(res['F'].tobytes())
+            if self.inputs['add_atom_idx']:
+                feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
             if atomic_weights:
                 feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         
@@ -150,6 +154,8 @@ class Symmetry_function(object):
 
         if use_force:
             features['F'] = tf.FixedLenFeature([], dtype=tf.string)
+            if self.inputs['add_atom_idx']:
+                features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
             if atomic_weights:
                 features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
 
@@ -189,6 +195,8 @@ class Symmetry_function(object):
 
         if use_force: 
             res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
+            if self.inputs['add_atom_idx']:
+                res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
             if atomic_weights:
                 res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
@@ -212,6 +220,8 @@ class Symmetry_function(object):
 
         if use_force:
             batch_dict['F'] = [None, 3]
+            if self.inputs['add_atom_idx']:
+                batch_dict['atom_idx'] = [None, 1]
             if atomic_weights:
                 batch_dict['atomic_weights'] = [None]
 
@@ -241,22 +251,24 @@ class Symmetry_function(object):
         
         # pickle list -> train / valid
         tmp_pickle_train = './pickle_train_list'
-        tmp_pickle_train_open = open(tmp_pickle_train, 'w')
         tmp_pickle_valid = './pickle_valid_list'
-        tmp_pickle_valid_open = open(tmp_pickle_valid, 'w')
-        for file_list in _make_str_data_list(self.pickle_list):
-            np.random.shuffle(file_list)
-            num_pickle = len(file_list)
-            num_valid = int(num_pickle * self.inputs['valid_rate'])
 
-            for i,item in enumerate(file_list):
-                if i < num_valid:
-                    tmp_pickle_valid_open.write(item + '\n')
-                else:
-                    tmp_pickle_train_open.write(item + '\n')
+        if not self.inputs['continue']:
+            tmp_pickle_train_open = open(tmp_pickle_train, 'w')
+            tmp_pickle_valid_open = open(tmp_pickle_valid, 'w')
+            for file_list in _make_str_data_list(self.pickle_list):
+                np.random.shuffle(file_list)
+                num_pickle = len(file_list)
+                num_valid = int(num_pickle * self.inputs['valid_rate'])
+
+                for i,item in enumerate(file_list):
+                    if i < num_valid:
+                        tmp_pickle_valid_open.write(item + '\n')
+                    else:
+                        tmp_pickle_train_open.write(item + '\n')
             
-        tmp_pickle_train_open.close()
-        tmp_pickle_valid_open.close()
+            tmp_pickle_train_open.close()
+            tmp_pickle_valid_open.close()
 
         # generate full symmetry function vector
         feature_list, idx_list = \
@@ -293,7 +305,8 @@ class Symmetry_function(object):
         train_list = open(self.train_data_list, 'w')
 
         random_idx = np.arange(num_tmp_pickle_train)        
-        np.random.shuffle(random_idx)
+        if not self.inputs['continue']:
+            np.random.shuffle(random_idx)
 
         for i,item in enumerate(random_idx):
             ptem = tmp_pickle_train_list[item]
@@ -449,6 +462,7 @@ class Symmetry_function(object):
                 res['F'] = atoms.get_forces()
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
+                res['atom_idx'] = atom_i
 
                 for j,jtem in enumerate(self.parent.inputs['atom_types']):
                     q = type_num[jtem] // comm.size
