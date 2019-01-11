@@ -9,6 +9,7 @@ from ase import io
 from cffi import FFI
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
+from ...utils import graph as grp
 from braceexpand import braceexpand
 
 class DummyMPI(object):
@@ -107,8 +108,8 @@ class Symmetry_function(object):
             feature['F'] = _bytes_feature(res['F'].tobytes())
             if self.inputs['add_atom_idx']:
                 feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
-            if atomic_weights:
-                feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
+#            if atomic_weights:
+#                feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
@@ -123,6 +124,9 @@ class Symmetry_function(object):
                 feature['dx_dense_shape_'+item] = _bytes_feature(dx_dense_shape.tobytes())
 
             feature['partition_'+item] = _bytes_feature(res['partition_'+item].tobytes())
+
+            if atomic_weights:
+                feature['atomic_weights_'+item] = _bytes_feature(res['atomic_weights'][item].tobytes())
 
         example = tf.train.Example(
             features=tf.train.Features(
@@ -151,13 +155,15 @@ class Symmetry_function(object):
                 features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
                 features['dx_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['partition_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+            if atomic_weights:
+                features['atomic_weights_'+item] = tf.FixedLenFeature([], dtype=tf.string)
 
         if use_force:
             features['F'] = tf.FixedLenFeature([], dtype=tf.string)
             if self.inputs['add_atom_idx']:
                 features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
-            if atomic_weights:
-                features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
+            #if atomic_weights:
+            #    features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
@@ -193,12 +199,15 @@ class Symmetry_function(object):
  
             res['partition_'+item] = tf.decode_raw(read_data['partition_'+item], tf.int32)
 
+            if atomic_weights:
+                res['atomic_weights_'+item] = tf.decode_raw(read_data['atomic_weights_'+item], tf.float64)
+
         if use_force: 
             res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
             if self.inputs['add_atom_idx']:
                 res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
-            if atomic_weights:
-                res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
+            #if atomic_weights:
+            #    res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
         return res
 
@@ -222,8 +231,8 @@ class Symmetry_function(object):
             batch_dict['F'] = [None, 3]
             if self.inputs['add_atom_idx']:
                 batch_dict['atom_idx'] = [None, 1]
-            if atomic_weights:
-                batch_dict['atomic_weights'] = [None]
+            #if atomic_weights:
+            #    batch_dict['atomic_weights'] = [None]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
@@ -231,6 +240,8 @@ class Symmetry_function(object):
             if use_force:
                 batch_dict['dx_'+item] = [None, inp_size[item], None, 3]
             batch_dict['partition_'+item] = [None]
+            if atomic_weights:
+                batch_dict['atomic_weights_'+item] = [None]
  
         if valid or full_batch:
             dataset = dataset.padded_batch(batch_size, batch_dict)
@@ -266,33 +277,36 @@ class Symmetry_function(object):
                         tmp_pickle_valid_open.write(item + '\n')
                     else:
                         tmp_pickle_train_open.write(item + '\n')
-            
+        
             tmp_pickle_train_open.close()
             tmp_pickle_valid_open.close()
 
         # generate full symmetry function vector
-        feature_list, idx_list = \
+        feature_list_train, idx_list_train = \
             _make_full_featurelist(tmp_pickle_train, self.parent.inputs['atom_types'], 'x')
+        feature_list_valid, idx_list_valid = \
+            _make_full_featurelist(tmp_pickle_valid, self.parent.inputs['atom_types'], 'x')
 
         # calculate scale
         scale = None
         if calc_scale:
-            scale = _generate_scale_file(feature_list, self.parent.inputs['atom_types'])
+            scale = _generate_scale_file(feature_list_train, self.parent.inputs['atom_types'])
         else:
             scale = pickle_load('./scale_factor')
 
         # calculate gdf
-        atomic_weights = None
+        atomic_weights_train = atomic_weights_valid = None
         if callable(get_atomic_weights):
-            atomic_weights = get_atomic_weights(feature_list, scale, self.parent.inputs['atom_types'], idx_list, **kwargs)
+            atomic_weights_train = get_atomic_weights(feature_list_train, feature_list_train, scale, self.parent.inputs['atom_types'], idx_list_train, 
+                                                    filename='atomic_weights', **kwargs)
+            atomic_weights_valid = get_atomic_weights(feature_list_train, feature_list_valid, scale, self.parent.inputs['atom_types'], idx_list_valid, **kwargs)
         elif isinstance(get_atomic_weights, six.string_types):
-            atomic_weights = pickle_load(get_atomic_weights)
+            atomic_weights_train = pickle_load(get_atomic_weights)
+            atomic_weights_valid = 'ones'
 
-        # write tfrecord files
-        def _bytes_feature(value):
-            return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+        grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
 
-        if atomic_weights is None:
+        if atomic_weights_train is None:
             aw_tag = False
         else:
             aw_tag = True
@@ -305,8 +319,8 @@ class Symmetry_function(object):
         train_list = open(self.train_data_list, 'w')
 
         random_idx = np.arange(num_tmp_pickle_train)        
-        if not self.inputs['continue']:
-            np.random.shuffle(random_idx)
+        #if not self.inputs['continue']:
+        np.random.shuffle(random_idx)
 
         for i,item in enumerate(random_idx):
             ptem = tmp_pickle_train_list[item]
@@ -321,12 +335,12 @@ class Symmetry_function(object):
                 writer = tf.python_io.TFRecordWriter(record_name)
 
             tmp_res = pickle_load(ptem)
-            if atomic_weights is not None:
-                tmp_aw = list()
+            if atomic_weights_train is not None:
+                tmp_aw = dict()
                 for jtem in self.parent.inputs['atom_types']:
-                    tmp_idx = (atomic_weights[jtem][:,1] == item)
-                    tmp_aw.append(atomic_weights[jtem][tmp_idx,0])
-                tmp_aw = np.concatenate(tmp_aw)
+                    tmp_idx = (atomic_weights_train[jtem][:,1] == item)
+                    tmp_aw[jtem] = atomic_weights_train[jtem][tmp_idx,0]
+                #tmp_aw = np.concatenate(tmp_aw)
                 tmp_res['atomic_weights'] = tmp_aw
             
             self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
@@ -339,37 +353,50 @@ class Symmetry_function(object):
         train_list.write(record_name + '\n')
         train_list.close()
 
-        # valid
-        tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
-        #np.random.shuffle(tmp_pickle_valid_list)
-        num_tmp_pickle_valid = len(tmp_pickle_valid_list)
-        num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
-        valid_list = open(self.valid_data_list, 'w')
+        if self.inputs['valid_rate'] != 0.0:
+            # valid
+            tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
+            #np.random.shuffle(tmp_pickle_valid_list)
+            num_tmp_pickle_valid = len(tmp_pickle_valid_list)
+            num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
+            valid_list = open(self.valid_data_list, 'w')
 
-        for i,item in enumerate(tmp_pickle_valid_list):
-            if i == 0:
-                record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
-                writer = tf.python_io.TFRecordWriter(record_name)
-            elif (i % self.inputs['data_per_tfrecord']) == 0:
-                writer.close()
-                self.parent.logfile.write('{} file saved in {}\n'.format(self.inputs['data_per_tfrecord'], record_name))
-                valid_list.write(record_name + '\n')
-                record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
-                writer = tf.python_io.TFRecordWriter(record_name)
+            random_idx = np.arange(num_tmp_pickle_valid)        
+            #if not self.inputs['continue']:
+            np.random.shuffle(random_idx)
 
-            tmp_res = pickle_load(item)
-            if atomic_weights is not None:
-                tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']]).astype(np.float64)
+            for i,item in enumerate(random_idx):
+                ptem = tmp_pickle_valid_list[item]
+                if i == 0:
+                    record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
+                    writer = tf.python_io.TFRecordWriter(record_name)
+                elif (i % self.inputs['data_per_tfrecord']) == 0:
+                    writer.close()
+                    self.parent.logfile.write('{} file saved in {}\n'.format(self.inputs['data_per_tfrecord'], record_name))
+                    valid_list.write(record_name + '\n')
+                    record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
+                    writer = tf.python_io.TFRecordWriter(record_name)
 
-            self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
+                tmp_res = pickle_load(ptem)
+                if atomic_weights_valid == 'ones':
+                    tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']]).astype(np.float64)
+                elif atomic_weights_valid is not None:
+                    tmp_aw = dict()
+                    for jtem in self.parent.inputs['atom_types']:
+                        tmp_idx = (atomic_weights_valid[jtem][:,1] == item)
+                        tmp_aw[jtem] = atomic_weights_valid[jtem][tmp_idx,0]
+                    #tmp_aw = np.concatenate(tmp_aw)
+                    tmp_res['atomic_weights'] = tmp_aw
 
-            if not self.inputs['remain_pickle']:
-                os.remove(item)
+                self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
 
-        writer.close()
-        self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
-        valid_list.write(record_name + '\n')
-        valid_list.close()
+                if not self.inputs['remain_pickle']:
+                    os.remove(item)
+
+            writer.close()
+            self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
+            valid_list.write(record_name + '\n')
+            valid_list.close()
  
 
     def generate(self):

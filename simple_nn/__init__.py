@@ -156,4 +156,4 @@ class Simple_nn(object):
                                        **self.descriptor.inputs['atomic_weights']['params'])
         
         if self.inputs['train_model']:
-            self.model.train(user_optimizer=user_optimizer)
+            self.model.train(user_optimizer=user_optimizer, aw_modifier=modifier)

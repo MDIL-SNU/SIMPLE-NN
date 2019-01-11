@@ -1,0 +1,12 @@
+generate_features: true
+preprocess: true
+train_model: false
+atom_types:
+ - Si
+ - O
+
+symmetry_function:
+  params:
+    Si: params_Si
+    O: params_O
+  valid_rate: 0.       
