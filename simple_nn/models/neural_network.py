@@ -28,36 +28,45 @@ class Neural_network(object):
         self.key = 'neural_network'
         self.default_inputs = {'neural_network':
                                   {
-                                      'method': 'Adam',
-                                      'continue': False,
-                                      'use_force': False,
-                                      'force_coeff': 0.3,
-                                      'energy_coeff': 1.,
-                                      'total_epoch': 10000,
-                                      'save_interval': 1000,
-                                      'show_interval': 100,
-                                      'max_iteration': 1000,
-                                      'batch_size': 64,
-                                      'full_batch': False,
-                                      'loss_scale': 1.,
-                                      'double_precision': True,
-                                      'learning_rate': 0.01,
-                                      'optimizer': dict(),
-                                      'nodes': '30-30',
-                                      'test': False,
+                                      # Function related
                                       'train': True,
+                                      'test': False,
+                                      'continue': False,
+
+                                      # Network related
+                                      'nodes': '30-30',
                                       'regularization': {
                                           'type': None,
                                           'params': dict(),
                                       },
-                                      'inter_op_parallelism_threads': 0,
-                                      'intra_op_parallelism_threads': 0,
-                                      'print_structure_rmse': False,
-                                      'cache': False,
+                                      'use_force': False,
+                                      'double_precision': True,
                                       'stddev': 0.3,
+
+                                      # Optimization related
+                                      'method': 'Adam',
+                                      'batch_size': 64,
+                                      'full_batch': False,
+                                      'total_epoch': 10000,
+                                      'learning_rate': 0.0001,
+                                      'force_coeff': 0.1,
+                                      'energy_coeff': 1.,
+                                      'loss_scale': 1.,
+                                      'optimizer': dict(),
+                                      
+                                      # Logging & saving related
+                                      'save_interval': 1000,
+                                      'show_interval': 100,
                                       'echeck': True,
                                       'fcheck': True,
                                       'break_max': 10,
+                                      'print_structure_rmse': False,
+                                      
+                                      # Performace related
+                                      'inter_op_parallelism_threads': 0,
+                                      'intra_op_parallelism_threads': 0,
+                                      'cache': False,
+                                      
                                   }
                               }
         self.inputs = dict()
