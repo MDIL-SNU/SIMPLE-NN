@@ -6,13 +6,12 @@ Tutorials
 
 Preparing dataset
 =================
-simple-nn use the data from *ab initio* packages like VASP and Quantum espresso.
-These calculation outputs are handled with ASE package.
-Thus, one can use various *ab initio* packages that supported by ASE.
+SIMPLE-NN uses `ASE`_ to handle output from *ab initio* programs like VASP or Quantum espresso. 
+All output types supported by ASE can be used in SIMPLE-NN, 
+but they need to contain essential information such as atom coordinates, lattice parameters, energy, and forces.  
+You can check if the output file contains the appropriate information by using the following command:
 
-simple-nn need atom coordinates, lattice parameters, structure energy 
-and atomic force(optional) to generate dataset. One can check if the output has
-the information that simple-nn need with the command below:
+.. _ASE: https://wiki.fysik.dtu.dk/ase/
 
 ::
 
@@ -21,6 +20,8 @@ the information that simple-nn need with the command below:
     atoms = io.read('some_output')
     # atom coordinates
     atoms.get_positions()
+    # chemical symbols
+    atoms.get_chemical_symbols()
     # lattice parameters
     atoms.get_cell()
     # structure_energy
@@ -32,10 +33,10 @@ the information that simple-nn need with the command below:
 Preparing inputs files
 ======================
 
-simple-nn use YAML style input file, input.yaml.
-input.yaml consists of 3 part: basic parameters, 
-feature-related parameters and model-related parameters.
-The basic format of input.yaml is like below::
+SIMPLE-NN use YAML style input file: :gray:`input.yaml`.
+:gray:`input.yaml` consists of 3 part: basic parameters, 
+feature-related parameters, and model-related parameters.
+The basic format of :gray:`input.yaml` is like below::
 
     # Basic parameters
     generate_features: true
@@ -46,13 +47,13 @@ The basic format of input.yaml is like below::
       - O
 
     # feature-related parameters
-    symmetry_function: # class name of feature
+    symmetry_function: # class name of the feature
     params:
       Si: params_Si
       O: params_O
 
     # model-related parameters
-    neural_network: # class name of model
+    neural_network: # class name of the model
       method: Adam
       nodes: 30-30
       batch_size: 10
@@ -70,7 +71,7 @@ Details of parameters and additional files are listed in
 Run the code
 ============
 
-After preparing all input files, one simply run the predefined script run.py to run simple-nn.
+To run SIMPLE-NN, you simply have to run the predefined script :gray:`run.py` after preparing all input files.
 The basic format of :gray:`run.py` is described below::
 
     # run.py
@@ -87,7 +88,52 @@ The basic format of :gray:`run.py` is described below::
                       model=Neural_network())
     model.run()
 
-One can find the practical usage in :doc:`/examples/examples`
+Examples of actual use for the entire process of generating neural network potential 
+can be found in :doc:`/examples/examples` or :gray:`SIMPLE-NN/examples/`
+
+Outputs
+=======
+
+The default output file of SIMPLE-NN is :gray:`LOG`, which contains the execution log of SIMPLE-NN.
+In addition to :gray:`LOG`, an additional output file is created for each process of SIMPLE-NN. 
+After :gray:`Symmetry_function.generate` method, you can find the output files listed below:
+
+    - :gray:`data/data##.pickle`\: (## indicates number) 
+      Data file which contains descriptor vectors, a derivative of descriptor 
+      vectors and other parameters per structure.
 
 
+After :gray:`Symmetry_function.preprocess` method, you can find the output files listed below:
 
+    - :gray:`data/{training,valid}_data_####_to_####.tfrecord`\: 
+      Packed Training/validation dataset which contains the same information of 
+      :gray:`data/data##.pickle`.
+    - :gray:`pickle_{training,valid}_list`\: List of pickle files that includes in 
+      :gray:`data/{training,valid}_data_####_to_####.tfrecord` file.
+
+    - :gray:`{train,valid}_list`\: List of tfrecord files (used in network optimization process)
+    - :gray:`scale_factor`\: Scale factor for symmetry function.
+    - :gray:`atomic_weights`\: Data file contains atomic weights.
+
+
+After :gray:`Neural_network.train` method, you can find the output files listed below:
+
+    - :gray:`SAVER.*`, :gray:`checkpoint`\: Tensorflow save file which contains 
+      the network information.
+    - :gray:`potential_saved`\: LAMMPS potential file.
+
+
+.. MDwithLAMMPS_
+
+MD simulation with LAMMPS
+=========================
+
+To run MD simulation with LAMMPS, add the lines into the LAMMPS script file.
+::
+
+    pair_style nn
+    pair_coeff * * /path/to/potential_saved Si O
+
+Regarding the unit system, the NNP trained with VASP output is compatible with the LAMMPS units ‘metal’. 
+For outputs from other ab initio programs, however, 
+the appropriate unit should be chosen with the user’s discretion.

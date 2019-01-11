@@ -5,6 +5,8 @@ Models
 Introduction
 ============
 
+In this section contains the information of ML models used in SIMPLE-NN.
+
 Model list
 ==========
 
