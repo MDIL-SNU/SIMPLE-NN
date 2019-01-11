@@ -1,5 +1,5 @@
-# SPINN
-SPINN(SNU Package for Interatomic Neural Network potential)
+# SIMPLE-NN
+SIMPLE-NN(SNU Interatomic Machine-learning PotentiaL packagE – version Neural Network)
 
 ## Installation
 SIMPLE-NN use Tensorflow and mpi4py(optional).
