@@ -21,12 +21,12 @@ sys.path.insert(0, os.path.abspath('..'))
 
 project = 'simple-nn'
 copyright = '2018, Nanco-L'
-author = 'Nanco-L'
+author = 'Kyuhyun Lee, Dongsun Yoo, Wonseok Jeong and Seungwu Han'
 
 # The short X.Y version
-version = '0.1.3'
+version = '0.6.0'
 # The full version, including alpha/beta/rc tags
-release = '0.1.3.1'
+release = '0.6.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
+    'sphinx.ext.imgmath',
     #'sphinx.ext.viewcode',
 ]
 
@@ -127,6 +128,9 @@ latex_elements = {
     #
     # 'figure_align': 'htbp',
 }
+
+#latex_engine = 'xelatex'
+
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
