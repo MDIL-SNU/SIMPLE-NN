@@ -9,6 +9,7 @@ import timeit
 import copy
 from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory, repeat, read_lammps_potential
 from ..utils.lbfgs import L_BFGS
+from tqdm import tqdm
 #from tensorflow.python.client import timeline
 
 """
@@ -86,6 +87,15 @@ class Neural_network(object):
     def _set_scale_parameter(self, scale_file):
         self.scale = pickle_load(scale_file)
         # TODO: add the check code for valid scale file
+
+    def _set_gdf_parameters(self, atomic_weights_file, modifier=None):
+        atomic_weights = pickle_load(atomic_weights_file)
+        self.gdf_scale = dict()
+        for item in self.parent.inputs['atom_types']:
+            if modifier != None and callable(modifier[item]):
+                atomic_weights[item][:,0] = modifier[item](atomic_weights[item][:,0])
+            self.gdf_scale[item] = np.mean(atomic_weights[item][:,0])
+
 
     def _make_model(self):
         self.models = dict()
@@ -366,7 +376,7 @@ class Neural_network(object):
         self._generate_lammps_potential(sess)
         
 
-    def _make_iterator_from_handle(self, training_dataset, atomic_weights=False):
+    def _make_iterator_from_handle(self, training_dataset, atomic_weights=False, modifier=None):
         self.handle = tf.placeholder(tf.string, shape=[])
         self.iterator = tf.data.Iterator.from_string_handle(
             self.handle, training_dataset.output_types, training_dataset.output_shapes)
@@ -380,18 +390,30 @@ class Neural_network(object):
                     tf.reshape(self.next_elem['F'], [-1, 3]),
                     self.next_elem['partition'], 2
                 )[1]
+            self.next_elem['atom_idx'] = \
+                tf.dynamic_partition(
+                    tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
+                    self.next_elem['partition'], 2
+                )[1]
+
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
         
         if atomic_weights:
-            self.next_elem['atomic_weights'] = \
-                tf.dynamic_partition(
-                    tf.reshape(self.next_elem['atomic_weights'], [-1, 1]),
-                    self.next_elem['partition'], 2
-                )[1]
+        #    self.next_elem['atomic_weights'] = \
+        #        tf.dynamic_partition(
+        #            tf.reshape(self.next_elem['atomic_weights'], [-1, 1]),
+        #            self.next_elem['partition'], 2
+        #        )[1]
+            self.next_elem['atomic_weights_org'] = list()
+            self.next_elem['atomic_weights'] = list()
+            self.next_elem['dense_out'] = list()
+            self.next_elem['partition_peratom'] = list()
 
         for item in self.parent.inputs['atom_types']:
             zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
 
+            if atomic_weights:
+                self.next_elem['partition_peratom'].append(self.next_elem['partition_'+item])
             self.next_elem['partition_'+item] = tf.cond(zero_cond, 
                                                         lambda: tf.zeros([1], tf.int32),
                                                         lambda: tf.reshape(self.next_elem['partition_'+item], [-1]))
@@ -440,12 +462,65 @@ class Neural_network(object):
                 )), tf.int32)
 
 
-    def train(self, user_optimizer=None, user_atomic_weights_function=None):
+            if atomic_weights:
+                #self.next_elem['atomic_weights_'+item] = tf.cond(
+                #                                            zero_cond,
+                #                                            lambda: tf.ones([0], tf.float64),#tf.ones([tf.reduce_sum(self.next_elem['N_'+item])], tf.float64),
+                #                                            lambda: tf.dynamic_partition(
+                #                                                tf.reshape(self.next_elem['atomic_weights_'+item], [-1]),
+                #                                                self.next_elem['partition_'+item], 2)[1]
+                #                                         )
+
+                self.next_elem['atomic_weights_org'].append(self.next_elem['atomic_weights_'+item])
+                if modifier != None and callable(modifier[item]):
+                    self.next_elem['dense_out_'+item] = tf.greater_equal(
+                                                            self.next_elem['atomic_weights_'+item], 
+                                                            self.parent.inputs['symmetry_function']['weight_modifier']['params'][item]['c']
+                                                            )
+                    self.next_elem['atomic_weights_'+item] = modifier[item](self.next_elem['atomic_weights_'+item], module_type=tf)
+                else:
+                    self.next_elem['dense_out_'+item] = tf.cast(tf.ones(tf.shape(self.next_elem['atomic_weights_'+item]), tf.float64), tf.bool)
+
+                self.next_elem['atomic_weights_'+item] /= self.gdf_scale[item]
+                self.next_elem['atomic_weights'].append(self.next_elem['atomic_weights_'+item])
+                self.next_elem['dense_out'].append(self.next_elem['dense_out_'+item])
+
+        if atomic_weights:
+            self.next_elem['partition_peratom'] = tf.reshape(tf.concat(self.next_elem['partition_peratom'], axis=1), [-1,1])
+            self.next_elem['atomic_weights_org'] = tf.dynamic_partition(
+                                                    tf.reshape(tf.concat(self.next_elem['atomic_weights_org'], axis=1), [-1,1]),
+                                                    self.next_elem['partition_peratom'], 2)[1]
+            self.next_elem['atomic_weights'] = tf.reshape(
+                                                    tf.dynamic_partition(
+                                                        tf.reshape(tf.concat(self.next_elem['atomic_weights'], axis=1), [-1,1]),
+                                                        self.next_elem['partition_peratom'], 2)[1], [-1,1]
+                                                    )
+            self.next_elem['dense_out'] = tf.reshape(
+                                            tf.dynamic_partition(
+                                                tf.reshape(tf.concat(self.next_elem['dense_out'], axis=1), [-1,1]),
+                                                self.next_elem['partition_peratom'], 2)[1], [-1,1]
+                                            )
+
+    def train(self, user_optimizer=None, aw_modifier=None):
         self.inputs = self.parent.inputs['neural_network']
         # read data?
 
         self._set_params('symmetry_function')
         self._set_scale_parameter('./scale_factor')
+        self._set_gdf_parameters('./atomic_weights', aw_modifier)
+
+        modifier_tag = dict()
+        modifier_total = False
+        for item in self.parent.inputs['atom_types']:
+            modifier_tag[item] = True
+            if aw_modifier == None:
+                modifier_tag[item] = False
+            elif (item in aw_modifier.keys()) and callable(aw_modifier[item]):
+                modifier_tag[item] = True
+            else:
+                modifier_tag[item] = False
+            modifier_total = modifier_total or modifier_tag[item]
+        modifier_tag['total'] = modifier_total
 
         if self.inputs['train']:
             train_filequeue = _make_data_list(self.train_data_list)
@@ -463,15 +538,22 @@ class Neural_network(object):
                                                                    batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'],
                                                                    valid=True, atomic_weights=aw_tag)
 #                                                                   valid=True, atomic_weights=aw_tag)
-            self._make_iterator_from_handle(train_iter, aw_tag)
+            self._make_iterator_from_handle(train_iter, aw_tag, modifier=aw_modifier)
 
         if self.inputs['test']:
             test_filequeue = _make_data_list(self.test_data_list)
+
+            if self.parent.descriptor.inputs['atomic_weights']['type'] == None:
+                aw_tag = False
+            else:
+                aw_tag = True
+
             test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, 
                                                                   batch_size=self.inputs['batch_size'], cache=self.inputs['cache'],
-                                                                  use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
+                                                                  #use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
+                                                                  use_force=self.inputs['use_force'], valid=True, atomic_weights=aw_tag)
             if not self.inputs['train']:
-                self._make_iterator_from_handle(test_iter)
+                self._make_iterator_from_handle(test_iter, aw_tag)
 
         self.force_coeff = self._get_decay_param(self.inputs['force_coeff'])
         self.energy_coeff = self._get_decay_param(self.inputs['energy_coeff'])
@@ -523,8 +605,8 @@ class Neural_network(object):
                 valid_fdict = {self.handle: valid_handle}
 
                 # Log validation set statistics.
-                _, _, _, _, str_tot_struc, str_tot_atom, str_weight, str_set = self._get_loss_for_print(
-                    sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter)
+                _, _, _, _, _, str_tot_struc, str_tot_atom, str_weight, str_set = self._get_loss_for_print(
+                    sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter, modifier_tag=modifier_tag)
 
                 self._log_statistics(str_tot_struc, str_tot_atom, str_weight)
                 """
@@ -549,7 +631,7 @@ class Neural_network(object):
                     total_epoch = self.inputs['total_epoch']
                     break_tag = False
 
-                for epoch in range(total_epoch):
+                for epoch in tqdm(range(total_epoch)):
                     if self.inputs['full_batch']:
                         if self.inputs['method'] == 'Adam':
                             [flat_grad] = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=False)
@@ -596,11 +678,11 @@ class Neural_network(object):
 
                         result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
 
-                        t_eloss, t_floss, t_str_eloss, t_str_floss, _, _, _, t_str_set = self._get_loss_for_print(
-                            sess, train_fdict, full_batch=self.inputs['full_batch'], iter_for_initialize=train_iter)
+                        t_eloss, t_floss, t_aw_floss, t_str_eloss, t_str_floss, _, _, _, t_str_set = self._get_loss_for_print(
+                            sess, train_fdict, full_batch=self.inputs['full_batch'], iter_for_initialize=train_iter, modifier_tag=modifier_tag)
 
-                        eloss, floss, str_eloss, str_floss, _, _, _, _ = self._get_loss_for_print(
-                            sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter)
+                        eloss, floss, aw_floss, str_eloss, str_floss, _, _, _, _ = self._get_loss_for_print(
+                            sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter, modifier_tag=modifier_tag)
 
                         full_str_set = list(set(t_str_set + str_set))
 
@@ -612,6 +694,19 @@ class Neural_network(object):
                             lr = sess.run(self.learning_rate)
                             result += ', learning_rate: {:6.4e}'.format(lr)
                         result += ', elapsed: {:4.2e}\n'.format((time2-time1-save_time)/self.inputs['show_interval'])
+
+                        # Print splitted RMSE according to atomic weights
+                        if modifier_tag['total']:
+                            cutline = '----------------------------------------------------------------------\n'
+                            result += cutline
+                            result += 'modifier breakdown:\n'
+                            result += '     |  rho(G)^-1 < c (dense)  | rho(G)^-1 >= c (sparse) |\n'
+                            result += '     |    Train   |    Valid   |    Train   |    Valid   |\n'
+                            for atem in self.parent.inputs['atom_types']:
+                                if modifier_tag[atem]:
+                                    result += '  {:2} | {:6.4e} | {:6.4e} | {:6.4e} | {:6.4e} |\n'.format(atem, 
+                                                                                                          t_aw_floss[atem][1], aw_floss[atem][1], 
+                                                                                                          t_aw_floss[atem][0], aw_floss[atem][0]) 
 
                         # Print structural breakdown of RMSE
                         if self.inputs['print_structure_rmse']:
@@ -687,6 +782,10 @@ class Neural_network(object):
                 if self.inputs['use_force']:
                     test_save['DFT_F'] = list()
                     test_save['NN_F'] = list()
+                    if self.parent.inputs['symmetry_function']['add_atom_idx']:
+                        test_save['atom_idx'] = list()
+                    if aw_tag:
+                        test_save['atomic_weights'] = list()
 
                 eloss = floss = 0.
                 test_tot_struc = test_tot_atom = 0
@@ -700,12 +799,19 @@ class Neural_network(object):
                             num_batch_atom = np.sum(test_elem['tot_num'])
                             eloss += tmp_eloss * num_batch_struc
                             floss += tmp_floss * num_batch_atom
-
+                            
                             test_save['DFT_E'].append(test_elem['E'])
                             test_save['NN_E'].append(tmp_nne)
                             test_save['N'].append(test_elem['tot_num'])
                             test_save['DFT_F'].append(test_elem['F'])
                             test_save['NN_F'].append(tmp_nnf)
+                            
+                            if self.parent.inputs['symmetry_function']['add_atom_idx']:
+                                temp_idx = test_elem['atom_idx'].reshape([-1])
+                                temp_idx = temp_idx[temp_idx != 0]                                
+                                test_save['atom_idx'].append(temp_idx)
+                            if aw_tag:
+                                test_save['atomic_weights'].append(test_elem['atomic_weights_org'])
                             
                             test_tot_atom += num_batch_atom
                         else:
@@ -732,6 +838,10 @@ class Neural_network(object):
 
                             test_save['DFT_F'] = np.concatenate(test_save['DFT_F'], axis=0)
                             test_save['NN_F'] = np.concatenate(test_save['NN_F'], axis=0)
+                            test_save['atom_idx'] = np.concatenate(test_save['atom_idx'], axis=0)
+
+                            if aw_tag:
+                                test_save['atomic_weights'] = np.concatenate(test_save['atomic_weights'], axis=0)
                         break
                 
                 with open('./test_result', 'wb') as fil:
@@ -759,9 +869,10 @@ class Neural_network(object):
         self.parent.logfile.write(result)
 
     # TODO: check memory leak!
-    def _get_loss_for_print(self, sess, fdict, full_batch=False, iter_for_initialize=None):
+    def _get_loss_for_print(self, sess, fdict, full_batch=False, iter_for_initialize=None, modifier_tag=None):
         eloss = floss = 0
         num_tot_struc = num_tot_atom = 0
+        aw_floss = {}
         str_eloss = {}
         str_floss = {}
         str_tot_struc = {}
@@ -782,11 +893,23 @@ class Neural_network(object):
             while True:
                 try:
                     if self.inputs['use_force']:
-                        next_elem, tmp_eloss, tmp_floss, tmp_str_eloss, tmp_str_floss, tmp_str_atom = sess.run(
-                            [self.next_elem, self.e_loss, self.f_loss, self.str_e_loss, 
+                        next_elem, tmp_eloss, tmp_f, tmp_floss, tmp_str_eloss, tmp_str_floss, tmp_str_atom = sess.run(
+                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.str_e_loss, 
                              self.str_f_loss, self.str_num_batch_atom], feed_dict=fdict)
                         num_batch_atom = np.sum(next_elem['tot_num'])
                         floss += tmp_floss * num_batch_atom
+
+                        if modifier_tag['total']:
+                            tmp_floss_not_packed = np.sum(np.square(next_elem['F'] - tmp_f), axis=1, keepdims=True)
+                            tmp_sparse_idx = next_elem['dense_out']
+                            tmp_dense_idx = np.logical_not(next_elem['dense_out'])
+
+                            for i,item in enumerate(self.parent.inputs['atom_types']):
+                                if item not in aw_floss:
+                                    aw_floss[item] = [list(), list()]
+                            
+                                aw_floss[item][0].append(tmp_floss_not_packed[np.logical_and(tmp_sparse_idx, next_elem['atom_idx'] == (i+1))])
+                                aw_floss[item][1].append(tmp_floss_not_packed[np.logical_and(tmp_dense_idx, next_elem['atom_idx'] == (i+1))])
                         num_tot_atom += num_batch_atom
                     else:
                         next_elem, tmp_eloss, tmp_str_eloss, tmp_str_atom = sess.run(
@@ -821,13 +944,29 @@ class Neural_network(object):
                         floss = np.sqrt(floss*3/num_tot_atom)
                         for struct in str_floss.keys():
                             str_floss[struct] = np.sqrt(str_floss[struct]*3/str_tot_atom[struct])
+
+                    if modifier_tag['total']:
+                        for item in self.parent.inputs['atom_types']:
+                            aw_floss[item][0] = np.sqrt(np.mean(np.concatenate(aw_floss[item][0], axis=0)))
+                            aw_floss[item][1] = np.sqrt(np.mean(np.concatenate(aw_floss[item][1], axis=0)))
                     break
         else:
             if self.inputs['use_force']:
-                next_elem, eloss, floss, tmp_str_eloss, tmp_str_floss = sess.run(
-                    [self.next_elem, self.e_loss, self.f_loss, self.str_e_loss, self.str_f_loss], feed_dict=fdict)
+                next_elem, eloss, tmp_f, floss, tmp_str_eloss, tmp_str_floss = sess.run(
+                    [self.next_elem, self.e_loss, self.F, self.f_loss, self.str_e_loss, self.str_f_loss], feed_dict=fdict)
                 floss = np.sqrt(floss*3)
                 tmp_str_floss = np.sqrt(tmp_str_floss*3)
+
+                if modifier_tag['total']:
+                    tmp_floss_not_packed = np.sum(np.square(next_elem['F'] - tmp_f), axis=1, keepdims=True)
+                    tmp_sparse_idx = next_elem['dense_out']
+                    tmp_dense_idx = np.logical_not(next_elem['dense_out'])
+
+                    for i,item in enumerate(self.parent.inputs['atom_types']):
+                        if item not in aw_floss:
+                            aw_floss[item] = [list(), list()]
+                        aw_floss[item][0] = np.sqrt(np.mean(tmp_floss_not_packed[np.logical_and(tmp_sparse_idx, next_elem['atom_idx'] == (i+1))]))
+                        aw_floss[item][1] = np.sqrt(np.mean(tmp_floss_not_packed[np.logical_and(tmp_dense_idx, next_elem['atom_idx'] == (i+1))]))
             else:
                 next_elem, eloss, tmp_str_eloss = sess.run(
                     [self.next_elem, self.e_loss, self.str_e_loss], feed_dict=fdict)
@@ -849,7 +988,7 @@ class Neural_network(object):
                                       next_elem['struct_weight'].reshape([-1])):
                 str_weight[struct] = weight
 
-        return eloss, floss, str_eloss, str_floss, str_tot_struc, str_tot_atom, str_weight, str_eloss.keys()
+        return eloss, floss, aw_floss, str_eloss, str_floss, str_tot_struc, str_tot_atom, str_weight, str_eloss.keys()
 
 
     def _get_grad_dict(self, flat_grad):

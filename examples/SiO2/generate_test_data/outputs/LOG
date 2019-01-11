@@ -1,0 +1,9 @@
+SIMPLE_NN v0.6.0
+../ab_initio_output/OUTCAR_comp ::10: ~./data/data1000.pickle
+150 file saved in ./data/training_data_0000_to_0006.tfrecord
+150 file saved in ./data/training_data_0001_to_0006.tfrecord
+150 file saved in ./data/training_data_0002_to_0006.tfrecord
+150 file saved in ./data/training_data_0003_to_0006.tfrecord
+150 file saved in ./data/training_data_0004_to_0006.tfrecord
+150 file saved in ./data/training_data_0005_to_0006.tfrecord
+100 file saved in ./data/training_data_0006_to_0006.tfrecord

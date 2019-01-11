@@ -134,7 +134,10 @@ class Simple_nn(object):
         self.descriptor.set_inputs()
         modifier = None
         if self.descriptor.inputs['weight_modifier']['type'] == 'modified sigmoid':
-            modifier = functools.partial(modified_sigmoid, **self.descriptor.inputs['weight_modifier']['params'])
+            modifier = dict()
+            #modifier = functools.partial(modified_sigmoid, **self.descriptor.inputs['weight_modifier']['params'])
+            for item in self.inputs['atom_types']:
+                modifier[item] = functools.partial(modified_sigmoid, **self.descriptor.inputs['weight_modifier']['params'][item])
         if self.descriptor.inputs['atomic_weights']['type'] == 'gdf':
             get_atomic_weights = functools.partial(_generate_gdf_file, modifier=modifier)
         elif self.descriptor.inputs['atomic_weights']['type'] == 'user':
@@ -153,4 +156,4 @@ class Simple_nn(object):
                                        **self.descriptor.inputs['atomic_weights']['params'])
         
         if self.inputs['train_model']:
-            self.model.train(user_optimizer=user_optimizer)
+            self.model.train(user_optimizer=user_optimizer, aw_modifier=modifier)

@@ -1,0 +1,34 @@
+generate_features: true
+preprocess: true
+train_model: true
+atom_types:
+ - Si
+ - O
+
+symmetry_function:
+  params:
+    Si: params_Si
+    O: params_O
+  atomic_weights:
+    type: gdf
+    params:
+      sigma:
+        Si: 0.02
+        O: 0.02
+  # weight modifier is applied in train_model part
+  weight_modifier:
+    type: modified sigmoid
+    params:
+      Si:
+        b: 0.02
+        c: 3500.
+      O:
+        b: 0.02
+        c: 10000.
+       
+neural_network:
+  method: Adam
+  nodes: 30-30
+  batch_size: 10
+  total_epoch: 50000
+  learning_rate: 0.001

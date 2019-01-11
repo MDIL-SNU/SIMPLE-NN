@@ -53,10 +53,13 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
     for (int s=0; s < nsyms; ++s) {
         if (cutoff < params_d[s][0])
             cutoff = params_d[s][0];
+        /*
         if ((params_i[s][0] == 4 || params_i[s][0] == 5) &&
              ceilf(params_d[s][2]) != params_d[s][2])
             return 2;
-        powtwo[s] = pow_int(2, 1.-params_d[s][2]);
+        */
+        //powtwo[s] = pow_int(2, 1.-params_d[s][2]);
+        powtwo[s] = pow(2, 1.-params_d[s][2]);
     }
     
     total_bins = 1;
