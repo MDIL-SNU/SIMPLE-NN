@@ -58,27 +58,61 @@ def _make_str_data_list(filename):
     return data_list.values()
 
 
-def _make_full_featurelist(filelist, atom_types, feature_tag):
+def _make_full_featurelist(filelist, feature_tag, atom_types=None, use_idx=False):
+    """
+    atom_types
+    - None: atom type is not considered
+    - list: use atom_types list
+    """
     data_list = _make_data_list(filelist)
 
-    feature_list = dict()
-    idx_list = dict()
+    if atom_types == None:
+        feature_list = list()
+        idx_list = list()
 
-    for item in atom_types:
-        feature_list[item] = list()
-        idx_list[item] = list()
+        for i,item in enumerate(data_list):
+            tmp_data = pickle_load(item)
+            feature_list.append(tmp_data[feature_tag])
 
-    for i,item in enumerate(data_list):
-        tmp_data = pickle_load(item)
-        for jtem in atom_types:
-            if jtem in tmp_data[feature_tag]:
-                feature_list[jtem].append(tmp_data[feature_tag][jtem])
-                idx_list[jtem].append([i]*tmp_data['N'][jtem])
+        feature_list = np.concatenate(feature_list, axis=0)
+
+    else:
+        if use_idx:
+            feature_list = dict()
+            idx_list = dict()
+
+            tmp_feature_list = list()
+            tmp_atom_idx_list = list()
+            for i,item in enumerate(data_list):
+                tmp_data = pickle_load(item)
+                tmp_feature_list.append(tmp_data[feature_tag])
+                tmp_atom_idx_list.append(tmp_data['atom_idx'])
+
+            tmp_feature_list = np.concatenate(tmp_feature_list, axis=0)
+            tmp_atom_idx_list = np.concatenate(tmp_atom_idx_list, axis=0)
+
+            for i,item in enumerate(atom_types):
+                feature_list[item] = tmp_feature_list[tmp_atom_idx_list == i+1]
+
+        else:
+            feature_list = dict()
+            idx_list = dict()
+
+            for item in atom_types:
+                feature_list[item] = list()
+                idx_list[item] = list()
+
+            for i,item in enumerate(data_list):
+                tmp_data = pickle_load(item)
+                for jtem in atom_types:
+                    if jtem in tmp_data[feature_tag]:
+                        feature_list[jtem].append(tmp_data[feature_tag][jtem])
+                        idx_list[jtem].append([i]*tmp_data['N'][jtem])
                 
-    for item in atom_types:
-        if len(feature_list[item]) > 0:
-            feature_list[item] = np.concatenate(feature_list[item], axis=0)
-            idx_list[item] = np.concatenate(idx_list[item], axis=0)
+            for item in atom_types:
+                if len(feature_list[item]) > 0:
+                    feature_list[item] = np.concatenate(feature_list[item], axis=0)
+                    idx_list[item] = np.concatenate(idx_list[item], axis=0)
 
     return feature_list, idx_list
 
