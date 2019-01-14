@@ -33,6 +33,7 @@ simple_nn/
     utils/
         __init__.py
         lbfgs.py
+        graph.py
         gdf.cpp
 examples/
     SiO2/
@@ -67,6 +68,7 @@ Brief description of each file:
   - utils/:
     - __init__.py: Set of utility functions
     - lbfgs.py: L-BFGS implementation
+    - graph.py: Set of graph-related functions
     - gdf.cpp: GDF implementation
 - examples/SiO2:
   Folder contains MD trajectory data for bulk SiO2 and 
