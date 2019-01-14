@@ -18,7 +18,8 @@ install_requires = [
     'ase>=3.10.0',
     'pyyaml>=3.10',
     'cffi>=1.0.0',
-    'psutil'
+    'psutil',
+    'tqdm'
 ]
 
 # C extension library for calculating symmetry function
