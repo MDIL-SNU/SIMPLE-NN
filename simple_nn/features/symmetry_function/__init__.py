@@ -283,9 +283,9 @@ class Symmetry_function(object):
 
         # generate full symmetry function vector
         feature_list_train, idx_list_train = \
-            _make_full_featurelist(tmp_pickle_train, self.parent.inputs['atom_types'], 'x')
+            _make_full_featurelist(tmp_pickle_train, 'x', self.parent.inputs['atom_types'])
         feature_list_valid, idx_list_valid = \
-            _make_full_featurelist(tmp_pickle_valid, self.parent.inputs['atom_types'], 'x')
+            _make_full_featurelist(tmp_pickle_valid, 'x', self.parent.inputs['atom_types'])
 
         # calculate scale
         scale = None
@@ -304,12 +304,11 @@ class Symmetry_function(object):
             atomic_weights_train = pickle_load(get_atomic_weights)
             atomic_weights_valid = 'ones'
 
-        grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
-
         if atomic_weights_train is None:
             aw_tag = False
         else:
             aw_tag = True
+            grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
         
         # train
         tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
@@ -391,7 +390,7 @@ class Symmetry_function(object):
                 self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
 
                 if not self.inputs['remain_pickle']:
-                    os.remove(item)
+                    os.remove(ptem)
 
             writer.close()
             self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
@@ -519,10 +518,10 @@ class Symmetry_function(object):
                         err = "Not implemented symmetry function type."
                         self.parent.logfile.write("Error: {:}\n".format(err))
                         raise NotImplementedError(err)
-                    elif errno == 2:
-                        err = "Zeta in G4/G5 must be integer."
-                        self.parent.logfile.write("Error: {:}\n".format(err))
-                        raise ValueError(err)
+                    #elif errno == 2:
+                    #    err = "Zeta in G4/G5 must be integer."
+                    #    self.parent.logfile.write("Error: {:}\n".format(err))
+                    #    raise ValueError(err)
                     else:
                         assert errno == 0
 

@@ -19,6 +19,7 @@ def plot_gdfinv_density(gdfinv_list, atom_types, bins=500):
 
 def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=500):
     res = dict()
+    max_num = 30000
 
     if use_scale:
         with open('scale_factor') as fil:
@@ -42,13 +43,25 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=50
 #            for j in range(i+1,data_len):
 #                res[item].append([np.linalg.norm(G_list[item][i] - G_list[item][j]), 
 #                                  np.linalg.norm(F_list[item][i] - F_list[item][j])])
-            res[item].append([np.linalg.norm(G_list[item][i] - G_list[item][i+1:], axis=1),
-                              np.linalg.norm(F_list[item][i] - F_list[item][i+1:], axis=1)])
+            st_idx = i+1
+
+            tmp_ed = st_idx + max_num
+            while tmp_ed < data_len:
+                tmp_res = np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:tmp_ed], axis=1),
+                                    np.linalg.norm(F_list[item][i] - F_list[item][st_idx:tmp_ed], axis=1)])
+                tmp_res = tmp_res[:, tmp_res[0,:] < 1.]
+
+                res[item].append(tmp_res)
+                st_idx = tmp_ed
+                tmp_ed += max_num
+
+            res[item].append(np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:], axis=1),
+                                       np.linalg.norm(F_list[item][i] - F_list[item][st_idx:], axis=1)]))
 
         #res[item] = np.array(res[item])
-        res[item] = np.concatenate(res[item], axis=0)
+        res[item] = np.concatenate(res[item], axis=1)
 
-        plt.hist2d(res[item][:,0], res[item][:,1], bins, range=[[0., 1.],[0., 4.]]) 
+        plt.hist2d(res[item][0,:], res[item][1,:], bins, range=[[0., 1.],[0., 4.]]) 
 
         plt.xlabel('$|\mathrm{\mathsf{\mathbf{G}}}_i-\mathrm{\mathsf{\mathbf{G}}}_j|$')
         plt.ylabel('$|\mathrm{\mathsf{\mathbf{F}}}_i-\mathrm{\mathsf{\mathbf{F}}}_j|$')
