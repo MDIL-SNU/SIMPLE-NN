@@ -17,9 +17,35 @@ def plot_gdfinv_density(gdfinv_list, atom_types, bins=500):
         plt.clf()
 
 
-def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=500):
+def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=200, max_num=30000, p_range=[[0., 1.], [0., 10.]]):
+    x_bins = np.linspace(p_range[0][0], p_range[0][1], bins+1)
+    y_bins = np.linspace(p_range[1][0], p_range[1][1], bins+1)
+
+    grid_x, grid_y = np.meshgrid(x_bins[:-1], y_bins[:-1])
+    grid_x = grid_x.reshape([-1,1])
+    grid_y = grid_y.reshape([-1,1])    
+    """
+    grid_pack order
+    x_1,y_1 -> x_2,y_1 -> ... -> x_1,y_2 -> ...
+    """
+
+    def _get_pack_count(res, x_bins=x_bins, y_bins=y_bins):
+        x_digi = np.digitize(res[0,:], x_bins)
+        x_num = len(x_bins)-1
+        y_digi = np.digitize(res[1,:], y_bins)
+
+        x_noout = x_digi < x_num+1
+        y_noout = y_digi < x_num+1
+        tot_noout = np.logical_and(x_noout, y_noout)
+
+        pack_digi = (x_digi[tot_noout] - 1) + x_num*(y_digi[tot_noout] - 1)
+
+        unique, counts = np.unique(pack_digi, return_counts=True)
+
+        return unique, counts
+
     res = dict()
-    max_num = 30000
+    #res = np.zeros(len(grid_x))
 
     if use_scale:
         with open('scale_factor') as fil:
@@ -27,7 +53,8 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=50
 
     for item in atom_types:
         data_len = len(G_list[item])
-        res[item] = list()
+        #res[item] = list()
+        res[item] = np.zeros(len(grid_x))
 
         if use_scale:
             G_list[item] -= scale[item][0:1,:]
@@ -47,21 +74,29 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=50
 
             tmp_ed = st_idx + max_num
             while tmp_ed < data_len:
-                tmp_res = np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:tmp_ed], axis=1),
-                                    np.linalg.norm(F_list[item][i] - F_list[item][st_idx:tmp_ed], axis=1)])
+                tmp_res = np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:tmp_ed], axis=1, keepdims=True),
+                                    np.linalg.norm(F_list[item][i] - F_list[item][st_idx:tmp_ed], axis=1, keepdims=True)])
                 tmp_res = tmp_res[:, tmp_res[0,:] < 1.]
 
-                res[item].append(tmp_res)
+                #res[item].append(tmp_res)
+                unique, counts = _get_pack_count(tmp_res)
+                res[item][unique] += counts
+
                 st_idx = tmp_ed
                 tmp_ed += max_num
 
-            res[item].append(np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:], axis=1),
-                                       np.linalg.norm(F_list[item][i] - F_list[item][st_idx:], axis=1)]))
+            tmp_res = np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:], axis=1, keepdims=True),
+                                np.linalg.norm(F_list[item][i] - F_list[item][st_idx:], axis=1, keepdims=True)])
+
+            unique, counts = _get_pack_count(tmp_res)
+            res[item][unique] += counts
+
+            #res[item].append(np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:], axis=1),
+            #                           np.linalg.norm(F_list[item][i] - F_list[item][st_idx:], axis=1)]))
 
         #res[item] = np.array(res[item])
-        res[item] = np.concatenate(res[item], axis=1)
-
-        plt.hist2d(res[item][0,:], res[item][1,:], bins, range=[[0., 1.],[0., 4.]]) 
+        #res[item] = np.concatenate(res[item], axis=1)
+        plt.hist2d(np.squeeze(grid_x), np.squeeze(grid_y), bins=[x_bins, y_bins], weights=res[item]) 
 
         plt.xlabel('$|\mathrm{\mathsf{\mathbf{G}}}_i-\mathrm{\mathsf{\mathbf{G}}}_j|$')
         plt.ylabel('$|\mathrm{\mathsf{\mathbf{F}}}_i-\mathrm{\mathsf{\mathbf{F}}}_j|$')
