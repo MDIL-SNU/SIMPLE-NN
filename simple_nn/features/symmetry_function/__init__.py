@@ -304,12 +304,11 @@ class Symmetry_function(object):
             atomic_weights_train = pickle_load(get_atomic_weights)
             atomic_weights_valid = 'ones'
 
-        grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
-
         if atomic_weights_train is None:
             aw_tag = False
         else:
             aw_tag = True
+            grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
         
         # train
         tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
