@@ -519,10 +519,10 @@ class Symmetry_function(object):
                         err = "Not implemented symmetry function type."
                         self.parent.logfile.write("Error: {:}\n".format(err))
                         raise NotImplementedError(err)
-                    elif errno == 2:
-                        err = "Zeta in G4/G5 must be integer."
-                        self.parent.logfile.write("Error: {:}\n".format(err))
-                        raise ValueError(err)
+                    #elif errno == 2:
+                    #    err = "Zeta in G4/G5 must be integer."
+                    #    self.parent.logfile.write("Error: {:}\n".format(err))
+                    #    raise ValueError(err)
                     else:
                         assert errno == 0
 
