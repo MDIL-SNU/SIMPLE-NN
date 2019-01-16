@@ -390,7 +390,7 @@ class Symmetry_function(object):
                 self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
 
                 if not self.inputs['remain_pickle']:
-                    os.remove(item)
+                    os.remove(ptem)
 
             writer.close()
             self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
