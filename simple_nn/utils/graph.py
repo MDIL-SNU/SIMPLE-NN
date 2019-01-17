@@ -96,7 +96,7 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
 
         #res[item] = np.array(res[item])
         #res[item] = np.concatenate(res[item], axis=1)
-        plt.hist2d(np.squeeze(grid_x), np.squeeze(grid_y), bins=[x_bins, y_bins], weights=res[item]) 
+        plt.hist2d(np.squeeze(grid_x), np.squeeze(grid_y), bins=[x_bins, y_bins], weights=res[item], cmax=1000) 
 
         plt.xlabel('$|\mathrm{\mathsf{\mathbf{G}}}_i-\mathrm{\mathsf{\mathbf{G}}}_j|$')
         plt.ylabel('$|\mathrm{\mathsf{\mathbf{F}}}_i-\mathrm{\mathsf{\mathbf{F}}}_j|$')
