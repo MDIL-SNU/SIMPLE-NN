@@ -17,7 +17,7 @@ def plot_gdfinv_density(gdfinv_list, atom_types, bins=500):
         plt.clf()
 
 
-def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=200, max_num=30000, p_range=[[0., 1.], [0., 10.]]):
+def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=200, max_num=30000, p_range=[[0., 1.], [0., 10.]], **kargs):
     x_bins = np.linspace(p_range[0][0], p_range[0][1], bins+1)
     y_bins = np.linspace(p_range[1][0], p_range[1][1], bins+1)
 
@@ -96,7 +96,7 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
 
         #res[item] = np.array(res[item])
         #res[item] = np.concatenate(res[item], axis=1)
-        plt.hist2d(np.squeeze(grid_x), np.squeeze(grid_y), bins=[x_bins, y_bins], weights=res[item], cmax=1000) 
+        plt.hist2d(np.squeeze(grid_x), np.squeeze(grid_y), bins=[x_bins, y_bins], weights=res[item], **kargs)#, cmax=1000) 
 
         plt.xlabel('$|\mathrm{\mathsf{\mathbf{G}}}_i-\mathrm{\mathsf{\mathbf{G}}}_j|$')
         plt.ylabel('$|\mathrm{\mathsf{\mathbf{F}}}_i-\mathrm{\mathsf{\mathbf{F}}}_j|$')
