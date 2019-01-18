@@ -516,7 +516,6 @@ class Neural_network(object):
 
         self._set_params('symmetry_function')
         self._set_scale_parameter('./scale_factor')
-        self._set_gdf_parameters('./atomic_weights', aw_modifier)
 
         modifier_tag = dict()
         modifier_total = False
@@ -539,6 +538,7 @@ class Neural_network(object):
                 aw_tag = False
             else:
                 aw_tag = True
+                self._set_gdf_parameters('./atomic_weights', aw_modifier)
 
             train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, cache=self.inputs['cache'],
                                                                    batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'], 
@@ -556,6 +556,7 @@ class Neural_network(object):
                 aw_tag = False
             else:
                 aw_tag = True
+                self._set_gdf_parameters('./atomic_weights', aw_modifier)
 
             test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, 
                                                                   batch_size=self.inputs['batch_size'], cache=self.inputs['cache'],

@@ -16,7 +16,7 @@ def plot_gdfinv_density(gdfinv_list, atom_types, bins=500):
         plt.savefig('GDFinv_hist_{}.pdf'.format(item))
         plt.clf()
 
-
+        
 def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=200, max_num=30000, p_range=[[0., 1.], [0., 10.]], **kargs):
     x_bins = np.linspace(p_range[0][0], p_range[0][1], bins+1)
     y_bins = np.linspace(p_range[1][0], p_range[1][1], bins+1)
