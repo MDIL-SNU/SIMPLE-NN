@@ -283,9 +283,9 @@ class Symmetry_function(object):
 
         # generate full symmetry function vector
         feature_list_train, idx_list_train = \
-            _make_full_featurelist(tmp_pickle_train, self.parent.inputs['atom_types'], 'x')
+            _make_full_featurelist(tmp_pickle_train, 'x', self.parent.inputs['atom_types'])
         feature_list_valid, idx_list_valid = \
-            _make_full_featurelist(tmp_pickle_valid, self.parent.inputs['atom_types'], 'x')
+            _make_full_featurelist(tmp_pickle_valid, 'x', self.parent.inputs['atom_types'])
 
         # calculate scale
         scale = None
