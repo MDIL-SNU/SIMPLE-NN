@@ -75,8 +75,11 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
             tmp_ed = st_idx + max_num
             while tmp_ed < data_len:
                 tmp_res = np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:tmp_ed], axis=1, keepdims=True),
-                                    np.linalg.norm(F_list[item][i] - F_list[item][st_idx:tmp_ed], axis=1, keepdims=True)])
-                tmp_res = tmp_res[:, tmp_res[0,:] < 1.]
+                                    #np.linalg.norm(F_list[item][i] - F_list[item][st_idx:tmp_ed], axis=1, keepdims=True)])
+                                    np.abs(np.linalg.norm(F_list[item][i]) - np.linalg.norm(F_list[item][st_idx:tmp_ed], axis=1, keepdims=True))])
+                # FIXME: Need change?
+                #tmp_res = tmp_res[:, tmp_res[0,:] < 1.]
+                tmp_res = tmp_res[:, tmp_res[0,:] < p_range[0][1]]
 
                 #res[item].append(tmp_res)
                 unique, counts = _get_pack_count(tmp_res)
@@ -86,7 +89,8 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
                 tmp_ed += max_num
 
             tmp_res = np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:], axis=1, keepdims=True),
-                                np.linalg.norm(F_list[item][i] - F_list[item][st_idx:], axis=1, keepdims=True)])
+                                #np.linalg.norm(F_list[item][i] - F_list[item][st_idx:], axis=1, keepdims=True)])
+                                np.abs(np.linalg.norm(F_list[item][i]) - np.linalg.norm(F_list[item][st_idx:], axis=1, keepdims=True))])
 
             unique, counts = _get_pack_count(tmp_res)
             res[item][unique] += counts
