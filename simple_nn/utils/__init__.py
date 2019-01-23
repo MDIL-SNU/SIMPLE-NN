@@ -117,18 +117,19 @@ def _make_full_featurelist(filelist, feature_tag, atom_types=None, use_idx=False
     return feature_list, idx_list
 
 
-def _generate_scale_file(feature_list, atom_types, filename='scale_factor'):
+def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scale_type='minmax', scale_scale=1.0):
     scale = dict()
     for item in atom_types:
         inp_size = feature_list[item].shape[1]
         scale[item] = np.zeros([2, inp_size])
 
         if len(feature_list[item]) > 0:
-            scale[item][0,:] = 0.5*(np.amax(feature_list[item], axis=0) + np.amin(feature_list[item], axis=0))
-            scale[item][1,:] = 0.5*(np.amax(feature_list[item], axis=0) - np.amin(feature_list[item], axis=0))
-
-            #scale[item][0,:] = np.mean(feature_list[item], axis=0)
-            #scale[item][1,:] = np.std(feature_list[item], axis=0)
+            if scale_type == 'minmax':
+                scale[item][0,:] = 0.5*(np.amax(feature_list[item], axis=0) + np.amin(feature_list[item], axis=0))
+                scale[item][1,:] = 0.5*(np.amax(feature_list[item], axis=0) - np.amin(feature_list[item], axis=0)) / scale_scale
+            elif scale_type == 'meanstd':
+                scale[item][0,:] = np.mean(feature_list[item], axis=0)
+                scale[item][1,:] = np.std(feature_list[item], axis=0) / scale_scale
 
             scale[item][1, scale[item][1,:] < 1e-15] = 1.
         else:

@@ -220,7 +220,7 @@ def plot_error_vs_gdfinv(atom_types, ref_data, target_data=None, save_data=False
             plt.ylabel('$\\frac{|\mathrm{\mathsf{\mathbf{F}_{NNP}}} - \mathrm{\mathsf{\mathbf{F}_{DFT}}}|}{|\mathrm{\mathsf{\mathbf{F}_{DFT}}}|}$ (eV/$\mathrm{\mathsf{\AA}}$)')
         else:
             plt.ylabel('|$\mathrm{\mathsf{\mathbf{F}_{NNP}}}$ - $\mathrm{\mathsf{\mathbf{F}_{DFT}}}$| (eV/$\mathrm{\mathsf{\AA}}$)')
-        plt.xlabel('$[\\rho(\mathrm{\mathsf{\mathbf{G}_{Si}}})]^{-1}$')
+        plt.xlabel('$[\\rho(\mathrm{\mathsf{\mathbf{G}_{'+item+'}}})]^{-1}$')
         plt.legend(frameon=False, prop={'size':16})
 
         if normalize:
