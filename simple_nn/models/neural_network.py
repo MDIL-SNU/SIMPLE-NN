@@ -57,7 +57,7 @@ class Neural_network(object):
                                       # Logging & saving related
                                       'save_interval': 1000,
                                       'show_interval': 100,
-                                      'save_criteria': list(),
+                                      'save_criteria': ['v_E'],
                                       #'echeck': True,
                                       #'fcheck': True,
                                       'break_max': 10,
