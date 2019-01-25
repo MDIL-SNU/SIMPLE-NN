@@ -868,7 +868,7 @@ class Neural_network(object):
         total_count_struc = sum(str_tot_struc.values())
         total_count_atom = sum(str_tot_atom.values())
         for struct in sorted(str_tot_struc.keys()):
-            label = struct.replace(' ', '_')
+            label = str(struct).replace(' ', '_')
             count_struc = str_tot_struc[struct]
             count_atom = str_tot_atom[struct]
             result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f} {:>11.4e}\n'.format(
@@ -998,7 +998,7 @@ class Neural_network(object):
                                       next_elem['struct_weight'].reshape([-1])):
                 str_weight[struct] = weight
 
-        return eloss, floss, aw_floss, str_eloss, str_floss, str_tot_struc, str_tot_atom, str_weight, str_eloss.keys()
+        return eloss, floss, aw_floss, str_eloss, str_floss, str_tot_struc, str_tot_atom, str_weight, list(str_eloss.keys())
 
 
     def _get_grad_dict(self, flat_grad):

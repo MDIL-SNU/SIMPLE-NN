@@ -482,7 +482,7 @@ class Symmetry_function(object):
                 res['dx'] = dict()
                 res['params'] = dict()
                 res['N'] = type_num
-                res['tot_num'] = np.sum(type_num.values())
+                res['tot_num'] = np.sum(list(type_num.values()))
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
