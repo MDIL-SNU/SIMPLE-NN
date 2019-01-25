@@ -72,6 +72,8 @@ class Symmetry_function(object):
                                           'type': None,
                                           'params': dict(),
                                       },
+                                      'scale_type': 'minmax',
+                                      'scale_scale': 1.0,
                                   }
                               }
         self.structure_list = './str_list'
@@ -290,7 +292,8 @@ class Symmetry_function(object):
         # calculate scale
         scale = None
         if calc_scale:
-            scale = _generate_scale_file(feature_list_train, self.parent.inputs['atom_types'])
+            scale = _generate_scale_file(feature_list_train, self.parent.inputs['atom_types'], 
+                                         scale_type=self.inputs['scale_type'], scale_scale=self.inputs['scale_scale'])
         else:
             scale = pickle_load('./scale_factor')
 

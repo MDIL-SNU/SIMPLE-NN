@@ -57,8 +57,9 @@ class Neural_network(object):
                                       # Logging & saving related
                                       'save_interval': 1000,
                                       'show_interval': 100,
-                                      'echeck': True,
-                                      'fcheck': True,
+                                      'save_criteria': ['v_E'],
+                                      #'echeck': True,
+                                      #'fcheck': True,
                                       'break_max': 10,
                                       'print_structure_rmse': False,
                                       
@@ -589,8 +590,23 @@ class Neural_network(object):
             #options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
             #run_metadata = tf.RunMetadata()
 
-            prev_eloss = float('inf')
-            prev_floss = float('inf')
+            # Save criteria
+            prev_criteria = list()
+            if 'v_E' in self.inputs['save_criteria']:
+                prev_criteria.append(float('inf')) # E_loss (valid)
+
+            if self.inputs['use_force']:
+                if 'v_F' in self.inputs['save_criteria']:
+                    prev_criteria.append(float('inf')) # F_loss (valid)
+
+                if modifier_tag['total']:
+                    for item in self.parent.inputs['atom_types']:
+                        if modifier_tag[item] and 'v_F_{}_sparse'.format(item) in self.inputs['save_criteria']:
+                            prev_criteria.append(float('inf'))
+            prev_criteria = np.array(prev_criteria)
+
+            #prev_eloss = float('inf')
+            #prev_floss = float('inf')
             save_stack = 1
 
             if self.inputs['train']:
@@ -730,7 +746,7 @@ class Neural_network(object):
                                 result += '   F_RMSE(T)   F_RMSE(V)'
                             result += '\n'
                             for struct in sorted(full_str_set):
-                                label = struct.replace(' ', '_')
+                                label = str(struct).replace(' ', '_')
                                 if struct not in t_str_eloss:
                                     teloss = '          -'
                                     tfloss = '          -'
@@ -754,15 +770,34 @@ class Neural_network(object):
                         self.parent.logfile.write(result)
                         time1 = timeit.default_timer()
 
+                        # TODO: modify save criteria
+                        cur_criteria = list()
+                        if 'v_E' in self.inputs['save_criteria']:
+                            cur_criteria.append(eloss) # E_loss (valid)
+
+                        if self.inputs['use_force']:
+                            if 'v_F' in self.inputs['save_criteria']:
+                                cur_criteria.append(floss) # F_loss (valid)
+
+                            if modifier_tag['total']:
+                                for atem in self.parent.inputs['atom_types']:
+                                    if modifier_tag[atem] and 'v_F_{}_sparse'.format(atem) in self.inputs['save_criteria']:
+                                        cur_criteria.append(aw_floss[atem][0])
+                        cur_criteria = np.array(cur_criteria)
+                        
+                        save_criteria = np.prod(cur_criteria < prev_criteria)
+
                     # Temp saving
                     #if (epoch+1) % self.inputs['save_interval'] == 0:
-                        if save_stack > self.inputs['save_interval'] and \
-                            (prev_eloss > eloss or not self.inputs['echeck']) and \
-                            (prev_floss > floss or not self.inputs['fcheck'] or floss == 0.):
+                        if save_stack > self.inputs['save_interval'] and save_criteria:
+                            #(prev_eloss > eloss or not self.inputs['echeck']) and \
+                            #(prev_floss > floss or not self.inputs['fcheck'] or floss == 0.):
+
                             temp_time = timeit.default_timer()
                             self._save(sess, saver)
-                            prev_eloss = eloss
-                            prev_floss = floss
+                            #prev_eloss = eloss
+                            #prev_floss = floss
+                            prev_criteria = np.copy(cur_criteria)
                             save_stack = 1
                             save_time = timeit.default_timer() - temp_time
                             if break_tag:
