@@ -746,7 +746,7 @@ class Neural_network(object):
                                 result += '   F_RMSE(T)   F_RMSE(V)'
                             result += '\n'
                             for struct in sorted(full_str_set):
-                                label = struct.replace(' ', '_')
+                                label = str(struct).replace(' ', '_')
                                 if struct not in t_str_eloss:
                                     teloss = '          -'
                                     tfloss = '          -'
