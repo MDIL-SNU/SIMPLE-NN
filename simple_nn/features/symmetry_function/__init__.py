@@ -403,10 +403,12 @@ class Symmetry_function(object):
 
     def generate(self):
 
-        if 'mpi4py' in sys.modules:
-            comm = MPI4PY()
-        else:
+        try:
+            import mpi4py
+        except ImportError:
             comm = DummyMPI()
+        else:
+            comm = MPI4PY()
 
         ffi = FFI()
         ffi.cdef("""int calculate_sf(double **, double **, double **,
@@ -452,7 +454,9 @@ class Symmetry_function(object):
             if self.inputs['compress_outcar']:
                 tmp_name = compress_outcar(item[0])
                 snapshots = io.read(tmp_name, index=index, force_consistent=True)
-                os.remove(tmp_name)
+                comm.barrier()
+                if comm.rank == 0:
+                    os.remove(tmp_name)
             else:    
                 snapshots = io.read(item[0], index=index, force_consistent=True) 
 
@@ -529,19 +533,19 @@ class Symmetry_function(object):
                         assert errno == 0
 
 
-                    if comm.rank == 0:
-                        if type_num[jtem] != 0:
-                            res['x'][jtem] = np.array(comm.gather(x, root=0))
-                            res['dx'][jtem] = np.array(comm.gather(dx, root=0))
+                    if type_num[jtem] != 0:
+                        res['x'][jtem] = np.array(comm.gather(x, root=0))
+                        res['dx'][jtem] = np.array(comm.gather(dx, root=0))
+                        if comm.rank == 0:
                             res['x'][jtem] = np.concatenate(res['x'][jtem], axis=0).reshape([type_num[jtem], params_set[jtem]['num']])
                             res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
                                                 reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
                             res['partition_'+jtem] = np.ones([type_num[jtem]]).astype(np.int32)
-                        else:
-                            res['x'][jtem] = np.zeros([0, params_set[jtem]['num']])
-                            res['dx'][jtem] = np.zeros([0, params_set[jtem]['num'], atom_num, 3])
-                            res['partition_'+jtem] = np.ones([0]).astype(np.int32)
-                        res['params'][jtem] = params_set[jtem]['total']
+                    else:
+                        res['x'][jtem] = np.zeros([0, params_set[jtem]['num']])
+                        res['dx'][jtem] = np.zeros([0, params_set[jtem]['num'], atom_num, 3])
+                        res['partition_'+jtem] = np.ones([0]).astype(np.int32)
+                    res['params'][jtem] = params_set[jtem]['total']
 
                 if comm.rank == 0:
                     data_dir = "./data/"
