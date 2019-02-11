@@ -325,11 +325,11 @@ class Neural_network(object):
         else:
             return tf.constant(param, dtype=tf.float64)
 
-    def _generate_lammps_potential(self, sess, epoch):
+    def _generate_lammps_potential(self, sess):
         # TODO: get the parameter info from initial batch generting processs
         atom_type_str = ' '.join(self.parent.inputs['atom_types'])
 
-        filename = './potential_saved_epoch{}'.format(epoch)
+        filename = './potential_saved_epoch{}'.format(sess.run(self.global_step)+1)
         FIL = open(filename, 'w')
         FIL.write('ELEM_LIST ' + atom_type_str + '\n\n')
 
@@ -369,7 +369,7 @@ class Neural_network(object):
 
         FIL.close()
 
-    def _save(self, sess, saver, epoch):
+    def _save(self, sess, saver):
         if not self.inputs['continue']:
             self.inputs['continue'] = True
             self.parent.write_inputs()
@@ -382,8 +382,8 @@ class Neural_network(object):
             self.parent.logfile.write(cutline + "\n")
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")
         self.parent.logfile.write(cutline + "\n")
-        saver.save(sess, './SAVER_epoch{}'.format(epoch))
-        self._generate_lammps_potential(sess, epoch)
+        saver.save(sess, './SAVER_epoch{}'.format(sess.run(self.global_step)+1))
+        self._generate_lammps_potential(sess)
         
 
     def _make_iterator_from_handle(self, training_dataset, atomic_weights=False, modifier=None):
@@ -794,7 +794,7 @@ class Neural_network(object):
                             #(prev_floss > floss or not self.inputs['fcheck'] or floss == 0.):
 
                             temp_time = timeit.default_timer()
-                            self._save(sess, saver, epoch)
+                            self._save(sess, saver)
                             #prev_eloss = eloss
                             #prev_floss = floss
                             prev_criteria = np.copy(cur_criteria)
