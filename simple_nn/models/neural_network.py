@@ -581,7 +581,7 @@ class Neural_network(object):
         #config.gpu_options.per_process_gpu_memory_fraction = 0.45
         with tf.Session(config=config) as sess:
             # Load or initialize the variables
-            saver = tf.train.Saver()
+            saver = tf.train.Saver(max_to_keep=None)
             if self.inputs['continue'] == True:
                 saver.restore(sess, './SAVER')
             else:
