@@ -794,7 +794,7 @@ class Neural_network(object):
                             #(prev_floss > floss or not self.inputs['fcheck'] or floss == 0.):
 
                             temp_time = timeit.default_timer()
-                            self._save(sess, saver)
+                            self._save(sess, saver, epoch)
                             #prev_eloss = eloss
                             #prev_floss = floss
                             prev_criteria = np.copy(cur_criteria)
