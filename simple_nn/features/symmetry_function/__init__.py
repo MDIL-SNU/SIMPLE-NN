@@ -553,7 +553,7 @@ class Symmetry_function(object):
                     # TODO: add tfrecord writing part
                     #self._write_tfrecords(res, tmp_filename)
                     with open(tmp_filename, "wb") as fil:
-                        pickle.dump(res, fil, pickle.HIGHEST_PROTOCOL)  
+                        pickle.dump(res, fil, protocol=2)  
 
                     train_dir.write('{}:{}\n'.format(ind, tmp_filename))
                     tmp_endfile = tmp_filename

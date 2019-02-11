@@ -136,7 +136,7 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
             scale[item][1,:] = 1.
 
     with open(filename, 'wb') as fil:
-        pickle.dump(scale, fil, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(scale, fil, protocol=2)
 
     return scale
 
@@ -179,7 +179,7 @@ def _generate_gdf_file(ref_list, target_list, scale, atom_types, idx_list, filen
 
     if filename != None:
         with open(filename, 'wb') as fil:
-            pickle.dump(gdf, fil, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(gdf, fil, protocol=2)
 
     return gdf
 
@@ -308,7 +308,7 @@ def read_lammps_potential(filename):
 
                 fil.readline()
                 for k in range(dims[j+1]):
-                    tmp_weights[:,k] = map(lambda x: float(x), fil.readline().split()[1:])
+                    tmp_weights[:,k] = list(map(lambda x: float(x), fil.readline().split()[1:]))
                     tmp_bias[k] = float(fil.readline().split()[1])
 
                 weights[item].append(np.copy(tmp_weights))
