@@ -325,11 +325,11 @@ class Neural_network(object):
         else:
             return tf.constant(param, dtype=tf.float64)
 
-    def _generate_lammps_potential(self, sess):
+    def _generate_lammps_potential(self, sess, epoch):
         # TODO: get the parameter info from initial batch generting processs
         atom_type_str = ' '.join(self.parent.inputs['atom_types'])
 
-        filename = './potential_saved'
+        filename = './potential_saved_epoch{}'.format(epoch)
         FIL = open(filename, 'w')
         FIL.write('ELEM_LIST ' + atom_type_str + '\n\n')
 
@@ -369,7 +369,7 @@ class Neural_network(object):
 
         FIL.close()
 
-    def _save(self, sess, saver):
+    def _save(self, sess, saver, epoch):
         if not self.inputs['continue']:
             self.inputs['continue'] = True
             self.parent.write_inputs()
@@ -382,8 +382,8 @@ class Neural_network(object):
             self.parent.logfile.write(cutline + "\n")
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")
         self.parent.logfile.write(cutline + "\n")
-        saver.save(sess, './SAVER')
-        self._generate_lammps_potential(sess)
+        saver.save(sess, './SAVER_epoch{}'.format(epoch))
+        self._generate_lammps_potential(sess, epoch)
         
 
     def _make_iterator_from_handle(self, training_dataset, atomic_weights=False, modifier=None):
@@ -890,7 +890,7 @@ class Neural_network(object):
                         break
                 
                 with open('./test_result', 'wb') as fil:
-                    pickle.dump(test_save, fil, pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(test_save, fil, protocol=2)
 
                 self.parent.logfile.write('Test result saved..\n')
                 self.parent.logfile.write(result + '\n')

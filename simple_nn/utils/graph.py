@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from six.moves import cPickle as pickle
 import itertools
 from tqdm import tqdm
+from ..utils import pickle_load
+import logging
 
 def plot_gdfinv_density(gdfinv_list, atom_types, bins=500):
 
@@ -17,7 +19,8 @@ def plot_gdfinv_density(gdfinv_list, atom_types, bins=500):
         plt.clf()
 
         
-def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=200, max_num=30000, p_range=[[0., 1.], [0., 10.]], **kargs):
+def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=200, max_num=30000, p_range=[[0., 1.], [0., 10.]], 
+                             to_check=[[0., 0.005], [0., 1.0]], **kargs):
     x_bins = np.linspace(p_range[0][0], p_range[0][1], bins+1)
     y_bins = np.linspace(p_range[1][0], p_range[1][1], bins+1)
 
@@ -28,6 +31,27 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
     grid_pack order
     x_1,y_1 -> x_2,y_1 -> ... -> x_1,y_2 -> ...
     """
+
+    # logging practice
+    logging.basicConfig(filename='pairs_to_check.log', level=logging.INFO)
+
+    def _make_checklist(res, to_check, cur_idx, idx_range):
+        idx_G_check_lower = res[0,:] > to_check[0][0]
+        idx_G_check_upper = res[0,:] < to_check[0][1]
+        idx_F_check_lower = res[1,:] > to_check[1][0]
+        idx_F_check_upper = res[1,:] < to_check[1][1]
+
+        full_idx = np.logical_and(idx_G_check_lower, idx_G_check_upper)
+        full_idx = np.logical_and(full_idx, idx_F_check_lower)
+        full_idx = np.logical_and(full_idx, idx_F_check_upper)
+
+        if np.sum(full_idx):
+            grep_res = res[:,full_idx]
+            print np.arange(idx_range[0], idx_range[1]).shape, full_idx.shape
+            grep_real_idx = np.arange(idx_range[0], idx_range[1])[np.squeeze(full_idx)]
+            for i in range(np.sum(full_idx)):
+                logging.info("{:16.8e} {:16.8} {:8d} {:8d}".format(grep_res[0,i], grep_res[1,i], cur_idx, grep_real_idx[i]))
+
 
     def _get_pack_count(res, x_bins=x_bins, y_bins=y_bins):
         x_digi = np.digitize(res[0,:], x_bins)
@@ -48,10 +72,12 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
     #res = np.zeros(len(grid_x))
 
     if use_scale:
-        with open('scale_factor') as fil:
-            scale = pickle.load(fil)
+        #with open('scale_factor') as fil:
+        #    scale = pickle.load(fil)
+        scale = pickle_load('scale_factor')
 
     for item in atom_types:
+        logging.info('**** {} ****'.format(item))
         data_len = len(G_list[item])
         #res[item] = list()
         res[item] = np.zeros(len(grid_x))
@@ -77,6 +103,9 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
                 tmp_res = np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:tmp_ed], axis=1, keepdims=True),
                                     #np.linalg.norm(F_list[item][i] - F_list[item][st_idx:tmp_ed], axis=1, keepdims=True)])
                                     np.abs(np.linalg.norm(F_list[item][i]) - np.linalg.norm(F_list[item][st_idx:tmp_ed], axis=1, keepdims=True))])
+
+                full_idx = _make_checklist(tmp_res, to_check, i, [st_idx, tmp_ed])
+
                 # FIXME: Need change?
                 #tmp_res = tmp_res[:, tmp_res[0,:] < 1.]
                 tmp_res = tmp_res[:, tmp_res[0,:] < p_range[0][1]]
@@ -91,6 +120,8 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
             tmp_res = np.array([np.linalg.norm(G_list[item][i] - G_list[item][st_idx:], axis=1, keepdims=True),
                                 #np.linalg.norm(F_list[item][i] - F_list[item][st_idx:], axis=1, keepdims=True)])
                                 np.abs(np.linalg.norm(F_list[item][i]) - np.linalg.norm(F_list[item][st_idx:], axis=1, keepdims=True))])
+
+            full_idx = _make_checklist(tmp_res, to_check, i, [st_idx, data_len])
 
             unique, counts = _get_pack_count(tmp_res)
             res[item][unique] += counts
