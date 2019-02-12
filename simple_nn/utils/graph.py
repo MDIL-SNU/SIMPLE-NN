@@ -260,61 +260,81 @@ def plot_error_vs_gdfinv(atom_types, ref_data, target_data=None, save_data=False
             plt.savefig('ferror_vs_GDFinv_{}.pdf'.format(item))
         plt.clf()
 
-def plot_correlation_graph(test_result='test_result'):
-    res = pickle_load(test_result)
+def plot_correlation_graph(test_result='test_result', atom_types=None):
 
-    force_tag = ('NN_F' in res) and ('DFT_F' in res)
-
-    if force_tag:
-        fig = plt.figure(figsize=(10,8))
-
-        ax1 = plt.subplot(222)
+    def _correlation(x, y, subplot_loc, xlabel=None, ylabel=None, title=None):
+        ax = plt.subplot(subplot_loc)
         # F correlation
         plt.gca().set_aspect('equal', adjustable='box')
-        min_val = np.min(res['NN_F'][:,0])
-        max_val = np.max(res['NN_F'][:,0])
+        min_val = np.min(x)
+        max_val = np.max(x)
         padding = (max_val - min_val)*0.1
         min_val -= padding
         max_val += padding
  
         plt.plot([min_val, max_val], [min_val, max_val], 'k:')
-        plt.plot(res['NN_F'][:,0], res['DFT_F'][:,0], 'bo', alpha=0.5)
+        plt.plot(x, y, 'bo', alpha=0.5)
  
-        ax1.set_yticks(ax1.get_xticks()[1:-1])
-        ax1.set_xticks(ax1.get_xticks()[1:-1])
-        plt.xlabel('$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
-        plt.ylabel('$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
+        ax.set_yticks(ax.get_xticks()[1:-1])
+        ax.set_xticks(ax.get_xticks()[1:-1])
+        plt.xlabel(xlabel) if xlabel != None else xlabel
+        plt.ylabel(ylabel) if ylabel != None else ylabel
+        plt.title(title) if title != None else title
 
-        ax2 = plt.subplot(224)
+    def _error_hist(x, subplot_loc, xlabel=None, ylabel=None, title=None):
+        ax = plt.subplot(subplot_loc)
         # F_x error histogram
-        plt.hist(np.sqrt(np.sum((res['NN_F'] - res['DFT_F'])**2, axis=1)), 30)
-        plt.ylabel('Frequency')
-        plt.xlabel('|$\mathrm{\mathsf{\mathbf{F}^{NNP}}} - \mathrm{\mathsf{\mathbf{F}^{DFT}}}$| (eV/$\mathrm{\mathsf{\AA}}$)')
+        plt.hist(x, 30)
+        plt.ylabel(ylabel) if ylabel != None else ylabel
+        plt.xlabel(xlabel) if xlabel != None else xlabel
+        plt.title(title) if title != None else title
+
+    res = pickle_load(test_result)
+
+    force_tag = ('NN_F' in res) and ('DFT_F' in res)
+
+    if force_tag:
+        if atom_types != None:
+            # TODO: error for non-list atom_types
+            num_atom_types = len(atom_types)
+            fig = plt.figure(figsize=(5*num_atom_types, 8))
+            for i,item in enumerate(atom_types):
+                target_NN_F = res['NN_F'][res['atom_idx']==i+1]
+                target_DFT_F = res['DFT_F'][res['atom_idx']==i+1]
+
+                _correlation(target_NN_F[:,0], target_DFT_F[:,0], 200+10*num_atom_types+i+1,
+                             xlabel='$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
+                             ylabel='$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
+                             title=item)
+
+                _error_hist(np.sqrt(np.sum((target_NN_F - target_DFT_F)**2, axis=1)), 200+11*num_atom_types+i+1,
+                            xlabel='|$\mathrm{\mathsf{\mathbf{F}^{NNP}}} - \mathrm{\mathsf{\mathbf{F}^{DFT}}}$| (eV/$\mathrm{\mathsf{\AA}}$)',
+                            ylabel='Frequency')
+
+            plt.tight_layout()
+            plt.savefig('F_correlation_per_atom_of_{}.pdf'.format(test_result))
+            fig.clf()
+
+        fig = plt.figure(figsize=(10,8))
+
+        _correlation(res['NN_F'][:,0], res['DFT_F'][:,0], 222,
+                     xlabel='$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
+                     ylabel='$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
+
+        _error_hist(np.sqrt(np.sum((res['NN_F'] - res['DFT_F'])**2, axis=1)), 224,
+                    xlabel='|$\mathrm{\mathsf{\mathbf{F}^{NNP}}} - \mathrm{\mathsf{\mathbf{F}^{DFT}}}$| (eV/$\mathrm{\mathsf{\AA}}$)',
+                    ylabel='Frequency')
+
     else:
         fig = plt.figure(figsize=(10,4))
 
-    ax3 = plt.subplot(221 if force_tag else 121)
-    # E correlation
-    plt.gca().set_aspect('equal', adjustable='box')
-    min_val = np.min(res['NN_E']/res['N'])
-    max_val = np.max(res['NN_E']/res['N'])
-    padding = (max_val - min_val)*0.1
-    min_val -= padding
-    max_val += padding
- 
-    plt.plot([min_val, max_val], [min_val, max_val], 'k:')
-    plt.plot(res['NN_E']/res['N'], res['DFT_E']/res['N'], 'bo', alpha=0.5)
- 
-    ax3.set_yticks(ax3.get_xticks()[1:-1])
-    ax3.set_xticks(ax3.get_xticks()[1:-1])
-    plt.xlabel('$E^\mathrm{\mathsf{NNP}}$ (eV/atom)')
-    plt.ylabel('$E^\mathrm{\mathsf{DFT}}$ (eV/atom)')
+    _correlation(res['NN_E']/res['N'], res['DFT_E']/res['N'], 221 if force_tag else 121,
+                 xlabel='$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
+                 ylabel='$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
 
-    ax4 = plt.subplot(223 if force_tag else 122)
-    # E error histogram
-    plt.hist(np.abs(res['NN_E']/res['N'] - res['DFT_E']/res['N'])*1000., 30)
-    plt.ylabel('Frequency')
-    plt.xlabel('|$E^\mathrm{\mathsf{NNP}} - E^\mathrm{\mathsf{DFT}}$| (meV/atom)')
+    _error_hist(np.abs(res['NN_E']/res['N'] - res['DFT_E']/res['N'])*1000., 223 if force_tag else 122,
+                xlabel='|$\mathrm{\mathsf{\mathbf{F}^{NNP}}} - \mathrm{\mathsf{\mathbf{F}^{DFT}}}$| (eV/$\mathrm{\mathsf{\AA}}$)',
+                ylabel='Frequency')
 
     plt.tight_layout()
     plt.savefig('correlation_of_{}.pdf'.format(test_result))
