@@ -259,3 +259,63 @@ def plot_error_vs_gdfinv(atom_types, ref_data, target_data=None, save_data=False
         else:
             plt.savefig('ferror_vs_GDFinv_{}.pdf'.format(item))
         plt.clf()
+
+def plot_correlation_graph(test_result='test_result'):
+    res = pickle_load(test_result)
+
+    force_tag = ('NN_F' in res) and ('DFT_F' in res)
+
+    if force_tag:
+        fig = plt.figure(figsize=(10,8))
+
+        ax1 = plt.subplot(222)
+        # F correlation
+        plt.gca().set_aspect('equal', adjustable='box')
+        min_val = np.min(res['NN_F'][:,0])
+        max_val = np.max(res['NN_F'][:,0])
+        padding = (max_val - min_val)*0.1
+        min_val -= padding
+        max_val += padding
+ 
+        plt.plot([min_val, max_val], [min_val, max_val], 'k:')
+        plt.plot(res['NN_F'][:,0], res['DFT_F'][:,0], 'bo', alpha=0.5)
+ 
+        ax1.set_yticks(ax1.get_xticks()[1:-1])
+        ax1.set_xticks(ax1.get_xticks()[1:-1])
+        plt.xlabel('$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
+        plt.ylabel('$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
+
+        ax2 = plt.subplot(224)
+        # F_x error histogram
+        plt.hist(np.sqrt(np.sum((res['NN_F'] - res['DFT_F'])**2, axis=1)), 30)
+        plt.ylabel('Frequency')
+        plt.xlabel('|$\mathrm{\mathsf{\mathbf{F}^{NNP}}} - \mathrm{\mathsf{\mathbf{F}^{DFT}}}$| (eV/$\mathrm{\mathsf{\AA}}$)')
+    else:
+        fig = plt.figure(figsize=(10,4))
+
+    ax3 = plt.subplot(221 if force_tag else 121)
+    # E correlation
+    plt.gca().set_aspect('equal', adjustable='box')
+    min_val = np.min(res['NN_E']/res['N'])
+    max_val = np.max(res['NN_E']/res['N'])
+    padding = (max_val - min_val)*0.1
+    min_val -= padding
+    max_val += padding
+ 
+    plt.plot([min_val, max_val], [min_val, max_val], 'k:')
+    plt.plot(res['NN_E']/res['N'], res['DFT_E']/res['N'], 'bo', alpha=0.5)
+ 
+    ax3.set_yticks(ax3.get_xticks()[1:-1])
+    ax3.set_xticks(ax3.get_xticks()[1:-1])
+    plt.xlabel('$E^\mathrm{\mathsf{NNP}}$ (eV/atom)')
+    plt.ylabel('$E^\mathrm{\mathsf{DFT}}$ (eV/atom)')
+
+    ax4 = plt.subplot(223 if force_tag else 122)
+    # E error histogram
+    plt.hist(np.abs(res['NN_E']/res['N'] - res['DFT_E']/res['N'])*1000., 30)
+    plt.ylabel('Frequency')
+    plt.xlabel('|$E^\mathrm{\mathsf{NNP}} - E^\mathrm{\mathsf{DFT}}$| (meV/atom)')
+
+    plt.tight_layout()
+    plt.savefig('correlation_of_{}.pdf'.format(test_result))
+
