@@ -45,7 +45,7 @@ double G4(double Rij, double Rik, double Rjk, double powtwo, \
     double expl = exp(-par[1]*precal[6]) * powtwo;
     double cosv = 1 + par[3]*precal[7];
     //double powcos = pow_int(cosv, par[2]-1);
-    double powcos = pow(fabs(cosv), par[2]-1);
+    double powcos = pow(fabs(cosv), fabs(par[2]-1));
 
     deriv[0] = expl*powcos*precal[2]*precal[4] * \
                ((-2*par[1]*Rij*precal[0] + precal[1])*cosv + \
@@ -70,7 +70,7 @@ double G5(double Rij, double Rik, double powtwo, \
     double expl = exp(-par[1]*precal[11]) * powtwo;
     double cosv = 1 + par[3]*precal[7];
     //double powcos = pow_int(cosv, par[2]-1);
-    double powcos = pow(fabs(cosv), par[2]-1);
+    double powcos = pow(fabs(cosv), fabs(par[2]-1));
 
     deriv[0] = expl*powcos*precal[2] * \
                ((-2*par[1]*Rij*precal[0] + precal[1])*cosv + \
