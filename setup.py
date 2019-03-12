@@ -20,7 +20,7 @@ install_requires = [
     'cffi>=1.0.0',
     'psutil',
     'tqdm',
-    'braceexpand'
+    'braceexpand',
     'matplotlib<3.0',
     'tensorflow<2.0',
 ]
