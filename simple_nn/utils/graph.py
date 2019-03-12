@@ -47,7 +47,6 @@ def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=20
 
         if np.sum(full_idx):
             grep_res = res[:,full_idx]
-            print np.arange(idx_range[0], idx_range[1]).shape, full_idx.shape
             grep_real_idx = np.arange(idx_range[0], idx_range[1])[np.squeeze(full_idx)]
             for i in range(np.sum(full_idx)):
                 logging.info("{:16.8e} {:16.8} {:8d} {:8d}".format(grep_res[0,i], grep_res[1,i], cur_idx, grep_real_idx[i]))

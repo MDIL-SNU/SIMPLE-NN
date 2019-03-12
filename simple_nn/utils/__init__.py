@@ -2,7 +2,7 @@ from __future__ import print_function
 import six
 from six.moves import cPickle as pickle
 import numpy as np
-from cffi import FFI
+from ._libgdf import lib, ffi
 import os, sys, psutil, shutil
 import types
 import re
@@ -142,10 +142,6 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
 
 
 def _generate_gdf_file(ref_list, target_list, scale, atom_types, idx_list, filename=None, modifier=None, noscale=False, sigma=0.02):
-    ffi = FFI()
-    ffi.cdef("""void calculate_gdf(double **, int, double **, int, int, double, double *);""")
-    lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libgdf.so"))
-
     gdf = dict()
     for item in atom_types:
         if len(ref_list[item]) > 0:
