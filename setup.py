@@ -20,31 +20,10 @@ install_requires = [
     'cffi>=1.0.0',
     'psutil',
     'tqdm',
-    'braceexpand'
+    'braceexpand',
+    'matplotlib<3.0',
+    'tensorflow<2.0',
 ]
-
-# C extension library for calculating symmetry function
-extension_libsymf = Extension(
-    'simple_nn.features.symmetry_function.libsymf', 
-    sources=[
-        'simple_nn/features/symmetry_function/calculate_sf.cpp',
-        'simple_nn/features/symmetry_function/symmetry_functions.cpp'
-        ],
-    languages='C++',
-    extra_compile_args=[
-        '-O3',
-        ]
-    )
-
-# C extension library for calculating gdf
-extension_libgdf = Extension(
-    'simple_nn.utils.libgdf',
-    sources = ['simple_nn/utils/gdf.cpp'],
-    language='C++',
-    extra_compile_args=[
-        '-O3'
-        ]
-    )
 
 # TODO: extern C module add
 # TODO: install requires add
@@ -84,8 +63,8 @@ setup(
     #project_urls={},
     python_requires='>=2.7, <4',
     install_requires=install_requires,
-    ext_modules=[
-        extension_libsymf,
-        extension_libgdf
-        ]
+    cffi_modules=[
+        "simple_nn/features/symmetry_function/libsymf_builder.py:ffibuilder",
+        "simple_nn/utils/libgdf_builder.py:ffibuilder",
+    ],
 )

@@ -6,7 +6,7 @@ import numpy as np
 import six
 from six.moves import cPickle as pickle
 from ase import io
-from cffi import FFI
+from ._libsymf import lib, ffi
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
 from ...utils import graph as grp
@@ -409,13 +409,6 @@ class Symmetry_function(object):
             comm = DummyMPI()
         else:
             comm = MPI4PY()
-
-        ffi = FFI()
-        ffi.cdef("""int calculate_sf(double **, double **, double **,
-                                     int *, int, int*, int,
-                                     int**, double **, int, 
-                                     double**, double**);""")
-        lib = ffi.dlopen(os.path.join(os.path.dirname(os.path.realpath(__file__)) + "/libsymf.so"))
 
         if comm.rank == 0:
             train_dir = open(self.pickle_list, 'w')
