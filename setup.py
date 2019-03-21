@@ -2,6 +2,7 @@ from setuptools import setup, find_packages, Extension
 # To use a consistent encoding
 from codecs import open
 from os import path
+from pkg_resources import DistributionNotFound, get_distribution
 
 here = path.abspath(path.dirname(__file__))
 
@@ -22,8 +23,19 @@ install_requires = [
     'tqdm',
     'braceexpand',
     'matplotlib<3.0',
-    'tensorflow<2.0',
 ]
+
+def is_installed(pkg):
+    try:
+        a = get_distribution(pkg)
+        return True
+    except DistributionNotFound:
+        return False
+
+if is_installed('tensorflow-gpu'):
+    install_requires.append('tensorflow-gpu<2.0')
+else:
+    install_requires.append('tensorflow<2.0')
 
 # TODO: extern C module add
 # TODO: install requires add
