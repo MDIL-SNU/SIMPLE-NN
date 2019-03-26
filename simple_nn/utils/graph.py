@@ -26,7 +26,7 @@ def plot_gdfinv_density(gdfinv_list, atom_types, bins=100, auto_c=None):
         if auto_c is not None:
             ax2 = plt.subplot(122)
 
-            plt.hist(gdfinv_list[item][:,0], bins=np.linspace(0., 10*auto_c[item], bins)) 
+            plt.hist(gdfinv_list[item][:,0], bins=np.linspace(0., 5*auto_c[item], bins)) 
 
             plt.xlabel('$[\\rho(\mathrm{\mathsf{\mathbf{G}}}_{ij})]^{-1}$')
             plt.ylabel('Frequency')
