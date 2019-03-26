@@ -300,9 +300,16 @@ class Symmetry_function(object):
         # calculate gdf
         atomic_weights_train = atomic_weights_valid = None
         if callable(get_atomic_weights):
-            atomic_weights_train = get_atomic_weights(feature_list_train, feature_list_train, scale, self.parent.inputs['atom_types'], idx_list_train, 
-                                                    filename='atomic_weights', **kwargs)
-            atomic_weights_valid = get_atomic_weights(feature_list_train, feature_list_valid, scale, self.parent.inputs['atom_types'], idx_list_valid, **kwargs)
+            atomic_weights_train, dict_sigma, dict_c = get_atomic_weights(feature_list_train, scale, self.parent.inputs['atom_types'], idx_list_train, 
+                                                                          target_list=None, filename='atomic_weights', tag_auto_c=True, **kwargs)
+            kwargs.pop('sigma')
+
+            self.parent.logfile.write('Selected(or generated) sigma and c\n')
+            for item in self.parent.inputs['atom_types']:
+                self.parent.logfile.write('{:3}: sigma = {:4.3f}, c = {:4.3f}\n'.format(item, dict_sigma[item], dict_c[item]))
+
+            atomic_weights_valid, _, _               = get_atomic_weights(feature_list_train, scale, self.parent.inputs['atom_types'], idx_list_valid, 
+                                                                          target_list=feature_list_valid, sigma=dict_sigma, **kwargs)
         elif isinstance(get_atomic_weights, six.string_types):
             atomic_weights_train = pickle_load(get_atomic_weights)
             atomic_weights_valid = 'ones'
@@ -311,7 +318,8 @@ class Symmetry_function(object):
             aw_tag = False
         else:
             aw_tag = True
-            grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
+            #grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
+            grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'], auto_c=dict_c)
         
         # train
         tmp_pickle_train_list = _make_data_list(tmp_pickle_train)

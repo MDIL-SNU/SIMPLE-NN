@@ -11,6 +11,10 @@ from collections import OrderedDict
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
     shape = arr.shape
@@ -141,29 +145,54 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
     return scale
 
 
-def _generate_gdf_file(ref_list, target_list, scale, atom_types, idx_list, filename=None, modifier=None, noscale=False, sigma=0.02):
+def _generate_gdf_file(ref_list, scale, atom_types, idx_list, target_list=None, filename=None, noscale=False, sigma=0.02, tag_auto_c=False):
     gdf = dict()
+    auto_c = dict()
+    auto_sigma = dict()
+
     for item in atom_types:
         if len(ref_list[item]) > 0:
             scaled_ref = ref_list[item] - scale[item][0:1,:]
             scaled_ref /= scale[item][1:2,:]
             scaled_ref_p = _gen_2Darray_for_ffi(scaled_ref, ffi)
 
-            scaled_target = target_list[item] - scale[item][0:1,:]
-            scaled_target /= scale[item][1:2,:]
-            scaled_target_p = _gen_2Darray_for_ffi(scaled_target, ffi)
+            if target_list == None:
+                scaled_target = scaled_ref
+                scaled_target_p = scaled_ref_p
+            else:
+                scaled_target = target_list[item] - scale[item][0:1,:]
+                scaled_target /= scale[item][1:2,:]
+                scaled_target_p = _gen_2Darray_for_ffi(scaled_target, ffi)
 
             temp_gdf = np.zeros([scaled_target.shape[0]], dtype=np.float64, order='C')
             temp_gdf_p = ffi.cast("double *", temp_gdf.ctypes.data)
 
-            if isinstance(sigma, collections.Mapping):
-                temp_sigma = sigma[item]
-            else:
-                temp_sigma = sigma
+            if sigma == 'Auto':
+                if target_list != None:
+                    raise NotImplementedError
+                else:
+                    lib.calculate_gdf(scaled_ref_p, scaled_ref.shape[0], scaled_target_p, scaled_target.shape[0], scaled_ref.shape[1], -1., temp_gdf_p)
+                    auto_sigma[item] = max(np.sort(temp_gdf))/3.
 
-            lib.calculate_gdf(scaled_ref_p, scaled_ref.shape[0], scaled_target_p, scaled_target.shape[0], scaled_ref.shape[1], temp_sigma, temp_gdf_p)
+            elif isinstance(sigma, collections.Mapping):
+                auto_sigma[item] = sigma[item]
+            else:
+                auto_sigma[item] = sigma
+
+            lib.calculate_gdf(scaled_ref_p, scaled_ref.shape[0], scaled_target_p, scaled_target.shape[0], scaled_ref.shape[1], auto_sigma[item], temp_gdf_p)
+
             gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
             gdf[item][:,0] *= float(len(gdf[item][:,0]))
+
+            if tag_auto_c:
+                sorted_gdf = np.sort(gdf[item][:,0])
+                max_line_idx = int(sorted_gdf.shape[0]*0.75)
+                pfit = np.polyfit(np.arange(max_line_idx), sorted_gdf[:max_line_idx], 1)
+                #auto_c[item] = np.poly1d(pfit)(sorted_gdf.shape[0]-1)
+                auto_c[item] = np.poly1d(pfit)(max_line_idx)
+            # FIXME: After testing, this part needs to be moved to neural_network.py
+            #if tag_auto_c:
+            #    auto_c[item]
 
             """
             if callable(modifier[item]):
@@ -177,7 +206,8 @@ def _generate_gdf_file(ref_list, target_list, scale, atom_types, idx_list, filen
         with open(filename, 'wb') as fil:
             pickle.dump(gdf, fil, protocol=2)
 
-    return gdf
+    return gdf, auto_sigma, auto_c
+
 
 
 def compress_outcar(filename):

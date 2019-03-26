@@ -54,10 +54,14 @@ class Neural_network(object):
                                       'loss_scale': 1.,
                                       'optimizer': dict(),
                                       
+                                      # Loss function related
+                                      'E_loss': 0,
+                                      'F_loss': 0,
+
                                       # Logging & saving related
                                       'save_interval': 1000,
                                       'show_interval': 100,
-                                      'save_criteria': ['v_E'],
+                                      'save_criteria': [],
                                       #'echeck': True,
                                       #'fcheck': True,
                                       'break_max': 10,
@@ -247,7 +251,13 @@ class Neural_network(object):
                                                                self.next_elem['partition'], 2)[1])
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
-        self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num'])
+        if self.inputs['E_loss'] == 1:
+            self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']) * self.next_elem['tot_num']
+        elif self.inputs['E_loss'] == 2:
+            self.e_loss = tf.square(self.next_elem['E'] - self.E)
+        else:
+            self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num'])
+
         self.sw_e_loss = self.e_loss * self.next_elem['struct_weight']
         self.e_loss = tf.reshape(self.e_loss, [-1])
         self.str_e_loss = tf.unsorted_segment_mean(self.e_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
@@ -266,11 +276,23 @@ class Neural_network(object):
             self.str_f_loss = tf.reduce_mean(self.str_f_loss, axis=1)
             if self.parent.descriptor.inputs['atomic_weights']['type'] is not None:
                 self.aw_f_loss = self.f_loss * self.next_elem['atomic_weights']
-                self.f_loss = tf.reduce_mean(self.f_loss)
-                self.aw_f_loss = tf.reduce_mean(self.aw_f_loss)
+
+                if self.inputs['F_loss'] == 1:
+                    self.f_loss = tf.reduce_mean(self.f_loss)
+                    self.aw_f_loss = tf.reduce_mean(self.aw_f_loss)
+                else:
+                    self.f_loss = tf.reduce_mean(tf.sparse_segment_sum(self.f_loss, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+                                                 num_segments=self.next_elem['num_seg'])[1:])
+                    self.aw_f_loss = tf.reduce_mean(tf.sparse_segment_sum(self.aw_f_loss, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+                                                    num_segments=self.next_elem['num_seg'])[1:])
+
                 self.total_loss += self.aw_f_loss * self.force_coeff
             else:
-                self.f_loss = tf.reduce_mean(self.f_loss)
+                if self.inputs['F_loss'] == 1:
+                    self.f_loss = tf.reduce_mean(self.f_loss)
+                else:
+                    self.f_loss = tf.reduce_mean(tf.sparse_segment_sum(self.f_loss, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+                                                 num_segments=self.next_elem['num_seg'])[1:])
                 self.total_loss += self.f_loss * self.force_coeff
 
         if self.inputs['regularization']['type'] is not None:
@@ -394,6 +416,10 @@ class Neural_network(object):
 
         # which place?
         self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
+        F_shape = tf.shape(self.next_elem['F'])
+        self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [F_shape[1]]), # dx_shape[1]
+                                                                            tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
+                                                                              self.next_elem['partition'], 2)[1]
         if self.inputs['use_force']:
             self.next_elem['F'] = \
                 tf.dynamic_partition(
@@ -407,6 +433,14 @@ class Neural_network(object):
                 )[1]
 
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
+
+        #F_shape = tf.shape(self.next_elem['F'])
+        #self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [F_shape[1]]), # dx_shape[1]
+        #                                                                    tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
+        #                                                                      self.next_elem['partition'], 2)[1]
+
+        self.next_elem['sparse_indices_'] = tf.cast(tf.range(tf.reduce_sum(self.next_elem['tot_num'])
+            ), tf.int32)
         
         if atomic_weights:
         #    self.next_elem['atomic_weights'] = \
@@ -510,6 +544,7 @@ class Neural_network(object):
                                                 tf.reshape(tf.concat(self.next_elem['dense_out'], axis=1), [-1,1]),
                                                 self.next_elem['partition_peratom'], 2)[1], [-1,1]
                                             )
+
 
     def train(self, user_optimizer=None, aw_modifier=None):
         self.inputs = self.parent.inputs['neural_network']
@@ -942,7 +977,10 @@ class Neural_network(object):
                             [self.next_elem, self.e_loss, self.F, self.f_loss, self.str_e_loss, 
                              self.str_f_loss, self.str_num_batch_atom], feed_dict=fdict)
                         num_batch_atom = np.sum(next_elem['tot_num'])
-                        floss += tmp_floss * num_batch_atom
+                        if self.inputs['F_loss'] == 1:
+                            floss += tmp_floss * num_batch_atom
+                        else:
+                            floss += tmp_floss
 
                         if modifier_tag['total']:
                             tmp_floss_not_packed = np.sum(np.square(next_elem['F'] - tmp_f), axis=1, keepdims=True)
@@ -986,7 +1024,11 @@ class Neural_network(object):
                         str_eloss[struct] = np.sqrt(str_eloss[struct]/str_tot_struc[struct])
 
                     if self.inputs['use_force']:
-                        floss = np.sqrt(floss*3/num_tot_atom)
+                        if self.inputs['F_loss'] == 1:
+                            floss = np.sqrt(floss*3/num_tot_atom)
+                        else:
+                            floss = np.sqrt(floss*3/num_tot_struc)
+
                         for struct in str_floss.keys():
                             str_floss[struct] = np.sqrt(str_floss[struct]*3/str_tot_atom[struct])
 
