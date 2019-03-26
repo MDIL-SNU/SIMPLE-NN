@@ -186,10 +186,10 @@ def _generate_gdf_file(ref_list, scale, atom_types, idx_list, target_list=None, 
 
             if tag_auto_c:
                 sorted_gdf = np.sort(gdf[item][:,0])
-                max_line_idx = int(sorted_gdf.shape[0]*0.75)
+                max_line_idx = int(sorted_gdf.shape[0]*0.5)
                 pfit = np.polyfit(np.arange(max_line_idx), sorted_gdf[:max_line_idx], 1)
-                #auto_c[item] = np.poly1d(pfit)(sorted_gdf.shape[0]-1)
-                auto_c[item] = np.poly1d(pfit)(max_line_idx)
+                auto_c[item] = np.poly1d(pfit)(sorted_gdf.shape[0]-1)
+                #auto_c[item] = np.poly1d(pfit)(max_line_idx)
             # FIXME: After testing, this part needs to be moved to neural_network.py
             #if tag_auto_c:
             #    auto_c[item]
