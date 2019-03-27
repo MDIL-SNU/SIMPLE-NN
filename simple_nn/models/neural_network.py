@@ -56,7 +56,7 @@ class Neural_network(object):
                                       
                                       # Loss function related
                                       'E_loss': 0,
-                                      'F_loss': 0,
+                                      'F_loss': 1,
 
                                       # Logging & saving related
                                       'save_interval': 1000,
