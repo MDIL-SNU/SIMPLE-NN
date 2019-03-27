@@ -10,10 +10,7 @@ import collections
 from collections import OrderedDict
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
-
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+from .mpiclass import DummyMPI, MPI4PY
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
@@ -121,7 +118,7 @@ def _make_full_featurelist(filelist, feature_tag, atom_types=None, use_idx=False
     return feature_list, idx_list
 
 
-def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scale_type='minmax', scale_scale=1.0):
+def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scale_type='minmax', scale_scale=1.0, comm=DummyMPI()):
     scale = dict()
     for item in atom_types:
         inp_size = feature_list[item].shape[1]
@@ -139,13 +136,14 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
         else:
             scale[item][1,:] = 1.
 
-    with open(filename, 'wb') as fil:
-        pickle.dump(scale, fil, protocol=2)
+    if comm.rank == 0:
+        with open(filename, 'wb') as fil:
+            pickle.dump(scale, fil, protocol=2)
 
     return scale
 
 
-def _generate_gdf_file(ref_list, scale, atom_types, idx_list, target_list=None, filename=None, noscale=False, sigma=0.02, tag_auto_c=False):
+def _generate_gdf_file(ref_list, scale, atom_types, idx_list, target_list=None, filename=None, noscale=False, sigma=0.02, comm=DummyMPI()):
     gdf = dict()
     auto_c = dict()
     auto_sigma = dict()
@@ -164,35 +162,43 @@ def _generate_gdf_file(ref_list, scale, atom_types, idx_list, target_list=None, 
                 scaled_target /= scale[item][1:2,:]
                 scaled_target_p = _gen_2Darray_for_ffi(scaled_target, ffi)
 
-            temp_gdf = np.zeros([scaled_target.shape[0]], dtype=np.float64, order='C')
-            temp_gdf_p = ffi.cast("double *", temp_gdf.ctypes.data)
+            local_temp_gdf = np.zeros([scaled_target.shape[0]], dtype=np.float64, order='C')
+            local_temp_gdf_p = ffi.cast("double *", local_temp_gdf.ctypes.data)
 
             if sigma == 'Auto':
-                if target_list != None:
-                    raise NotImplementedError
-                else:
-                    lib.calculate_gdf(scaled_ref_p, scaled_ref.shape[0], scaled_target_p, scaled_target.shape[0], scaled_ref.shape[1], -1., temp_gdf_p)
-                    auto_sigma[item] = max(np.sort(temp_gdf))/3.
+                #if target_list != None:
+                #    raise NotImplementedError
+                #else:
+                lib.calculate_gdf(scaled_ref_p, scaled_ref.shape[0], scaled_target_p, scaled_target.shape[0], scaled_ref.shape[1], -1., local_temp_gdf_p)
+                local_auto_sigma = max(np.sort(local_temp_gdf))/3.
+                comm.barrier()
+                auto_sigma[item] = comm.allreduce_max(local_auto_sigma)
 
             elif isinstance(sigma, collections.Mapping):
                 auto_sigma[item] = sigma[item]
             else:
                 auto_sigma[item] = sigma
 
-            lib.calculate_gdf(scaled_ref_p, scaled_ref.shape[0], scaled_target_p, scaled_target.shape[0], scaled_ref.shape[1], auto_sigma[item], temp_gdf_p)
+            lib.calculate_gdf(scaled_ref_p, scaled_ref.shape[0], scaled_target_p, scaled_target.shape[0], scaled_ref.shape[1], auto_sigma[item], local_temp_gdf_p)
+            comm.barrier()
 
-            gdf[item] = np.squeeze(np.dstack(([temp_gdf, idx_list[item]])))
-            gdf[item][:,0] *= float(len(gdf[item][:,0]))
+            temp_gdf = comm.gather(local_temp_gdf.reshape([-1,1]), root=0)
+            comm_idx_list = comm.gather(idx_list[item].reshape([-1,1]), root=0)   
 
-            if tag_auto_c:
+            if comm.rank == 0:
+                temp_gdf = np.concatenate(temp_gdf, axis=0).reshape([-1])
+                comm_idx_list = np.concatenate(comm_idx_list, axis=0).reshape([-1])
+
+                gdf[item] = np.squeeze(np.dstack(([temp_gdf, comm_idx_list])))
+                #print(gdf[item])
+                gdf[item][:,0] *= float(len(gdf[item][:,0]))
+
                 sorted_gdf = np.sort(gdf[item][:,0])
                 max_line_idx = int(sorted_gdf.shape[0]*0.75)
                 pfit = np.polyfit(np.arange(max_line_idx), sorted_gdf[:max_line_idx], 1)
                 #auto_c[item] = np.poly1d(pfit)(sorted_gdf.shape[0]-1)
-                auto_c[item] = np.poly1d(pfit)(max_line_idx)
-            # FIXME: After testing, this part needs to be moved to neural_network.py
-            #if tag_auto_c:
-            #    auto_c[item]
+                auto_c[item] = np.poly1d(pfit)(max_line_idx-1)
+                # FIXME: After testing, this part needs to be moved to neural_network.py
 
             """
             if callable(modifier[item]):
@@ -202,7 +208,7 @@ def _generate_gdf_file(ref_list, scale, atom_types, idx_list, target_list=None, 
                 gdf[item][:,0] /= np.mean(gdf[item][:,0])
             """
 
-    if filename != None:
+    if (filename != None) and (comm.rank == 0):
         with open(filename, 'wb') as fil:
             pickle.dump(gdf, fil, protocol=2)
 
