@@ -8,16 +8,38 @@ from tqdm import tqdm
 from ..utils import pickle_load
 import logging
 
-def plot_gdfinv_density(gdfinv_list, atom_types, bins=500):
+def plot_gdfinv_density(gdfinv_list, atom_types, bins=100, auto_c=None):
 
     for item in atom_types:
+        if auto_c is not None: 
+            fig = plt.figure(figsize=(10,4))
+
+            ax1 = plt.subplot(121)
+        else:
+            fig = plt.figure()
+
         plt.hist(gdfinv_list[item][:,0], bins) 
 
         plt.xlabel('$[\\rho(\mathrm{\mathsf{\mathbf{G}}}_{ij})]^{-1}$')
         plt.ylabel('Frequency')
-        plt.savefig('GDFinv_hist_{}.pdf'.format(item))
-        plt.clf()
 
+        if auto_c is not None:
+            ax2 = plt.subplot(122)
+
+            plt.hist(gdfinv_list[item][:,0], bins=np.linspace(0., 5*auto_c[item], bins)) 
+
+            plt.xlabel('$[\\rho(\mathrm{\mathsf{\mathbf{G}}}_{ij})]^{-1}$')
+            plt.ylabel('Frequency')
+            plt.savefig('GDFinv_hist_{}.pdf'.format(item))
+
+            ax2.axvline(auto_c[item], color='k', linestyle=':')
+
+            plt.tight_layout()
+
+        plt.savefig('GDFinv_hist_{}.pdf'.format(item))
+
+        fig.clf()
+        fig.clear()
         
 def plot_Gdistance_vs_Ferror(G_list, F_list, atom_types, use_scale=True, bins=200, max_num=30000, p_range=[[0., 1.], [0., 10.]], 
                              to_check=[[0., 0.005], [0., 1.0]], **kargs):
@@ -328,11 +350,11 @@ def plot_correlation_graph(test_result='test_result', atom_types=None):
         fig = plt.figure(figsize=(10,4))
 
     _correlation(res['NN_E']/res['N'], res['DFT_E']/res['N'], 221 if force_tag else 121,
-                 xlabel='$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
-                 ylabel='$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
+                 xlabel='$E^\mathrm{\mathsf{NNP}}$ (eV/atom)',
+                 ylabel='$E^\mathrm{\mathsf{DFT}}$ (eV/atom)')
 
     _error_hist(np.abs(res['NN_E']/res['N'] - res['DFT_E']/res['N'])*1000., 223 if force_tag else 122,
-                xlabel='|$\mathrm{\mathsf{\mathbf{F}^{NNP}}} - \mathrm{\mathsf{\mathbf{F}^{DFT}}}$| (eV/$\mathrm{\mathsf{\AA}}$)',
+                xlabel='|$E^\mathrm{\mathsf{NNP}} - E^\mathrm{\mathsf{DFT}}$| (meV/atom)',
                 ylabel='Frequency')
 
     plt.tight_layout()

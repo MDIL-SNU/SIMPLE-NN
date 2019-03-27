@@ -10,30 +10,9 @@ from ._libsymf import lib, ffi
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
 from ...utils import graph as grp
+from ...utils.mpiclass import DummyMPI, MPI4PY
 from braceexpand import braceexpand
 
-class DummyMPI(object):
-    rank = 0
-    size = 1
-
-    def barrier(self):
-        pass
-
-    def gather(self, data, root=0):
-        return data
-
-class MPI4PY(object):
-    def __init__(self):
-        from mpi4py import MPI
-        self.comm = MPI.COMM_WORLD
-        self.size = self.comm.Get_size()
-        self.rank = self.comm.Get_rank()
-
-    def barrier(self):
-        self.comm.barrier()
-
-    def gather(self, data, root=0):
-        return self.comm.gather(data, root=0)
 
 def _read_params(filename):
     params_i = list()
@@ -262,26 +241,36 @@ class Symmetry_function(object):
 
     def preprocess(self, calc_scale=True, use_force=False, get_atomic_weights=None, **kwargs):
         
+        try:
+            import mpi4py
+        except ImportError:
+            comm = DummyMPI()
+        else:
+            comm = MPI4PY()
+
         # pickle list -> train / valid
         tmp_pickle_train = './pickle_train_list'
         tmp_pickle_valid = './pickle_valid_list'
 
-        if not self.inputs['continue']:
-            tmp_pickle_train_open = open(tmp_pickle_train, 'w')
-            tmp_pickle_valid_open = open(tmp_pickle_valid, 'w')
-            for file_list in _make_str_data_list(self.pickle_list):
-                np.random.shuffle(file_list)
-                num_pickle = len(file_list)
-                num_valid = int(num_pickle * self.inputs['valid_rate'])
+        if comm.rank == 0:
+            if not self.inputs['continue']:
+                tmp_pickle_train_open = open(tmp_pickle_train, 'w')
+                tmp_pickle_valid_open = open(tmp_pickle_valid, 'w')
+                for file_list in _make_str_data_list(self.pickle_list):
+                    np.random.shuffle(file_list)
+                    num_pickle = len(file_list)
+                    num_valid = int(num_pickle * self.inputs['valid_rate'])
 
-                for i,item in enumerate(file_list):
-                    if i < num_valid:
-                        tmp_pickle_valid_open.write(item + '\n')
-                    else:
-                        tmp_pickle_train_open.write(item + '\n')
+                    for i,item in enumerate(file_list):
+                        if i < num_valid:
+                            tmp_pickle_valid_open.write(item + '\n')
+                        else:
+                            tmp_pickle_train_open.write(item + '\n')
         
-            tmp_pickle_train_open.close()
-            tmp_pickle_valid_open.close()
+                tmp_pickle_train_open.close()
+                tmp_pickle_valid_open.close()
+
+        comm.barrier()
 
         # generate full symmetry function vector
         feature_list_train, idx_list_train = \
@@ -300,9 +289,48 @@ class Symmetry_function(object):
         # calculate gdf
         atomic_weights_train = atomic_weights_valid = None
         if callable(get_atomic_weights):
-            atomic_weights_train = get_atomic_weights(feature_list_train, feature_list_train, scale, self.parent.inputs['atom_types'], idx_list_train, 
-                                                    filename='atomic_weights', **kwargs)
-            atomic_weights_valid = get_atomic_weights(feature_list_train, feature_list_valid, scale, self.parent.inputs['atom_types'], idx_list_valid, **kwargs)
+            # FIXME: use mpi
+            local_target_list = dict()
+            local_idx_list = dict()
+
+            for item in self.parent.inputs['atom_types']:
+                q = feature_list_train[item].shape[0] // comm.size
+                r = feature_list_train[item].shape[0]  % comm.size
+
+                begin = comm.rank * q + min(comm.rank, r)
+                end = begin + q
+                if r > comm.rank:
+                    end += 1
+
+                local_target_list[item] = feature_list_train[item][begin:end]
+                local_idx_list[item] = idx_list_train[item][begin:end]
+
+            atomic_weights_train, dict_sigma, dict_c = get_atomic_weights(feature_list_train, scale, self.parent.inputs['atom_types'], local_idx_list, 
+                                                                          target_list=local_target_list, filename='atomic_weights', comm=comm, **kwargs)
+            kwargs.pop('sigma')
+
+            if comm.rank == 0:
+                self.parent.logfile.write('Selected(or generated) sigma and c\n')
+                for item in self.parent.inputs['atom_types']:
+                    self.parent.logfile.write('{:3}: sigma = {:4.3f}, c = {:4.3f}\n'.format(item, dict_sigma[item], dict_c[item]))
+
+            local_target_list = dict()
+            local_idx_list = dict()
+
+            for item in self.parent.inputs['atom_types']:
+                q = feature_list_valid[item].shape[0] // comm.size
+                r = feature_list_valid[item].shape[0]  % comm.size
+
+                begin = comm.rank * q + min(comm.rank, r)
+                end = begin + q
+                if r > comm.rank:
+                    end += 1
+
+                local_target_list[item] = feature_list_valid[item][begin:end]
+                local_idx_list[item] = idx_list_valid[item][begin:end]
+
+            atomic_weights_valid, _, _               = get_atomic_weights(feature_list_train, scale, self.parent.inputs['atom_types'], idx_list_valid, 
+                                                                          target_list=feature_list_valid, sigma=dict_sigma, comm=comm, **kwargs)
         elif isinstance(get_atomic_weights, six.string_types):
             atomic_weights_train = pickle_load(get_atomic_weights)
             atomic_weights_valid = 'ones'
@@ -311,94 +339,97 @@ class Symmetry_function(object):
             aw_tag = False
         else:
             aw_tag = True
-            grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
+            #grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
+            if comm.rank == 0:
+                grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'], auto_c=dict_c)
         
         # train
-        tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
-        #np.random.shuffle(tmp_pickle_train_list)
-        num_tmp_pickle_train = len(tmp_pickle_train_list)
-        num_tfrecord_train = int(num_tmp_pickle_train / self.inputs['data_per_tfrecord'])
-        train_list = open(self.train_data_list, 'w')
-
-        random_idx = np.arange(num_tmp_pickle_train)        
-        #if not self.inputs['continue']:
-        np.random.shuffle(random_idx)
-
-        for i,item in enumerate(random_idx):
-            ptem = tmp_pickle_train_list[item]
-            if i == 0:
-                record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
-                writer = tf.python_io.TFRecordWriter(record_name)
-            elif (i % self.inputs['data_per_tfrecord']) == 0:
-                writer.close()
-                self.parent.logfile.write('{} file saved in {}\n'.format(self.inputs['data_per_tfrecord'], record_name))
-                train_list.write(record_name + '\n')
-                record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
-                writer = tf.python_io.TFRecordWriter(record_name)
-
-            tmp_res = pickle_load(ptem)
-            if atomic_weights_train is not None:
-                tmp_aw = dict()
-                for jtem in self.parent.inputs['atom_types']:
-                    tmp_idx = (atomic_weights_train[jtem][:,1] == item)
-                    tmp_aw[jtem] = atomic_weights_train[jtem][tmp_idx,0]
-                #tmp_aw = np.concatenate(tmp_aw)
-                tmp_res['atomic_weights'] = tmp_aw
-            
-            self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
-
-            if not self.inputs['remain_pickle']:
-                os.remove(ptem)
-
-        writer.close()
-        self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
-        train_list.write(record_name + '\n')
-        train_list.close()
-
-        if self.inputs['valid_rate'] != 0.0:
-            # valid
-            tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
-            #np.random.shuffle(tmp_pickle_valid_list)
-            num_tmp_pickle_valid = len(tmp_pickle_valid_list)
-            num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
-            valid_list = open(self.valid_data_list, 'w')
-
-            random_idx = np.arange(num_tmp_pickle_valid)        
+        if comm.rank == 0:
+            tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
+            #np.random.shuffle(tmp_pickle_train_list)
+            num_tmp_pickle_train = len(tmp_pickle_train_list)
+            num_tfrecord_train = int(num_tmp_pickle_train / self.inputs['data_per_tfrecord'])
+            train_list = open(self.train_data_list, 'w')
+ 
+            random_idx = np.arange(num_tmp_pickle_train)        
             #if not self.inputs['continue']:
             np.random.shuffle(random_idx)
-
+ 
             for i,item in enumerate(random_idx):
-                ptem = tmp_pickle_valid_list[item]
+                ptem = tmp_pickle_train_list[item]
                 if i == 0:
-                    record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
+                    record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
                     writer = tf.python_io.TFRecordWriter(record_name)
                 elif (i % self.inputs['data_per_tfrecord']) == 0:
                     writer.close()
                     self.parent.logfile.write('{} file saved in {}\n'.format(self.inputs['data_per_tfrecord'], record_name))
-                    valid_list.write(record_name + '\n')
-                    record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
+                    train_list.write(record_name + '\n')
+                    record_name = './data/training_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_train)
                     writer = tf.python_io.TFRecordWriter(record_name)
-
+ 
                 tmp_res = pickle_load(ptem)
-                if atomic_weights_valid == 'ones':
-                    tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']]).astype(np.float64)
-                elif atomic_weights_valid is not None:
+                if atomic_weights_train is not None:
                     tmp_aw = dict()
                     for jtem in self.parent.inputs['atom_types']:
-                        tmp_idx = (atomic_weights_valid[jtem][:,1] == item)
-                        tmp_aw[jtem] = atomic_weights_valid[jtem][tmp_idx,0]
+                        tmp_idx = (atomic_weights_train[jtem][:,1] == item)
+                        tmp_aw[jtem] = atomic_weights_train[jtem][tmp_idx,0]
                     #tmp_aw = np.concatenate(tmp_aw)
                     tmp_res['atomic_weights'] = tmp_aw
-
+                
                 self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
-
+ 
                 if not self.inputs['remain_pickle']:
                     os.remove(ptem)
-
+ 
             writer.close()
             self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
-            valid_list.write(record_name + '\n')
-            valid_list.close()
+            train_list.write(record_name + '\n')
+            train_list.close()
+ 
+            if self.inputs['valid_rate'] != 0.0:
+                # valid
+                tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
+                #np.random.shuffle(tmp_pickle_valid_list)
+                num_tmp_pickle_valid = len(tmp_pickle_valid_list)
+                num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
+                valid_list = open(self.valid_data_list, 'w')
+ 
+                random_idx = np.arange(num_tmp_pickle_valid)        
+                #if not self.inputs['continue']:
+                np.random.shuffle(random_idx)
+ 
+                for i,item in enumerate(random_idx):
+                    ptem = tmp_pickle_valid_list[item]
+                    if i == 0:
+                        record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
+                        writer = tf.python_io.TFRecordWriter(record_name)
+                    elif (i % self.inputs['data_per_tfrecord']) == 0:
+                        writer.close()
+                        self.parent.logfile.write('{} file saved in {}\n'.format(self.inputs['data_per_tfrecord'], record_name))
+                        valid_list.write(record_name + '\n')
+                        record_name = './data/valid_data_{:0>4}_to_{:0>4}.tfrecord'.format(int(i/self.inputs['data_per_tfrecord']), num_tfrecord_valid)
+                        writer = tf.python_io.TFRecordWriter(record_name)
+ 
+                    tmp_res = pickle_load(ptem)
+                    if atomic_weights_valid == 'ones':
+                        tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']]).astype(np.float64)
+                    elif atomic_weights_valid is not None:
+                        tmp_aw = dict()
+                        for jtem in self.parent.inputs['atom_types']:
+                            tmp_idx = (atomic_weights_valid[jtem][:,1] == item)
+                            tmp_aw[jtem] = atomic_weights_valid[jtem][tmp_idx,0]
+                        #tmp_aw = np.concatenate(tmp_aw)
+                        tmp_res['atomic_weights'] = tmp_aw
+ 
+                    self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
+ 
+                    if not self.inputs['remain_pickle']:
+                        os.remove(ptem)
+ 
+                writer.close()
+                self.parent.logfile.write('{} file saved in {}\n'.format((i%self.inputs['data_per_tfrecord'])+1, record_name))
+                valid_list.write(record_name + '\n')
+                valid_list.close()
  
 
     def generate(self):
