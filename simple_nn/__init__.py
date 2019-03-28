@@ -157,4 +157,8 @@ class Simple_nn(object):
                                        **self.descriptor.inputs['atomic_weights']['params'])
         
         if self.inputs['train_model']:
+            if self.descriptor.comm and self.descriptor.comm.size > 1:
+                if self.descriptor.comm.rank == 0:
+                    self.logfile.write("Error: Training model with MPI is not supported! Please restart training without MPI (set generate_features: false, preprocess: false, and train_model: true to run only training).\n")
+                sys.exit(0)
             self.model.train(user_optimizer=user_optimizer, aw_modifier=modifier)

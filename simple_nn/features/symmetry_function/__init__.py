@@ -59,6 +59,7 @@ class Symmetry_function(object):
         self.pickle_list = './pickle_list'
         self.train_data_list = './train_list'
         self.valid_data_list = './valid_list'
+        self.comm = None
 
     def set_inputs(self):
         self.inputs = self.parent.inputs['symmetry_function']
@@ -241,12 +242,7 @@ class Symmetry_function(object):
 
     def preprocess(self, calc_scale=True, use_force=False, get_atomic_weights=None, **kwargs):
         
-        try:
-            import mpi4py
-        except ImportError:
-            comm = DummyMPI()
-        else:
-            comm = MPI4PY()
+        comm = self.get_comm()
 
         # pickle list -> train / valid
         tmp_pickle_train = './pickle_train_list'
@@ -434,12 +430,7 @@ class Symmetry_function(object):
 
     def generate(self):
 
-        try:
-            import mpi4py
-        except ImportError:
-            comm = DummyMPI()
-        else:
-            comm = MPI4PY()
+        comm = self.get_comm()
 
         if comm.rank == 0:
             train_dir = open(self.pickle_list, 'w')
@@ -476,7 +467,12 @@ class Symmetry_function(object):
                     self.parent.logfile.write('{} {}'.format(item[0], item[1]))
 
             if self.inputs['compress_outcar']:
-                tmp_name = compress_outcar(item[0])
+                if comm.rank == 0:
+                    tmp_name = compress_outcar(item[0])
+                else:
+                    tmp_name = None
+                tmp_name = comm.bcast(tmp_name, root=0)
+                comm.barrier()
                 snapshots = io.read(tmp_name, index=index, force_consistent=True)
                 comm.barrier()
                 if comm.rank == 0:
@@ -644,3 +640,13 @@ class Symmetry_function(object):
                     structure_ind.append(structure_names.index(name))
 
         return structures, structure_ind, structure_names, structure_weights
+    
+    def get_comm(self):
+        if self.comm is None:
+            try:
+                import mpi4py
+            except ImportError:
+                self.comm = DummyMPI()
+            else:
+                self.comm = MPI4PY()
+        return self.comm
