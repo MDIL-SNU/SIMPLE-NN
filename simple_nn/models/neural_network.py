@@ -414,12 +414,6 @@ class Neural_network(object):
             self.handle, training_dataset.output_types, training_dataset.output_shapes)
         self.next_elem = self.iterator.get_next()
 
-        # which place?
-        self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
-        F_shape = tf.shape(self.next_elem['F'])
-        self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [F_shape[1]]), # dx_shape[1]
-                                                                            tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
-                                                                              self.next_elem['partition'], 2)[1]
         if self.inputs['use_force']:
             self.next_elem['F'] = \
                 tf.dynamic_partition(
@@ -431,6 +425,16 @@ class Neural_network(object):
                     tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
                     self.next_elem['partition'], 2
                 )[1]
+            # which place?
+            self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
+            F_shape = tf.shape(self.next_elem['F'])
+            self.next_elem['seg_id_'] = tf.dynamic_partition(
+                                            tf.reshape(
+                                                tf.map_fn(
+                                                    lambda x: tf.tile([x+1], [F_shape[1]]), # dx_shape[1]
+                                                    tf.range(tf.shape(self.next_elem['tot_num'])[0])), 
+                                                [-1]),
+                                            self.next_elem['partition'], 2)[1]
 
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
 
