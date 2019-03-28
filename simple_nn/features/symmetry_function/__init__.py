@@ -476,7 +476,9 @@ class Symmetry_function(object):
                     self.parent.logfile.write('{} {}'.format(item[0], item[1]))
 
             if self.inputs['compress_outcar']:
-                tmp_name = compress_outcar(item[0])
+                if comm.rank == 0:
+                    tmp_name = compress_outcar(item[0])
+                comm.barrier()
                 snapshots = io.read(tmp_name, index=index, force_consistent=True)
                 comm.barrier()
                 if comm.rank == 0:
