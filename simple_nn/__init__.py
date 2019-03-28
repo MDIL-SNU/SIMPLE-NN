@@ -3,7 +3,7 @@ import yaml
 import collections
 import functools
 from .utils import modified_sigmoid, _generate_gdf_file
-from ._version import __version__
+from ._version import __version__, __git_sha__
 
 # TODO: logging
 
@@ -85,7 +85,7 @@ class Simple_nn(object):
 
     def _log_header(self):
         # TODO: make the log header (low priority)
-        self.logfile.write("SIMPLE_NN v{:}\n".format(__version__))
+        self.logfile.write("SIMPLE_NN v{0:} ({1:})\n".format(__version__, __git_sha__))
 
     def write_inputs(self):
         """

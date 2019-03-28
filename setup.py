@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages, Extension
 # To use a consistent encoding
 from codecs import open
-from os import path
+from os import path, listdir
 from pkg_resources import DistributionNotFound, get_distribution
+from subprocess import check_output
 
 here = path.abspath(path.dirname(__file__))
 
@@ -11,6 +12,17 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 # Read version number.
 exec(open('simple_nn/_version.py').read())
+
+def git_sha():
+    try:
+        sha = check_output(['git', 'rev-parse', 'HEAD'], cwd=here).decode('ascii').strip()[:7]
+    except:
+        sha = 'unknown'
+    return sha
+
+with open('simple_nn/_version.py', 'w') as fp:
+    fp.write('__version__ = "{0:}"\n'.format(__version__))
+    fp.write('__git_sha__ = "{0:}"\n'.format(git_sha()))
 
 # required module
 # TODO: version check
@@ -80,3 +92,7 @@ setup(
         "simple_nn/utils/libgdf_builder.py:ffibuilder",
     ],
 )
+
+with open('simple_nn/_version.py', 'w') as fp:
+    fp.write('__version__ = "{0:}"\n'.format(__version__))
+    fp.write('__git_sha__ = "unknown"\n')
