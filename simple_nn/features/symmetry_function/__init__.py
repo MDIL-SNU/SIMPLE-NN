@@ -478,6 +478,9 @@ class Symmetry_function(object):
             if self.inputs['compress_outcar']:
                 if comm.rank == 0:
                     tmp_name = compress_outcar(item[0])
+                else:
+                    tmp_name = None
+                tmp_name = comm.bcast(tmp_name, root=0)
                 comm.barrier()
                 snapshots = io.read(tmp_name, index=index, force_consistent=True)
                 comm.barrier()
