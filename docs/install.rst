@@ -51,4 +51,4 @@ and compile LAMMPS package.
 
 ::
 
-    cp SIMPLE-NN/simple_nn/features/symmetry_function/{symmetry_function.*,pair_nn.*} /path/to/lammps/src/
+    cp SIMPLE-NN/simple_nn/features/symmetry_function/{symmetry_functions.*,pair_nn.*} /path/to/lammps/src/
