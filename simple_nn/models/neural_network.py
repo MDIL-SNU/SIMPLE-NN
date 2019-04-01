@@ -100,6 +100,7 @@ class Neural_network(object):
 
     def _set_scale_parameter(self, scale_file):
         self.scale = pickle_load(scale_file)
+        self.pca = pickle_load("./pca")
         # TODO: add the check code for valid scale file
 
     def _set_gdf_parameters(self, atomic_weights_file, modifier=None):
@@ -124,8 +125,10 @@ class Neural_network(object):
         # TODO: input validation for stddev.
         dense_basic_setting = {
             'dtype': dtype,
-            'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
-            'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
+            #'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
+            #'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
+            'kernel_initializer': tf.initializers.he_normal(),
+            'bias_initializer': tf.initializers.he_normal(),
         }
         dense_last_setting = copy.deepcopy(dense_basic_setting)
 
@@ -195,6 +198,7 @@ class Neural_network(object):
                                                 #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[i-1], dtype=dtype),
                                                 #use_bias=False,
                                                 **dense_basic_setting))
+                model.add(tf.keras.layers.Dropout(0.5))
 
             if self.inputs['continue'] == 'weights':
                 dense_last_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][-2])
@@ -472,6 +476,8 @@ class Neural_network(object):
 
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
+            self.next_elem['x_'+item] = tf.matmul(self.next_elem['x_'+item], self.pca[item][0])
+            self.next_elem['x_'+item] /= self.pca[item][1].reshape([1, -1])
 
             if self.inputs['use_force']:
                 dx_shape = tf.shape(self.next_elem['dx_'+item])
@@ -493,6 +499,8 @@ class Neural_network(object):
                                                                     [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['dx_'+item])[2]], [0,0]]))
              
                 self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
+                self.next_elem['dx_'+item] = tf.einsum('ijkl,jm->imkl', self.next_elem['dx_'+item], tf.constant(self.pca[item][0]))
+                self.next_elem['dx_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
                                                      lambda: tf.zeros([1], tf.int32), 
