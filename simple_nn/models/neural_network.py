@@ -565,7 +565,8 @@ class Neural_network(object):
             else:
                 modifier_tag[item] = False
             modifier_total = modifier_total or modifier_tag[item]
-        modifier_tag['total'] = modifier_total
+        # Turn off modifier breakdown if atomic weights are not calculated (e.g. read from file or user-provided function)
+        modifier_tag['total'] = modifier_total and self.parent.descriptor.inputs['atomic_weights']['type'] == 'gdf'
 
         if self.inputs['train']:
             train_filequeue = _make_data_list(self.train_data_list)
