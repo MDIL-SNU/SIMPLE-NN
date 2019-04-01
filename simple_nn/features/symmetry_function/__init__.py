@@ -325,8 +325,8 @@ class Symmetry_function(object):
                 local_target_list[item] = feature_list_valid[item][begin:end]
                 local_idx_list[item] = idx_list_valid[item][begin:end]
 
-            atomic_weights_valid, _, _               = get_atomic_weights(feature_list_train, scale, self.parent.inputs['atom_types'], idx_list_valid, 
-                                                                          target_list=feature_list_valid, sigma=dict_sigma, comm=comm, **kwargs)
+            atomic_weights_valid, _, _               = get_atomic_weights(feature_list_train, scale, self.parent.inputs['atom_types'], local_idx_list, 
+                                                                          target_list=local_target_list, sigma=dict_sigma, comm=comm, **kwargs)
         elif isinstance(get_atomic_weights, six.string_types):
             atomic_weights_train = pickle_load(get_atomic_weights)
             atomic_weights_valid = 'ones'
