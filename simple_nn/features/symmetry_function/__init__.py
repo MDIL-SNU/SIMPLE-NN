@@ -336,7 +336,8 @@ class Symmetry_function(object):
         else:
             aw_tag = True
             #grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'])
-            if comm.rank == 0:
+            # Plot histogram only if atomic weights just have been calculated.
+            if comm.rank == 0 and callable(get_atomic_weights):
                 grp.plot_gdfinv_density(atomic_weights_train, self.parent.inputs['atom_types'], auto_c=dict_c)
         
         # train
@@ -408,7 +409,10 @@ class Symmetry_function(object):
  
                     tmp_res = pickle_load(ptem)
                     if atomic_weights_valid == 'ones':
-                        tmp_res['atomic_weights'] = np.ones([tmp_res['tot_num']]).astype(np.float64)
+                        tmp_aw = dict()
+                        for jtem in self.parent.inputs['atom_types']:
+                            tmp_aw[jtem] = np.ones([tmp_res['N'][jtem]]).astype(np.float64)
+                        tmp_res['atomic_weights'] = tmp_aw
                     elif atomic_weights_valid is not None:
                         tmp_aw = dict()
                         for jtem in self.parent.inputs['atom_types']:
