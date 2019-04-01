@@ -1,5 +1,5 @@
-generate_features: true
-preprocess: true
+generate_features: false
+preprocess: false
 train_model: true
 atom_types:
  - Si
@@ -9,22 +9,24 @@ symmetry_function:
   params:
     Si: params_Si
     O: params_O
+  use_force: true
   atomic_weights:
     type: gdf
     params:
+  # sigma and c is obtained from LOG_data_generation file
       sigma:
-        Si: 0.02
-        O: 0.02
+        Si: 0.083
+        O: 0.067
   # weight modifier is applied in train_model part
   weight_modifier:
     type: modified sigmoid
     params:
       Si:
-        b: 0.02
-        c: 3500.
+        b: 1.
+        c: 35.
       O:
-        b: 0.02
-        c: 10000.
+        b: 1.
+        c: 74.
        
 neural_network:
   method: Adam
@@ -32,3 +34,4 @@ neural_network:
   batch_size: 10
   total_epoch: 50000
   learning_rate: 0.001
+  use_force: true
