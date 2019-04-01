@@ -693,6 +693,7 @@ class Neural_network(object):
                     total_epoch = self.inputs['total_epoch']
                     break_tag = False
 
+                time_begin = timeit.default_timer()
                 for epoch in tqdm(range(total_epoch)):
                     if self.inputs['full_batch']:
                         if self.inputs['method'] == 'Adam':
@@ -738,7 +739,7 @@ class Neural_network(object):
                         # TODO: need to fix the calculation part for training loss
                         save_stack += self.inputs['show_interval']
 
-                        result = "epoch {:7d}: ".format(sess.run(self.global_step)+1)
+                        result = "epoch {:7d} ".format(sess.run(self.global_step)+1)
 
                         t_eloss, t_floss, t_aw_floss, t_str_eloss, t_str_floss, _, _, _, t_str_set = self._get_loss_for_print(
                             sess, train_fdict, full_batch=self.inputs['full_batch'], iter_for_initialize=train_iter, modifier_tag=modifier_tag)
@@ -750,12 +751,14 @@ class Neural_network(object):
 
                         result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss, eloss)
                         if self.inputs['use_force']:
-                            result += ', F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss, floss)
+                            result += ' F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss, floss)
 
                         if self.inputs['method'] != 'L-BFGS':
                             lr = sess.run(self.learning_rate)
-                            result += ', learning_rate: {:6.4e}'.format(lr)
-                        result += ', elapsed: {:4.2e}\n'.format((time2-time1-save_time)/self.inputs['show_interval'])
+                            result += ' learning_rate: {:6.4e}'.format(lr)
+                        result += ' elapsed: {:4.2e} s speed: {:4.2e} it/s\n'.format(
+                                timeit.default_timer() - time_begin,
+                                self.inputs['show_interval']/(time2-time1-save_time))
 
                         # Print splitted RMSE according to atomic weights
                         if modifier_tag['total']:
