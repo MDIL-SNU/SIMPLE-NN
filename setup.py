@@ -45,9 +45,9 @@ def is_installed(pkg):
         return False
 
 if is_installed('tensorflow-gpu'):
-    install_requires.append('tensorflow-gpu<2.0')
+    install_requires.append('tensorflow-gpu<2.0,>=1.6')
 else:
-    install_requires.append('tensorflow<2.0')
+    install_requires.append('tensorflow<2.0,>=1.6')
 
 # TODO: extern C module add
 # TODO: install requires add
