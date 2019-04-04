@@ -1,6 +1,6 @@
 generate_features: true
 preprocess: true
-train_model: false
+train_model: true
 atom_types:
  - Si
  - O
@@ -12,9 +12,7 @@ symmetry_function:
   atomic_weights:
     type: gdf
     params:
-      sigma:
-        Si: 0.02
-        O: 0.02
+      sigma: Auto
        
 neural_network:
   method: Adam
@@ -22,3 +20,4 @@ neural_network:
   batch_size: 10
   total_epoch: 50000
   learning_rate: 0.001
+  use_force: true

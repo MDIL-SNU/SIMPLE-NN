@@ -1,2 +1,2 @@
-model_checkpoint_path: "SAVER"
-all_model_checkpoint_paths: "SAVER"
+model_checkpoint_path: "SAVER_epoch50001"
+all_model_checkpoint_paths: "SAVER_epoch50001"

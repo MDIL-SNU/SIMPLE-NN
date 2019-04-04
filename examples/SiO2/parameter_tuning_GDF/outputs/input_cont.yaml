@@ -1,0 +1,57 @@
+atom_types:
+- Si
+- O
+generate_features: true
+neural_network:
+  E_loss: 0
+  F_loss: 1
+  batch_size: 10
+  break_max: 10
+  cache: false
+  continue: true
+  double_precision: true
+  energy_coeff: 1.0
+  force_coeff: 0.1
+  full_batch: false
+  inter_op_parallelism_threads: 0
+  intra_op_parallelism_threads: 0
+  learning_rate: 0.001
+  loss_scale: 1.0
+  method: Adam
+  nodes: 30-30
+  optimizer: {}
+  print_structure_rmse: false
+  regularization:
+    params: {}
+    type: null
+  save_criteria: []
+  save_interval: 1000
+  show_interval: 100
+  stddev: 0.3
+  test: false
+  total_epoch: 50000
+  train: true
+  use_force: true
+preprocess: true
+symmetry_function:
+  add_atom_idx: true
+  atomic_weights:
+    params:
+      sigma: Auto
+    type: gdf
+  compress_outcar: true
+  continue: false
+  data_per_tfrecord: 150
+  num_parallel_calls: 5
+  params:
+    O: params_O
+    Si: params_Si
+  remain_pickle: false
+  scale_scale: 1.0
+  scale_type: minmax
+  use_force: true
+  valid_rate: 0.1
+  weight_modifier:
+    params: {}
+    type: null
+train_model: true
