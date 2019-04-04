@@ -278,7 +278,9 @@ class Symmetry_function(object):
         scale = None
         if calc_scale:
             scale = _generate_scale_file(feature_list_train, self.parent.inputs['atom_types'], 
-                                         scale_type=self.inputs['scale_type'], scale_scale=self.inputs['scale_scale'])
+                                         scale_type=self.inputs['scale_type'],
+                                         scale_scale=self.inputs['scale_scale'],
+                                         log=self.parent.logfile)
         else:
             scale = pickle_load('./scale_factor')
 
