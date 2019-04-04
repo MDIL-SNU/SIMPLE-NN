@@ -124,8 +124,10 @@ class Neural_network(object):
         # TODO: input validation for stddev.
         dense_basic_setting = {
             'dtype': dtype,
-            'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
-            'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
+            #'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
+            'kernel_initializer': tf.initializers.random_uniform(dtype=dtype),
+            #'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
+            'bias_initializer': tf.initializers.random_uniform(dtype=dtype)
         }
         dense_last_setting = copy.deepcopy(dense_basic_setting)
 
@@ -1036,10 +1038,10 @@ class Neural_network(object):
                         for struct in str_floss.keys():
                             str_floss[struct] = np.sqrt(str_floss[struct]*3/str_tot_atom[struct])
 
-                    if modifier_tag['total']:
-                        for item in self.parent.inputs['atom_types']:
-                            aw_floss[item][0] = np.sqrt(np.mean(np.concatenate(aw_floss[item][0], axis=0)))
-                            aw_floss[item][1] = np.sqrt(np.mean(np.concatenate(aw_floss[item][1], axis=0)))
+                        if modifier_tag['total']:
+                            for item in self.parent.inputs['atom_types']:
+                                aw_floss[item][0] = np.sqrt(np.mean(np.concatenate(aw_floss[item][0], axis=0)))
+                                aw_floss[item][1] = np.sqrt(np.mean(np.concatenate(aw_floss[item][1], axis=0)))
                     break
         else:
             if self.inputs['use_force']:
