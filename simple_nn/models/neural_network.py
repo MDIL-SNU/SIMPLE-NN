@@ -41,7 +41,12 @@ class Neural_network(object):
                                       },
                                       'use_force': False,
                                       'double_precision': True,
-                                      'stddev': 0.3,
+                                      'weight_initializer': {
+                                          'type': 'truncated normal',
+                                          'params': {
+                                              'stddev': 0.3,
+                                          },
+                                      },
 
                                       # Optimization related
                                       'method': 'Adam',
@@ -62,8 +67,6 @@ class Neural_network(object):
                                       'save_interval': 1000,
                                       'show_interval': 100,
                                       'save_criteria': [],
-                                      #'echeck': True,
-                                      #'fcheck': True,
                                       'break_max': 10,
                                       'print_structure_rmse': False,
                                       
@@ -122,13 +125,19 @@ class Neural_network(object):
         else:
             dtype = tf.float32
 
+        if self.inputs['weight_initializer']['type'] == 'truncated normal':
+            initializer = tf.initializers.truncated_normal(
+                    stddev=self.inputs['weight_initializer']['params']['stddev'], dtype=dtype)
+        elif self.inputs['weight_initializer']['type'] == 'he normal':
+            initializer = tf.initializers.he_normal()
+        else:
+            raise NotImplementedError("Not implemented weight initializer type!")
+
         # TODO: input validation for stddev.
         dense_basic_setting = {
             'dtype': dtype,
-            #'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
-            #'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
-            'kernel_initializer': tf.initializers.he_normal(),
-            'bias_initializer': tf.initializers.he_normal(),
+            'kernel_initializer': initializer,
+            'bias_initializer': initializer,
         }
         dense_last_setting = copy.deepcopy(dense_basic_setting)
 
