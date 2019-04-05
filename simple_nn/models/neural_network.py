@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import random
 import six
+import os
 from six.moves import cPickle as pickle
 import collections
 import functools
