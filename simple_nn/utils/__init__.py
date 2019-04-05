@@ -118,11 +118,12 @@ def _make_full_featurelist(filelist, feature_tag, atom_types=None, use_idx=False
     return feature_list, idx_list
 
 
-def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scale_type='minmax', scale_scale=1.0, comm=DummyMPI()):
+def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scale_type='minmax', scale_scale=1.0, comm=DummyMPI(), log=None):
     scale = dict()
     for item in atom_types:
         inp_size = feature_list[item].shape[1]
         scale[item] = np.zeros([2, inp_size])
+        is_scaled = np.array([True] * inp_size)
 
         if len(feature_list[item]) > 0:
             if scale_type == 'minmax':
@@ -132,9 +133,26 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
                 scale[item][0,:] = np.mean(feature_list[item], axis=0)
                 scale[item][1,:] = np.std(feature_list[item], axis=0) / scale_scale
 
+            is_scaled[scale[item][1,:] < 1e-15] = False
             scale[item][1, scale[item][1,:] < 1e-15] = 1.
+
+            if log is not None and comm.rank == 0:
+                log.write("{:-^70}\n".format(" Scaling information for {:} ".format(item)))
+                log.write("(scaled_value = (value - mean) * scale)\n")
+                log.write("Index   Mean         Scale        Min(after)   Max(after)   Std(after)\n")
+                scaled = (feature_list[item] - scale[item][0,:]) / scale[item][1,:]
+                scaled_min = np.min(scaled, axis=0)
+                scaled_max = np.max(scaled, axis=0)
+                scaled_std = np.std(scaled, axis=0)
+                for i in range(scale[item].shape[1]):
+                    scale_str = "{:11.4e}".format(1/scale[item][1,i]) if is_scaled[i] else "Not_scaled"
+                    log.write("{0:<5}  {1:>11.4e}  {2:>11}  {3:>11.4e}  {4:>11.4e}  {5:>11.4e}\n".format(
+                        i, scale[item][0,i], scale_str, scaled_min[i], scaled_max[i], scaled_std[i]))
         else:
             scale[item][1,:] = 1.
+
+    if log is not None and comm.rank == 0:
+        log.write("{:-^70}\n".format(""))
 
     if comm.rank == 0:
         with open(filename, 'wb') as fil:
