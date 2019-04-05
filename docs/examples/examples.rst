@@ -10,12 +10,12 @@ Introduction
 This section demonstrate SIMPLE-NN with examples. 
 Example files are in :gray:`SIMPLE-NN/examples/`.
 In this example, snapshots from 500K MD trajectory of 
-amorphous SiO\ :sub:`2`\ (60 atoms) are used as training set.  
+amorphous SiO\ :sub:`2`\  (60 atoms) are used as training set.  
 
 .. Note::
 
-    To actually run the example, you need to modify :gray:`str_list` 
-    to suit your environment. 
+    Since we set the relative path for reference file in :gray:`str_list`, 
+    You need to move to the directory indicated in each section below to run the examples.
 
 .. _Generate NNP:
 
@@ -23,12 +23,12 @@ Generate NNP
 ============
 
 To generate NNP using symmetry function and neural network, 
-you need 3 types of input file (input.yaml, str_list, params_XX) 
+you need three types of input file (input.yaml, str_list, params_XX) 
 as described in :doc:`/tutorials/tutorial` section.
 The example files except params_Si and params_O are introduced below.
-Detail of params_Si and params_O can be found in :doc:`/features/features`.
+Detail of params_Si and params_O can be found in :doc:`/features/features` section.
 Input files introduced in this section can be found in 
-:gray:`SIMPLE-NN/examples/SiO2/generate_NNP`
+:gray:`SIMPLE-NN/examples/SiO2/generate_NNP`.
 
 ::
 
@@ -57,13 +57,13 @@ Input files introduced in this section can be found in
     # str_list
     ../ab_initio_output/OUTCAR_comp ::10
 
-With this input file, SIMPLE-NN calculate feature vectors and its derivatives(:gray:`generate_features`), 
-generate training/validation dataset(:gray:`preprocess`) and optimize the network(:gray:`train_model`).
-Sample VASP OUTCAR file is in :gray:`SIMPLE-NN/examples/SiO2/ab_initio_output`.
-In MD trajectory, snapshots are selected with the interval of 10 MD steps.
+With this input file, SIMPLE-NN calculate feature vectors and its derivatives (:gray:`generate_features`), 
+generate training/validation dataset (:gray:`preprocess`) and optimize the network (:gray:`train_model`).
+Sample VASP OUTCAR file (the file is compressed to reduce the file size) is in :gray:`SIMPLE-NN/examples/SiO2/ab_initio_output`.
+In MD trajectory, snapshots are sampled in the interval of 10 MD steps.
 In this example, 70 symmetry functions consist of 8 radial symmetry functions per 2-body combination 
 and 18 angular symmetry functions per 3-body combination.
-Thus, this model use 70-30-30-1 network for both Si and O. 
+Thus, this model uses 70-30-30-1 network for both Si and O. 
 The network is optimized by Adam optimizer with the 0.001 of learning rate and batch size is 10. 
 
 Output files can be found in :gray:`SIMPLE-NN/examples/SiO2/generate_NNP/outputs`.
@@ -99,7 +99,7 @@ Input files introduced in this section can be found in
       valid_rate: 0.
 
 In this case, :gray:`train_model` is set to :gray:`false` 
-because training process does not need to generate test dataset.
+because training process is not required to generate test dataset.
 In addition, valid_rate also set to 0.
 :gray:`str_list` is same as `Generate NNP`_ section.
 
@@ -142,8 +142,13 @@ Input files introduced in this section can be found in
       batch_size: 10
       train: false
       test: true
-      continue: true # continue: weights (if the potential is generated using L-BFGS)
+      continue: true
 
+.. Note::
+  You need to change the filename from :gray:`SAVER_epochXXXX.*` to :gray:`SAVER.*` to use the option :gray:`continue: true`
+  and modify the checkpoints file (remove '_epochXXXX' in the text). 
+  If you use the option :gray:`continue: weights`, 
+  change the filename from :gray:`potential_saved_epochXXXX` to :gray:`potential_saved`.
 
 After running SIMPLE-NN with the setting above, 
 new output file named :gray:`test_result` is generated. 
@@ -152,13 +157,14 @@ The file is pickle format and you can open this file with python code of below::
     from six.moves import cPickle as pickle
 
     with open('test_result') as fil:
-        res = pickle.load(fil)
+        res = pickle.load(fil) # For Python 2
+        # res = pickle.load(fil, encoding='latin1') # For Python 3
 
 In the file, DFT energies/forces, NNP energies/forces are included.
 
 Molecular dynamics
 ------------------
-Please check in :doc:`/tutorials/tutorial` for detailed LAMMPS script writing.
+Please check in :doc:`/tutorials/tutorial` section for detailed LAMMPS script writing.
 
 
 Parameter tuning
@@ -166,7 +172,7 @@ Parameter tuning
 
 GDF
 ---
-GDF [#f1]_ is used to reduce the force error for the sparsely sampled atoms. 
+GDF [#f1]_ is used to reduce the force errors of the sparsely sampled atoms. 
 To use GDF, you need to calculate the :math:`\rho(\mathbf{G})` 
 by adding the following lines to the :gray:`symmetry_function` section in :gray:`input.yaml`.
 SIMPLE-NN supports automatic parameter generation scheme for :math:`\sigma` and :math:`c`.
@@ -187,11 +193,16 @@ Input files introduced in this section can be found in
           #  O: 0.02
 
 
-:math:`\rho(\mathbf{G})` indicates the density of each training points.
+:math:`\rho(\mathbf{G})` indicates the density of each training point.
 After calculating :math:`\rho(\mathbf{G})`, histograms of :math:`\rho(\mathbf{G})^{-1}` 
-also generated in the file of :gray:`GDFinv_hist_XX.pdf`.
-If the histogram is biased in low :math:`\rho(\mathbf{G})^{-1}` region 
-or large :math:`\rho(\mathbf{G})^{-1}` region, modify Gaussian width(:math:`\sigma`).
+are also saved as in the file of :gray:`GDFinv_hist_XX.pdf`.
+
+.. Note::
+  If there is a peak in high :math:`\rho(\mathbf{G})^{-1}` region in the histogram, 
+  increasing the Gaussian weight(:math:`\sigma`) is recommended until the peak is removed.
+  On the contrary, if multiple peaks are shown in low :math:`\rho(\mathbf{G})^{-1}` region in the histogram,
+  reduce :math:`\sigma` is recommended until the peaks are combined. 
+
 In the default setting, the group of :math:`\rho(\mathbf{G})^{-1}` is scaled to have average value of 1. 
 The interval-averaged force error with respect to the :math:`\rho(\mathbf{G})^{-1}` 
 can be visualized with the following script.
@@ -204,15 +215,15 @@ can be visualized with the following script.
     grp.plot_error_vs_gdfinv(['Si','O'], 'test_result')
 
 where :gray:`test_result` is generated after :ref:`test_mode` as the output file. 
-The graph of interval-averaged force error with respect to the 
+The graph of interval-averaged force errors with respect to the 
 :math:`\rho(\mathbf{G})^{-1}` is generated as :gray:`ferror_vs_GDFinv_XX.pdf`
 
 .. .. image:: /images/ref_forceerror
 
-If default GDF is not sufficient to reduce the force error of sparsely sampled atoms, 
+If default GDF is not sufficient to reduce the force error of sparsely sampled training points, 
 One can use scale function to increase the effect of GDF. In scale function, 
 :math:`b` controls the decaying rate for low :math:`\rho(\mathbf{G})^{-1}` and 
-:math:`c` separates highly concentrated and sparsely sampled atoms.
+:math:`c` separates highly concentrated and sparsely sampled training points.
 To use the scale function, add following lines to the :gray:`symmetry_function` section in :gray:`input.yaml`.
 
 ::
@@ -230,7 +241,9 @@ To use the scale function, add following lines to the :gray:`symmetry_function` 
 
 For our experience, :math:`b=1.0` and automatically selected :math:`c` shows reasonable results. 
 To check the effect of scale function, use the following script for visualizing the 
-force error distribution according to :math:`\rho(\mathbf{G})^{-1}`.
+force error distribution according to :math:`\rho(\mathbf{G})^{-1}`. 
+In the script below, :gray:`test_result_noscale` is the test result file from the training without scale function and 
+:gray:`test_result_wscale` is the test result file from the training with scale function.
 
 ::
 
