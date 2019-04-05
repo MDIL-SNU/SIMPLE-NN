@@ -47,6 +47,7 @@ class Neural_network(object):
                                               'stddev': 0.3,
                                           },
                                       },
+                                      'dropout': None,
 
                                       # Optimization related
                                       'method': 'Adam',
@@ -207,7 +208,8 @@ class Neural_network(object):
                                                 #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[i-1], dtype=dtype),
                                                 #use_bias=False,
                                                 **dense_basic_setting))
-                model.add(tf.keras.layers.Dropout(0.5))
+                if self.inputs['dropout'] is not None:
+                    model.add(tf.keras.layers.Dropout(self.inputs['dropout']))
 
             if self.inputs['continue'] == 'weights':
                 dense_last_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][-2])
