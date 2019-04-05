@@ -34,6 +34,8 @@ You can download a current SIMPLE-NN source package from link below.
 Once you have a zip file, unzip it. This will create SIMPLE-NN directory.
 After unzipping the file, run the command below to install SIMPLE-NN.
 
+**Download SIMPLE-NN**: https://github.com/Nanco-L/SIMPLE-NN
+
 ::
 
     cd SIMPLE-NN
