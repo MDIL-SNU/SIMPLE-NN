@@ -294,13 +294,14 @@ class Symmetry_function(object):
             scale = pickle_load('./scale_factor')
 
         # Fit PCA.
-        pca = {}
-        for item in self.parent.inputs['atom_types']:
-            pca_temp = PCA()
-            pca_temp.fit((feature_list_train[item] - scale[item][0:1,:]) / scale[item][1:2,:])
-            pca[item] = [pca_temp.components_.T, np.sqrt(pca_temp.explained_variance_ + 1e-8)]
-        with open("./pca", "wb") as fil:
-            pickle.dump(pca, fil, protocol=2)
+        if self.parent.model.inputs['pca']:
+            pca = {}
+            for item in self.parent.inputs['atom_types']:
+                pca_temp = PCA()
+                pca_temp.fit((feature_list_train[item] - scale[item][0:1,:]) / scale[item][1:2,:])
+                pca[item] = [pca_temp.components_.T, np.sqrt(pca_temp.explained_variance_ + 1e-8)]
+            with open("./pca", "wb") as fil:
+                pickle.dump(pca, fil, protocol=2)
 
         # calculate gdf
         atomic_weights_train = atomic_weights_valid = None

@@ -75,7 +75,8 @@ class Neural_network(object):
                                       'inter_op_parallelism_threads': 0,
                                       'intra_op_parallelism_threads': 0,
                                       'cache': False,
-                                      
+                                      'pca': False,
+                                      'pca_whiten': True,
                                   }
                               }
         self.inputs = dict()
@@ -104,7 +105,12 @@ class Neural_network(object):
 
     def _set_scale_parameter(self, scale_file):
         self.scale = pickle_load(scale_file)
-        self.pca = pickle_load("./pca")
+        if self.inputs['pca']:
+            if not os.path.exists("./pca"):
+                err = "PCA components must be calculated in the preprocess part."
+                self.parent.logfile.write("Error: {:}\n".format(err))
+                raise FileNotFoundError(err)
+            self.pca = pickle_load("./pca")
         # TODO: add the check code for valid scale file
 
     def _set_gdf_parameters(self, atomic_weights_file, modifier=None):
@@ -487,8 +493,10 @@ class Neural_network(object):
 
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
-            self.next_elem['x_'+item] = tf.matmul(self.next_elem['x_'+item], self.pca[item][0])
-            self.next_elem['x_'+item] /= self.pca[item][1].reshape([1, -1])
+            if self.inputs['pca']:
+                self.next_elem['x_'+item] = tf.matmul(self.next_elem['x_'+item], self.pca[item][0])
+                if self.inputs['pca_whiten']:
+                    self.next_elem['x_'+item] /= self.pca[item][1].reshape([1, -1])
 
             if self.inputs['use_force']:
                 dx_shape = tf.shape(self.next_elem['dx_'+item])
@@ -510,8 +518,10 @@ class Neural_network(object):
                                                                     [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['dx_'+item])[2]], [0,0]]))
              
                 self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
-                self.next_elem['dx_'+item] = tf.einsum('ijkl,jm->imkl', self.next_elem['dx_'+item], tf.constant(self.pca[item][0]))
-                self.next_elem['dx_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1])
+                if self.inputs['pca']:
+                    self.next_elem['dx_'+item] = tf.einsum('ijkl,jm->imkl', self.next_elem['dx_'+item], tf.constant(self.pca[item][0]))
+                    if self.inputs['pca_whiten']:
+                        self.next_elem['dx_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
                                                      lambda: tf.zeros([1], tf.int32), 
