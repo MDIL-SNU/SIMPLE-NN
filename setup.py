@@ -35,6 +35,7 @@ install_requires = [
     'tqdm',
     'braceexpand',
     'matplotlib<3.0',
+    'scipy',
 ]
 
 # Check the differece
