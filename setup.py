@@ -37,6 +37,11 @@ install_requires = [
     'matplotlib<3.0',
 ]
 
+# Check the differece
+setup_requires = [
+    'cffi>=1.0.0',
+]
+
 def is_installed(pkg):
     try:
         a = get_distribution(pkg)
@@ -59,9 +64,9 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/Nanco-L/simple-nn', # temperary url 
-    author='Kyuhyun Lee',
+    author='Kyuhyun Lee, Dongsun Yoo',
     author_email='khlee1992@naver.com',
-    license='MIT',
+    license='GPL-3.0',
     classifiers=[   # Optional
         # How mature is this project? Common values are
         #   3 - Alpha
@@ -87,6 +92,7 @@ setup(
     #project_urls={},
     python_requires='>=2.7, <4',
     install_requires=install_requires,
+    setup_requires=setup_requires,
     cffi_modules=[
         "simple_nn/features/symmetry_function/libsymf_builder.py:ffibuilder",
         "simple_nn/utils/libgdf_builder.py:ffibuilder",

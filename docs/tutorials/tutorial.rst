@@ -6,7 +6,7 @@ Tutorials
 
 Preparing dataset
 =================
-SIMPLE-NN uses `ASE`_ to handle output from *ab initio* programs like VASP or Quantum espresso. 
+SIMPLE-NN uses `ASE`_ to handle output from *ab initio* programs like VASP or Quantum ESPRESSO. 
 All output types supported by ASE can be used in SIMPLE-NN, 
 but they need to contain essential information such as atom coordinates, lattice parameters, energy, and forces.  
 You can check if the output file contains the appropriate information by using the following command:
@@ -34,7 +34,7 @@ Preparing inputs files
 ======================
 
 SIMPLE-NN use YAML style input file: :gray:`input.yaml`.
-:gray:`input.yaml` consists of 3 part: basic parameters, 
+:gray:`input.yaml` consists of three part: basic parameters, 
 feature-related parameters, and model-related parameters.
 The basic format of :gray:`input.yaml` is like below::
 
@@ -62,14 +62,15 @@ The basic format of :gray:`input.yaml` is like below::
 
 Depending on the feature and model classes, additional input files may be required.
 For example, for :gray:`symmetry_function` class, 
-additional files named :gray:`str_list` and :gray:`params_XX` are required. 
+additional files named :gray:`str_list` and :gray:`params_XX` 
+(name of :gray:`params_XX` can be changed) are required. 
 Details of parameters and additional files are listed in 
 :doc:`/simple_nn/Simple_nn` (basic parameters), 
 :doc:`/features/features` (feature-related parameters) and 
-:doc:`/models/models` (model-related parameters) page.
+:doc:`/models/models` (model-related parameters) section.
 
-Run the code
-============
+Running the code
+================
 
 To run SIMPLE-NN, you simply have to run the predefined script :gray:`run.py` after preparing all input files.
 The basic format of :gray:`run.py` is described below::
@@ -89,7 +90,7 @@ The basic format of :gray:`run.py` is described below::
     model.run()
 
 Examples of actual use for the entire process of generating neural network potential 
-can be found in :doc:`/examples/examples` or :gray:`SIMPLE-NN/examples/`
+can be found in :doc:`/examples/examples` section or :gray:`SIMPLE-NN/examples/`
 
 Outputs
 =======
@@ -100,27 +101,29 @@ After :gray:`Symmetry_function.generate` method, you can find the output files l
 
     - :gray:`data/data##.pickle`\: (## indicates number) 
       Data file which contains descriptor vectors, a derivative of descriptor 
-      vectors and other parameters per structure.
+      vectors, and other parameters per structure.
 
 
 After :gray:`Symmetry_function.preprocess` method, you can find the output files listed below:
 
     - :gray:`data/{training,valid}_data_####_to_####.tfrecord`\: 
-      Packed Training/validation dataset which contains the same information of 
-      :gray:`data/data##.pickle`.
-    - :gray:`pickle_{training,valid}_list`\: List of pickle files that includes in 
+      Packed Training/validation dataset which contains the information in 
+      :gray:`data/data##.pickle` and additional parameters like atomic weights
+      which are used during training process.
+    - :gray:`pickle_{training,valid}_list`\: List of pickle files that are included in 
       :gray:`data/{training,valid}_data_####_to_####.tfrecord` file.
 
     - :gray:`{train,valid}_list`\: List of tfrecord files (used in network optimization process)
     - :gray:`scale_factor`\: Scale factor for symmetry function.
-    - :gray:`atomic_weights`\: Data file contains atomic weights.
+    - :gray:`atomic_weights`\: Data file that contains atomic weights.
 
 
 After :gray:`Neural_network.train` method, you can find the output files listed below:
 
-    - :gray:`SAVER.*`, :gray:`checkpoint`\: Tensorflow save file which contains 
-      the network information.
-    - :gray:`potential_saved`\: LAMMPS potential file.
+    - :gray:`SAVER_epochXXXX.*`, :gray:`checkpoint`\: Tensorflow save file which contains 
+      the network information at the XXXXth epoch.
+    - :gray:`potential_saved_epochXXXX`\: LAMMPS potential file which contains 
+      the network information at the XXXXth epoch.
 
 
 .. MDwithLAMMPS_

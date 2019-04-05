@@ -6,7 +6,7 @@ High-dimensional neural network
 
 Introduction
 ============
-simple-nn use High-Dimensional Neural Network(HDNN) [#f1]_ as a default machine learning model.
+SIMPLE-NN use High-Dimensional Neural Network(HDNN) [#f1]_ as a default machine learning model.
 
 Parameters
 ==========
@@ -20,13 +20,13 @@ Function related parameter
 * :gray:`test`\: (boolean, default: false)
   If :gray:`true`, predicted energy and forces for test set are calculated.
 
-* :gray:`continue`\: (boolean, default: false)
-  If :gray:`true`, training process restart from save file (SAVER.*, checkpoints). 
-  If :gray:`weights`, training process restart from the LAMMPS potential file (potential_saved).
+* :gray:`continue`\: (boolean or string, default: false)
+  If :gray:`true`, training process restarts from save file (SAVER.*, checkpoints). 
+  If :gray:`continue: weights`, training process restarts from the LAMMPS potential file (potential_saved).
 
 .. Note::
     :gray:`potential_saved` only contains the weights and bias of the network. 
-    Thus, hyperparameter used in Adam optimizer is reset with :gray:`weights`.
+    Thus, hyperparameter used in Adam optimizer is reset with :gray:`continue: weights`.
 
 
 Network related parameter
@@ -53,9 +53,6 @@ Network related parameter
 
 * :gray:`use_force`\: (boolean, default: false)
   If :gray:`true`, both energy and force are used for training.
-
-* :gray:`double_precision`\: (boolean, default: true)
-  Switch the double precision(:gray:`true`) and single precision(:gray:`false`).
 
 * :gray:`stddev`\: (float, default: 0.3)
   Standard deviation for weights initialization.
@@ -84,6 +81,7 @@ Optimization related parameter
 
 * :gray:`total_epoch`\: (int, default: 10000)
   The number of total training epoch.
+  If negative, early termination scheme is activated (See :gray:`break_max` below).
 
 * :gray:`learning_rate`\: (float, default: 0.0001, :ref:`exponential_dacay-label`)
   Learning rate for gradient descendent based optimization algorithm.
@@ -98,19 +96,35 @@ Optimization related parameter
 
 Logging & saving related parameters
 -----------------------------------
-* :gray:`save_interval`\: (int, default: 1000)
-  Interval for saving the neural network potential file.
-
 * :gray:`show_interval`\: (int, default: 100)
   Interval for printing RMSE in LOG file.
 
-* :gray:`echeck` and :gray:`fcheck`\: (boolean, default: true, true)
-  If :gray:`true`, simple-nn check the selected type of RMSE for the validation set.
-  The network is saved when current RMSE is smaller than the RMSE of the previous save point.
+* :gray:`save_interval`\: (int, default: 1000)
+  Interval for saving the neural network potential file.
+
+* :gray:`save_criteria`\: (list, default: [])
+  Criteria for saving the neural network potential file. 
+  Energy error for validation set (:gray:`v_E`),
+  force error for validation set (:gray:`v_F`),
+  and force error for validation set for sparsely sampled training points (:gray:`v_F_XX_sparse`) 
+  are possible.
+  A network is saved only when all values in the criteria are smaller than previous save points.
+  If not, :gray:`break_count` is increased (See :gray:`break_max` below).
+
+.. Note::
+    In SIMPLE-NN, save conditions(:gray:`save_interval` and :gray:`save_critera`) 
+    are checked every multiple of :gray:`show_interval`.
+    Thus, it is recommended to set :gray:`save_interval` to multiples of :gray:`show_interval`. 
+
+.. Note::
+    Every multiple of :gray:`show_interval`, SIMPLE-NN calculates energies and forces for entire validation set.
+    so the process takes a lot of time in general. 
+    Thus, small :gray:`show_interval` may slow down the training speed.
 
 * :gray:`break_max`\: (int, default: 10)
-  If RMSE of validation set is larger then that of previous save point, :gray:`break_count` increases.
-  Optimization process terminated when :gray:`break_count` >= :gray:`break_max`.
+  If save criteria is not satisfied in current save points, :gray:`break_count` increases.
+  Optimization process is terminated when :gray:`break_count` >= :gray:`break_max`.
+  This tag is only activated when total_epoch is negative.
 
 * :gray:`print_structure_rmse`\: (boolean, default: false)
   If :gray:`true`, RMSEs for each structure type are also printed in LOG file.
@@ -119,7 +133,10 @@ Logging & saving related parameters
 Performance related parameters
 ------------------------------
 * :gray:`inter_op_parallelism_threads` and :gray:`intra_op_parallelism_threads`\: (int, default: 0, 0)
-  The number of threads for CPU. Zero means a single thread.
+  The number of threads for CPU. Default is 0, which results the values set to the number of logical cores. 
+  The recommended values are the number of physical cores 
+  for intra_op_parallelism_threads and the number of sockets for inter_op_parallelism_threads. 
+  intra_op_parallelism_threads should be equal to OMP_NUM_THREADS.
 
 * :gray:`cache`\: (boolean, default: false)
   If :gray:`true`, batch dataset is temporarily saved using caches. 
@@ -144,7 +161,12 @@ In those cases, you can use this format instead of float value. More information
         decay_steps: 10000
         staircase: false
 
-methods
+.. Note::
+    If :gray:`continue: true`, :gray:`global_step` (see the link above) of save points is also loaded. 
+    Thus, you need to consider the :gray:`global_step` to calculate the values from :gray:`exponential_decay`.
+    On the contrary, :gray:`global_step` is reset when :gray:`continue: weights` 
+
+Methods
 =======
 .. py:function::
     __init__(self)
@@ -160,8 +182,6 @@ methods
         - :gray:`aw_modifier`\: scale function for atomic weights.
 
     Method for optimizing neural network potential.
-
-.. rubric:: Reference
 
 .. [#f1] `J. Behler, M. Parrinello, Phys. Rev. Lett. 98 (2007) 146401`_
 

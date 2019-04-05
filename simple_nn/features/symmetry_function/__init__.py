@@ -36,6 +36,7 @@ class Symmetry_function(object):
         self.default_inputs = {'symmetry_function': 
                                   {
                                       'params': dict(),
+                                      'refdata_format':'vasp_out',
                                       'compress_outcar':True,
                                       'data_per_tfrecord': 150,
                                       'valid_rate': 0.1,
@@ -472,19 +473,22 @@ class Symmetry_function(object):
                 if comm.rank == 0:
                     self.parent.logfile.write('{} {}'.format(item[0], item[1]))
 
-            if self.inputs['compress_outcar']:
-                if comm.rank == 0:
-                    tmp_name = compress_outcar(item[0])
-                else:
-                    tmp_name = None
-                tmp_name = comm.bcast(tmp_name, root=0)
-                comm.barrier()
-                snapshots = io.read(tmp_name, index=index, force_consistent=True)
-                comm.barrier()
-                if comm.rank == 0:
-                    os.remove(tmp_name)
-            else:    
-                snapshots = io.read(item[0], index=index, force_consistent=True) 
+            if self.inputs['refdata_format'] == 'vasp-out':
+                if self.inputs['compress_outcar']:
+                    if comm.rank == 0:
+                        tmp_name = compress_outcar(item[0])
+                    else:
+                        tmp_name = None
+                    tmp_name = comm.bcast(tmp_name, root=0)
+                    comm.barrier()
+                    snapshots = io.read(tmp_name, index=index, format=self.inputs['refdata_format'], force_consistent=True)
+                    comm.barrier()
+                    if comm.rank == 0:
+                        os.remove(tmp_name)
+                else:    
+                    snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'], force_consistent=True)
+            else:
+                snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'])
 
             for atoms in snapshots:
                 cart = np.copy(atoms.get_positions(wrap=True), order='C')

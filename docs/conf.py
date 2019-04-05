@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'simple-nn'
+project = 'SIMPLE-NN'
 copyright = '2019, Nanco-L'
 author = 'Kyuhyun Lee, Dongsun Yoo, Wonseok Jeong and Seungwu Han'
 
@@ -136,8 +136,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'simple-nn.tex', 'simple-nn Documentation',
-     'Nanco-L', 'manual'),
+    (master_doc, 'simple-nn.tex', 'SIMPLE-NN Documentation',
+     'Kyuhyun Lee \\ Dongsun Yoo \\ Wonseok Jeong \\ Seungwu Han', 'manual'),
 ]
 
 
@@ -146,7 +146,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'simple-nn', 'simple-nn Documentation',
+    (master_doc, 'SIMPLE-NN', 'SIMPLE-NN Documentation',
      [author], 1)
 ]
 
@@ -157,8 +157,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'simple-nn', 'simple-nn Documentation',
-     author, 'simple-nn', 'One line description of project.',
+    (master_doc, 'SIMPLE-NN', 'SIMPLE-NN Documentation',
+     author, 'SIMPLE-NN', 'One line description of project.',
      'Miscellaneous'),
 ]
 
