@@ -1136,3 +1136,6 @@ class Neural_network(object):
             except tf.errors.OutOfRangeError:
                 break
         return res
+
+    def set_inputs(self):
+        self.inputs = self.parent.inputs['neural_network']
