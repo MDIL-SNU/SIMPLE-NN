@@ -395,11 +395,14 @@ def read_lammps_potential(filename):
                 tmp_weights = np.zeros([dims[j], dims[j+1]])
                 tmp_bias = np.zeros([dims[j+1]])
 
-                fil.readline()
+                # Since PCA will be dealt separately, skip PCA layer.
+                skip = True if fil.readline().split()[-1] == 'PCA' else False
                 for k in range(dims[j+1]):
                     tmp_weights[:,k] = list(map(lambda x: float(x), fil.readline().split()[1:]))
                     tmp_bias[k] = float(fil.readline().split()[1])
 
+                if skip:
+                    continue
                 weights[item].append(np.copy(tmp_weights))
                 weights[item].append(np.copy(tmp_bias))
 
