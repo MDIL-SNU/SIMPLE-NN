@@ -397,7 +397,7 @@ class Neural_network(object):
             nlayers = len(self.nodes[item])
             # An extra linear layer is used for PCA transformation.
             if self.inputs['pca']:
-                nodes = [self.nodes[item][0]] + self.nodes[item]
+                nodes = [self.pca[item][0].shape[0]] + self.nodes[item]
                 joffset = 1
             else:
                 nodes = self.nodes[item]
