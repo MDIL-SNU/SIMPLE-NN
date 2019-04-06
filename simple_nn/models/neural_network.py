@@ -124,10 +124,8 @@ class Neural_network(object):
         # TODO: input validation for stddev.
         dense_basic_setting = {
             'dtype': dtype,
-            #'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
-            'kernel_initializer': tf.initializers.random_uniform(dtype=dtype),
-            #'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
-            'bias_initializer': tf.initializers.random_uniform(dtype=dtype)
+            'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
+            'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
         }
         dense_last_setting = copy.deepcopy(dense_basic_setting)
 
