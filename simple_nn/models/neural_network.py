@@ -392,10 +392,26 @@ class Neural_network(object):
 
             FIL.write('scale1 {}\n'.format(' '.join(self.scale[item][0,:].astype(np.str))))
             FIL.write('scale2 {}\n'.format(' '.join(self.scale[item][1,:].astype(np.str))))
-            
+
             weights = sess.run(self.models[item].weights)
             nlayers = len(self.nodes[item])
-            FIL.write('NET {} {}\n'.format(nlayers-1, ' '.join(map(str, self.nodes[item]))))
+            # An extra linear layer is used for PCA transformation.
+            if self.inputs['pca']:
+                nodes = [self.nodes[item][0]] + self.nodes[item]
+                joffset = 1
+            else:
+                nodes = self.nodes[item]
+                joffset = 0
+            FIL.write('NET {} {}\n'.format(len(nodes)-1, ' '.join(map(str, nodes))))
+
+            # PCA transformation layer.
+            pca_mat = self.pca[item][0] / self.pca[item][1].reshape([1, -1])
+            if self.inputs['pca']:
+                FIL.write('LAYER 0 linear\n')
+
+                for k in range(nodes[0]):
+                    FIL.write('w{} {}\n'.format(k, ' '.join(pca_mat[:,k].astype(np.str))))
+                    FIL.write('b{} {}\n'.format(k, 0.0))
 
             for j in range(nlayers):
                 # FIXME: add activation function type if new activation is added
@@ -404,7 +420,7 @@ class Neural_network(object):
                 else:
                     acti = 'sigmoid'
 
-                FIL.write('LAYER {} {}\n'.format(j, acti))
+                FIL.write('LAYER {} {}\n'.format(j+joffset, acti))
 
                 for k in range(self.nodes[item][j]):
                     FIL.write('w{} {}\n'.format(k, ' '.join(weights[j*2][:,k].astype(np.str))))
