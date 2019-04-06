@@ -137,7 +137,8 @@ class Neural_network(object):
             initializer = tf.initializers.truncated_normal(
                     stddev=self.inputs['weight_initializer']['params']['stddev'], dtype=dtype)
         elif self.inputs['weight_initializer']['type'] == 'he normal':
-            initializer = tf.initializers.he_normal()
+            initializer = tf.initializers.variance_scaling(scale=2.0, mode='fan_in',
+                    distribution="normal", dtype=dtype)
         else:
             raise NotImplementedError("Not implemented weight initializer type!")
 
