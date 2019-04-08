@@ -405,9 +405,9 @@ class Neural_network(object):
             FIL.write('NET {} {}\n'.format(len(nodes)-1, ' '.join(map(str, nodes))))
 
             # PCA transformation layer.
-            pca_mat = self.pca[item][0] / self.pca[item][1].reshape([1, -1])
             if self.inputs['pca']:
                 FIL.write('LAYER 0 linear PCA\n')
+                pca_mat = self.pca[item][0] / self.pca[item][1].reshape([1, -1])
 
                 for k in range(nodes[0]):
                     FIL.write('w{} {}\n'.format(k, ' '.join(pca_mat[:,k].astype(np.str))))
