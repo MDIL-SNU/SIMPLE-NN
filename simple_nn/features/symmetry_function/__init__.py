@@ -12,6 +12,7 @@ from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file
 from ...utils import graph as grp
 from ...utils.mpiclass import DummyMPI, MPI4PY
 from braceexpand import braceexpand
+from sklearn.decomposition import PCA
 
 
 def _read_params(filename):
@@ -54,6 +55,7 @@ class Symmetry_function(object):
                                       },
                                       'scale_type': 'minmax',
                                       'scale_scale': 1.0,
+                                      'scale_rho': None,
                                   }
                               }
         self.structure_list = './str_list'
@@ -277,13 +279,29 @@ class Symmetry_function(object):
 
         # calculate scale
         scale = None
+        params_set = dict()
+        for item in self.parent.inputs['atom_types']:
+            params_set[item] = dict()
+            params_set[item]['i'], params_set[item]['d'] = _read_params(self.inputs['params'][item])
         if calc_scale:
             scale = _generate_scale_file(feature_list_train, self.parent.inputs['atom_types'], 
                                          scale_type=self.inputs['scale_type'],
                                          scale_scale=self.inputs['scale_scale'],
+                                         scale_rho=self.inputs['scale_rho'],
+                                         params=params_set,
                                          log=self.parent.logfile)
         else:
             scale = pickle_load('./scale_factor')
+
+        # Fit PCA.
+        if self.parent.model.inputs['pca']:
+            pca = {}
+            for item in self.parent.inputs['atom_types']:
+                pca_temp = PCA()
+                pca_temp.fit((feature_list_train[item] - scale[item][0:1,:]) / scale[item][1:2,:])
+                pca[item] = [pca_temp.components_.T, np.sqrt(pca_temp.explained_variance_ + 1e-8)]
+            with open("./pca", "wb") as fil:
+                pickle.dump(pca, fil, protocol=2)
 
         # calculate gdf
         atomic_weights_train = atomic_weights_valid = None
