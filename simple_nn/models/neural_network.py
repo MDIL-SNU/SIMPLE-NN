@@ -202,8 +202,13 @@ class Neural_network(object):
                 dense_basic_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][0])
                 dense_basic_setting['bias_initializer'] = tf.constant_initializer(saved_weights[item][1])
 
+            # Input dimension to the first layer can be changed due to truncation of principal components.
+            if self.inputs['pca']:
+                input_dim = self.pca[item][0].shape[1]
+            else:
+                input_dim = self.inp_size[item]
             model.add(tf.keras.layers.Dense(nodes[0], activation=acti_func, \
-                                            input_dim=self.inp_size[item],
+                                            input_dim=input_dim,
                                             #kernel_initializer=tf.initializers.random_normal(stddev=1./self.inp_size[item], dtype=dtype),
                                             #use_bias=False,
                                             **dense_basic_setting))
@@ -398,7 +403,7 @@ class Neural_network(object):
             nlayers = len(self.nodes[item])
             # An extra linear layer is used for PCA transformation.
             if self.inputs['pca']:
-                nodes = [self.pca[item][0].shape[0]] + self.nodes[item]
+                nodes = [self.pca[item][0].shape[1]] + self.nodes[item]
                 joffset = 1
             else:
                 nodes = self.nodes[item]
