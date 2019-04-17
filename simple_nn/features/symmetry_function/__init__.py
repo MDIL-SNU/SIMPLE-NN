@@ -299,7 +299,8 @@ class Symmetry_function(object):
             for item in self.parent.inputs['atom_types']:
                 pca_temp = PCA()
                 pca_temp.fit((feature_list_train[item] - scale[item][0:1,:]) / scale[item][1:2,:])
-                pca[item] = [pca_temp.components_.T, np.sqrt(pca_temp.explained_variance_ + 1e-8)]
+                min_level = self.parent.model.inputs['pca_min_whiten_level']
+                pca[item] = [pca_temp.components_.T, np.sqrt(pca_temp.explained_variance_ + min_level)]
             with open("./pca", "wb") as fil:
                 pickle.dump(pca, fil, protocol=2)
 

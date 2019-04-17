@@ -78,6 +78,7 @@ class Neural_network(object):
                                       'cache': False,
                                       'pca': False,
                                       'pca_whiten': True,
+                                      'pca_min_whiten_level': 1e-8,
                                   }
                               }
         self.inputs = dict()
