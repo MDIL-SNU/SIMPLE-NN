@@ -109,9 +109,9 @@ class Neural_network(object):
         self.scale = pickle_load(scale_file)
         if self.inputs['pca']:
             if not os.path.exists("./pca"):
-                err = "PCA components must be calculated in the preprocess part."
+                err = "File not found: './pca'. PCA components must be calculated in the preprocess part."
                 self.parent.logfile.write("Error: {:}\n".format(err))
-                raise FileNotFoundError(err)
+                raise OSError(err)
             self.pca = pickle_load("./pca")
         # TODO: add the check code for valid scale file
 
