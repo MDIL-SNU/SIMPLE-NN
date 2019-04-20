@@ -413,7 +413,7 @@ class Neural_network(object):
             # PCA transformation layer.
             if self.inputs['pca']:
                 FIL.write('LAYER 0 linear PCA\n')
-                pca_mat = self.pca[item][0]
+                pca_mat = np.copy(self.pca[item][0])
                 if self.inputs['pca_whiten']:
                     pca_mat /= self.pca[item][1].reshape([1, -1])
 
