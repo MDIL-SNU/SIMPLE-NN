@@ -1,7 +1,9 @@
 import sys
-import yaml 
+import os
+import yaml
 import collections
 import functools
+import atexit
 from .utils import modified_sigmoid, _generate_gdf_file
 from ._version import __version__, __git_sha__
 
@@ -49,6 +51,7 @@ class Simple_nn(object):
         
         """
         self.logfile = open('LOG', 'w', 10)
+        atexit.register(self._close_log)
         self._log_header()
 
         self.default_inputs = {
@@ -81,7 +84,11 @@ class Simple_nn(object):
         if self.inputs['neural_network']['method'] == 'L-BFGS' and \
                 not self.inputs['neural_network']['full_batch']:
             self.logfile.write("Warning: Optimization method is L-BFGS but full batch mode is off. This might results bad convergence or divergence.\n")
-        
+
+    def _close_log(self):
+        self.logfile.flush()
+        os.fsync(self.logfile.fileno())
+        self.logfile.close()
 
     def _log_header(self):
         # TODO: make the log header (low priority)
