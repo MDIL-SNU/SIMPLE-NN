@@ -6,10 +6,11 @@ import functools
 import atexit
 from .utils import modified_sigmoid, _generate_gdf_file
 from ._version import __version__, __git_sha__
+from .utils.mpiclass import DummyMPI, MPI4PY
 
 # TODO: logging
 
-def deep_update(source, overrides, warn_new_key=False, logfile=None, depth=0, parent="top"):
+def deep_update(source, overrides, warn_new_key=False, logfile=None, comm=DummyMPI(), depth=0, parent="top"):
     """
     Update a nested dictionary or similar mapping.
     Modify ``source`` in place.
@@ -25,11 +26,12 @@ def deep_update(source, overrides, warn_new_key=False, logfile=None, depth=0, pa
 
     for key in overrides.keys():
         if isinstance(source, collections.Mapping):
-            if warn_new_key and depth < 2 and key not in source:
+            if warn_new_key and depth < 2 and key not in source and comm.rank == 0:
                 logfile.write("Warning: Unidentified option in {:}: {:}\n".format(parent, key))
             if isinstance(overrides[key], collections.Mapping) and overrides[key]:
                 returned = deep_update(source.get(key, {}), overrides[key],
-                                       warn_new_key=warn_new_key, logfile=logfile, depth=depth+1, parent=key)
+                                       warn_new_key=warn_new_key, logfile=logfile, comm=comm,
+                                       depth=depth+1, parent=key)
                 source[key] = returned
             # Need list append?
             else:
@@ -50,9 +52,18 @@ class Simple_nn(object):
         """
         
         """
-        self.logfile = open('LOG', 'w', 10)
-        atexit.register(self._close_log)
-        self._log_header()
+        self.logfile = sys.stdout
+        try:
+            import mpi4py
+        except ImportError:
+            self.comm = DummyMPI()
+        else:
+            self.comm = MPI4PY()
+        if self.comm.rank == 0:
+            # Only proc 0 opens and writes to LOG file.
+            self.logfile = open('LOG', 'w', 10)
+            atexit.register(self._close_log)
+            self._log_header()
 
         self.default_inputs = {
             'generate_features': True,
@@ -72,7 +83,8 @@ class Simple_nn(object):
             self.inputs = deep_update(self.inputs, self.model.default_inputs)
 
         with open(inputs) as input_file:
-            self.inputs = deep_update(self.inputs, yaml.load(input_file), warn_new_key=True, logfile=self.logfile)
+            self.inputs = deep_update(self.inputs, yaml.load(input_file), warn_new_key=True,
+                                      logfile=self.logfile, comm=self.comm)
 
         if len(self.inputs['atom_types']) == 0:
             raise KeyError
@@ -164,8 +176,8 @@ class Simple_nn(object):
                                        **self.descriptor.inputs['atomic_weights']['params'])
         
         if self.inputs['train_model']:
-            if self.descriptor.comm and self.descriptor.comm.size > 1:
-                if self.descriptor.comm.rank == 0:
+            if self.comm.size > 1:
+                if self.comm.rank == 0:
                     self.logfile.write("Error: Training model with MPI is not supported! Please restart training without MPI (set generate_features: false, preprocess: false, and train_model: true to run only training).\n")
                 sys.exit(0)
             self.model.train(user_optimizer=user_optimizer, aw_modifier=modifier)
