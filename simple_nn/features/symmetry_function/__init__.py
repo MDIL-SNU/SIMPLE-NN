@@ -281,7 +281,8 @@ class Symmetry_function(object):
             scale = _generate_scale_file(feature_list_train, self.parent.inputs['atom_types'], 
                                          scale_type=self.inputs['scale_type'],
                                          scale_scale=self.inputs['scale_scale'],
-                                         log=self.parent.logfile)
+                                         log=self.parent.logfile,
+                                         comm=comm)
         else:
             scale = pickle_load('./scale_factor')
 
@@ -551,16 +552,21 @@ class Symmetry_function(object):
                                      params_set[jtem]['ip'], params_set[jtem]['dp'], params_set[jtem]['num'], \
                                      x_p, dx_p)
                     comm.barrier()
-                    if errno == 1:
-                        err = "Not implemented symmetry function type."
-                        self.parent.logfile.write("Error: {:}\n".format(err))
-                        raise NotImplementedError(err)
-                    elif errno == 2:
-                       err = "Zeta in G4/G5 must be greater or equal to 1.0."
-                       self.parent.logfile.write("Error: {:}\n".format(err))
-                       raise ValueError(err)
-                    else:
-                        assert errno == 0
+                    errnos = comm.gather(errno)
+                    errnos = comm.bcast(errnos)
+                    for errno in errnos:
+                        if errno == 1:
+                            err = "Not implemented symmetry function type."
+                            if comm.rank == 0:
+                                self.parent.logfile.write("\nError: {:}\n".format(err))
+                            raise NotImplementedError(err)
+                        elif errno == 2:
+                            err = "Zeta in G4/G5 must be greater or equal to 1.0."
+                            if comm.rank == 0:
+                                self.parent.logfile.write("\nError: {:}\n".format(err))
+                            raise ValueError(err)
+                        else:
+                            assert errno == 0
 
 
                     if type_num[jtem] != 0:
@@ -635,12 +641,13 @@ class Symmetry_function(object):
                         structure_weights.append(weight)
                         if weight < 0:
                             err = "Structure weight must be greater than or equal to zero."
-                            self.parent.logfile.write("Error: {:}\n".format(err))
+                            if self.comm.rank == 0:
+                                self.parent.logfile.write("Error: {:}\n".format(err))
                             raise ValueError(err)
-                        if np.isclose(weight, 0):
+                        if np.isclose(weight, 0) and self.comm.rank == 0:
                             self.parent.logfile.write("Warning: Structure weight for '{:}' is set to zero.\n".format(name))
                     old_weight = structure_weights[structure_names.index(name)]
-                    if not np.isclose(old_weight - weight, 0):
+                    if not np.isclose(old_weight - weight, 0) and self.comm.rank == 0:
                         self.parent.logfile.write("Warning: Structure weight for '{:}' is set to {:} (previously set to {:}). New value will be ignored\n".format(name, weight, old_weight))
                     continue
 
