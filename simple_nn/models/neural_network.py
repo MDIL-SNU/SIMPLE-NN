@@ -520,7 +520,7 @@ class Neural_network(object):
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
             if self.inputs['pca']:
-                self.next_elem['x_'+item] = tf.matmul(self.next_elem['x_'+item], self.pca[item][0])
+                self.next_elem['x_'+item] = tf.matmul(self.next_elem['x_'+item], self.pca[item][0]) - self.pca[item][2]
                 if self.inputs['pca_whiten']:
                     self.next_elem['x_'+item] /= self.pca[item][1].reshape([1, -1])
 

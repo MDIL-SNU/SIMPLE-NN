@@ -300,7 +300,10 @@ class Symmetry_function(object):
                 pca_temp = PCA()
                 pca_temp.fit((feature_list_train[item] - scale[item][0:1,:]) / scale[item][1:2,:])
                 min_level = self.parent.model.inputs['pca_min_whiten_level']
-                pca[item] = [pca_temp.components_.T, np.sqrt(pca_temp.explained_variance_ + min_level)]
+                # PCA transformation = x * pca[0] - pca[2] (divide by pca[1] if whiten)
+                pca[item] = [pca_temp.components_.T,
+                             np.sqrt(pca_temp.explained_variance_ + min_level),
+                             np.dot(pca_temp.mean_, pca_temp.components_.T)]
             with open("./pca", "wb") as fil:
                 pickle.dump(pca, fil, protocol=2)
 
