@@ -414,12 +414,14 @@ class Neural_network(object):
             if self.inputs['pca']:
                 FIL.write('LAYER 0 linear PCA\n')
                 pca_mat = np.copy(self.pca[item][0])
+                pca_mean = np.copy(self.pca[item][2])
                 if self.inputs['pca_whiten']:
                     pca_mat /= self.pca[item][1].reshape([1, -1])
+                    pca_mean /= self.pca[item][1]
 
                 for k in range(nodes[0]):
                     FIL.write('w{} {}\n'.format(k, ' '.join(pca_mat[:,k].astype(np.str))))
-                    FIL.write('b{} {}\n'.format(k, 0.0))
+                    FIL.write('b{} {}\n'.format(k, -pca_mean[k]))
 
             for j in range(nlayers):
                 # FIXME: add activation function type if new activation is added
