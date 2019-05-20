@@ -1,6 +1,10 @@
 # SIMPLE-NN
 SIMPLE-NN(SNU Interatomic Machine-learning PotentiaL packagE – version Neural Network)
 
+If you use SIMPLE-NN, please cite this article: 
+
+K.Lee, D.Yoo, W.Jeong et al., SIMPLE-NN: An efficient package for training and executing neural-network interatomic potentials, ComputerPhysicsCommunications(2019),https://doi.org/10.1016/j.cpc.2019.04.014.
+
 ## Installation
 SIMPLE-NN use Tensorflow and mpi4py(optional).
 You need to install Tensorflow and mpi4py to use SIMPLE-NN
