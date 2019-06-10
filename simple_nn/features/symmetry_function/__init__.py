@@ -6,6 +6,7 @@ import numpy as np
 import six
 from six.moves import cPickle as pickle
 from ase import io
+from ase import ase.units.GPa as GPa
 from ._libsymf import lib, ffi
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
@@ -523,7 +524,7 @@ class Symmetry_function(object):
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
-				res['S'] = atoms.get_stress()
+				res['S'] = -atoms.get_stress()/GPa*10
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
                 res['atom_idx'] = atom_i
