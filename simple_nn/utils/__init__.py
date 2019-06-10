@@ -247,6 +247,7 @@ def compress_outcar(filename):
     - lattice vector(cell)
     - free energy
     - force
+	- stress
     """
     comp_name = './tmp_comp_OUTCAR'
 
@@ -267,6 +268,9 @@ def compress_outcar(filename):
             elif 'POSITION          ' in line:
                 res.write(line)
                 line_tag = 3
+			elif 'FORCE on cell =-STRESS' in line:
+				res.write(line)
+				minus_tag = 15
             elif minus_tag > 0:
                 res.write(line)
                 minus_tag -= 1
