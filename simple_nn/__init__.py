@@ -24,6 +24,7 @@ def deep_update(source, overrides, warn_new_key=False, logfile=None, depth=0, pa
     for key in overrides.keys():
         if isinstance(source, collections.Mapping):
             if warn_new_key and depth < 2 and key not in source:
+                logfile.write("Error why?")
                 logfile.write("Warning: Unidentified option in {:}: {:}\n".format(parent, key))
             if isinstance(overrides[key], collections.Mapping) and overrides[key]:
                 returned = deep_update(source.get(key, {}), overrides[key],

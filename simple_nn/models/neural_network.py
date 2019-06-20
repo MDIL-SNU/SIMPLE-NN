@@ -39,7 +39,8 @@ class Neural_network(object):
                                           'type': None,
                                           'params': dict(),
                                       },
-                                      'use_force': False,
+                                      'use_force': True,
+                                      'use_stress': True,
                                       'double_precision': True,
                                       'stddev': 0.3,
 
@@ -249,6 +250,9 @@ class Neural_network(object):
                                   lambda: tf.cast(0., tf.float64),
                                   lambda: tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                                self.next_elem['partition'], 2)[1])
+                # CHECK
+                if self.inputs['use_stress']:
+                    print(self.next_elem['S'])
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         if self.inputs['E_loss'] == 1:
@@ -268,6 +272,7 @@ class Neural_network(object):
 
         self.str_num_batch_atom = tf.reshape(tf.unsorted_segment_sum(self.next_elem['tot_num'], self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set'])), [-1])
         if self.inputs['use_force']:
+			print(self.next_elem['F'])
             self.f_loss = tf.reshape(tf.square(self.next_elem['F'] - self.F), [-1, 3])
             ind = repeat(self.next_elem['struct_ind'],
                          tf.cast(tf.reshape(self.next_elem['tot_num'], shape=[-1]), tf.int32))
@@ -580,9 +585,11 @@ class Neural_network(object):
 
             train_iter = self.parent.descriptor._tfrecord_input_fn(train_filequeue, self.inp_size, cache=self.inputs['cache'],
                                                                    batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'], 
-                                                                   full_batch=self.inputs['full_batch'], atomic_weights=aw_tag)
+                                                                   use_stress=self.inputs['use_stress'], full_batch=self.inputs['full_batch'], 
+                                                                   atomic_weights=aw_tag)
             valid_iter = self.parent.descriptor._tfrecord_input_fn(valid_filequeue, self.inp_size, cache=self.inputs['cache'],
-                                                                   batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'],
+                                                                   batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'], 
+                                                                   use_stress=self.inputs['use_stress'],
                                                                    valid=True, atomic_weights=aw_tag)
 #                                                                   valid=True, atomic_weights=aw_tag)
             self._make_iterator_from_handle(train_iter, aw_tag, modifier=aw_modifier)
@@ -599,7 +606,8 @@ class Neural_network(object):
             test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, 
                                                                   batch_size=self.inputs['batch_size'], cache=self.inputs['cache'],
                                                                   #use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
-                                                                  use_force=self.inputs['use_force'], valid=True, atomic_weights=aw_tag)
+                                                                  use_force=self.inputs['use_force'], use_stress=self.inputs['use_stress'],
+                                                                  valid=True, atomic_weights=aw_tag)
             if not self.inputs['train']:
                 self._make_iterator_from_handle(test_iter, aw_tag)
 

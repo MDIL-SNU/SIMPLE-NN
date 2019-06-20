@@ -6,7 +6,7 @@ import numpy as np
 import six
 from six.moves import cPickle as pickle
 from ase import io
-from ase import ase.units.GPa as GPa
+from ase import units
 from ._libsymf import lib, ffi
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
@@ -121,7 +121,7 @@ class Symmetry_function(object):
         writer.write(example.SerializeToString())
 
 
-    def _parse_data(self, serialized, inp_size, use_force=False, atomic_weights=False):
+    def _parse_data(self, serialized, inp_size, use_force=False, use_stress=False, atomic_weights=False):
         features = {
             'E': tf.FixedLenFeature([], dtype=tf.string),
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
@@ -148,6 +148,10 @@ class Symmetry_function(object):
                 features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
             #if atomic_weights:
             #    features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
+
+            # CHECK
+            if use_stress:
+                features['S'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
@@ -193,13 +197,17 @@ class Symmetry_function(object):
             #if atomic_weights:
             #    res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
+            # CHECK
+            if use_stress:
+                res['S'] = tf.decode_raw(read_data['S'], tf.float64)
+
         return res
 
 
-    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, use_force=False, valid=False, cache=False, full_batch=False, atomic_weights=False):
+    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, use_force=False, use_stress=False, valid=False, cache=False, full_batch=False, atomic_weights=False):
         dataset = tf.data.TFRecordDataset(filename_queue)
         #dataset = dataset.cache() # for test
-        dataset = dataset.map(lambda x: self._parse_data(x, inp_size, use_force=use_force, atomic_weights=atomic_weights), 
+        dataset = dataset.map(lambda x: self._parse_data(x, inp_size, use_force=use_force, use_stress=use_stress, atomic_weights=atomic_weights), 
                               num_parallel_calls=self.inputs['num_parallel_calls'])
         if cache:
             dataset = dataset.take(-1).cache() # for test
@@ -217,6 +225,10 @@ class Symmetry_function(object):
                 batch_dict['atom_idx'] = [None, 1]
             #if atomic_weights:
             #    batch_dict['atomic_weights'] = [None]
+
+            # CHECK
+            if use_stress:
+                batch_dict['S'] = [None, 6]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
@@ -460,7 +472,7 @@ class Symmetry_function(object):
         data_idx = 1
         for item, ind in zip(structures, structure_ind):
             # FIXME: add another input type
-            
+            print(item) 
             if len(item) == 1:
                 index = 0
                 if comm.rank == 0:
@@ -524,7 +536,7 @@ class Symmetry_function(object):
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
-				res['S'] = -atoms.get_stress()/GPa*10
+                res['S'] = -atoms.get_stress()/units.GPa*10
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
                 res['atom_idx'] = atom_i
