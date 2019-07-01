@@ -151,10 +151,14 @@ class Simple_nn(object):
 
         if self.inputs['generate_features']:
             self.descriptor.generate()
-            self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'], get_atomic_weights=get_atomic_weights,
+            self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'],
+                                       use_stress=self.inputs['neural_network']['use_stress'],
+                                       get_atomic_weights=get_atomic_weights,
                                        **self.descriptor.inputs['atomic_weights']['params'])
         elif self.inputs['preprocess']:
-            self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'], get_atomic_weights=get_atomic_weights, 
+            self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'], 
+                                       use_stress=self.inputs['neural_network']['use_stress'],
+                                       get_atomic_weights=get_atomic_weights, 
                                        **self.descriptor.inputs['atomic_weights']['params'])
         
         if self.inputs['train_model']:

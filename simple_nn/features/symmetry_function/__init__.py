@@ -66,7 +66,7 @@ class Symmetry_function(object):
     def set_inputs(self):
         self.inputs = self.parent.inputs['symmetry_function']
 
-    def _write_tfrecords(self, res, writer, use_force=False, atomic_weights=False):
+    def _write_tfrecords(self, res, writer, use_force=False, use_stress=False, atomic_weights=False):
         # TODO: after stabilize overall tfrecord related part,
         # this part will replace the part of original 'res' dict
          
@@ -95,6 +95,9 @@ class Symmetry_function(object):
 #            if atomic_weights:
 #                feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         
+            if use_stress:
+                feature['S'] = _bytes_feature(res['S'].tobytes())
+
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
             feature['N_'+item] = _bytes_feature(res['N'][item].tobytes())
@@ -149,7 +152,6 @@ class Symmetry_function(object):
             #if atomic_weights:
             #    features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
 
-            # CHECK
             if use_stress:
                 features['S'] = tf.FixedLenFeature([], dtype=tf.string)
 
@@ -197,10 +199,9 @@ class Symmetry_function(object):
             #if atomic_weights:
             #    res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
-            # CHECK
             if use_stress:
                 res['S'] = tf.decode_raw(read_data['S'], tf.float64)
-
+        
         return res
 
 
@@ -228,7 +229,7 @@ class Symmetry_function(object):
 
             # CHECK
             if use_stress:
-                batch_dict['S'] = [None, 6]
+                batch_dict['S'] = [6]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
@@ -254,7 +255,7 @@ class Symmetry_function(object):
         return iterator  
 
 
-    def preprocess(self, calc_scale=True, use_force=False, get_atomic_weights=None, **kwargs):
+    def preprocess(self, calc_scale=True, use_force=False, use_stress=False, get_atomic_weights=None, **kwargs):
         
         comm = self.get_comm()
 
@@ -389,7 +390,7 @@ class Symmetry_function(object):
                     #tmp_aw = np.concatenate(tmp_aw)
                     tmp_res['atomic_weights'] = tmp_aw
                 
-                self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
+                self._write_tfrecords(tmp_res, writer, use_force=use_force, use_stress=use_stress, atomic_weights=aw_tag)
  
                 if not self.inputs['remain_pickle']:
                     os.remove(ptem)
@@ -437,7 +438,7 @@ class Symmetry_function(object):
                         #tmp_aw = np.concatenate(tmp_aw)
                         tmp_res['atomic_weights'] = tmp_aw
  
-                    self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
+                    self._write_tfrecords(tmp_res, writer, use_force=use_force, use_stress=use_stress, atomic_weights=aw_tag)
  
                     if not self.inputs['remain_pickle']:
                         os.remove(ptem)
@@ -472,7 +473,6 @@ class Symmetry_function(object):
         data_idx = 1
         for item, ind in zip(structures, structure_ind):
             # FIXME: add another input type
-            print(item) 
             if len(item) == 1:
                 index = 0
                 if comm.rank == 0:

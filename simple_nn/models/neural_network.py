@@ -50,7 +50,8 @@ class Neural_network(object):
                                       'full_batch': False,
                                       'total_epoch': 10000,
                                       'learning_rate': 0.0001,
-                                      'force_coeff': 0.1,
+                                      'stress_coeff': 0.01,
+                                      'force_coeff': 0.1, 
                                       'energy_coeff': 1.,
                                       'loss_scale': 1.,
                                       'optimizer': dict(),
@@ -228,7 +229,7 @@ class Neural_network(object):
 
 
     def _calc_output(self):
-        self.E = self.F = 0
+        self.E = self.F = self.S =0
 
         for item in self.parent.inputs['atom_types']:
             zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
@@ -250,9 +251,8 @@ class Neural_network(object):
                                   lambda: tf.cast(0., tf.float64),
                                   lambda: tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                                self.next_elem['partition'], 2)[1])
-                # CHECK
                 if self.inputs['use_stress']:
-                    print(self.next_elem['S'])
+                    print('Coming soon')
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         if self.inputs['E_loss'] == 1:
@@ -272,7 +272,6 @@ class Neural_network(object):
 
         self.str_num_batch_atom = tf.reshape(tf.unsorted_segment_sum(self.next_elem['tot_num'], self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set'])), [-1])
         if self.inputs['use_force']:
-			print(self.next_elem['F'])
             self.f_loss = tf.reshape(tf.square(self.next_elem['F'] - self.F), [-1, 3])
             ind = repeat(self.next_elem['struct_ind'],
                          tf.cast(tf.reshape(self.next_elem['tot_num'], shape=[-1]), tf.int32))
@@ -299,6 +298,10 @@ class Neural_network(object):
                     self.f_loss = tf.reduce_mean(tf.sparse_segment_sum(self.f_loss, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
                                                  num_segments=self.next_elem['num_seg'])[1:])
                 self.total_loss += self.f_loss * self.force_coeff
+
+            if self.inputs['use_stress']:
+                self.s_loss = tf.square(self.next_elem['S'] - self.S) / 6
+                self.total_loss += self.s_loss * self.stress_coeff
 
         if self.inputs['regularization']['type'] is not None:
             # FIXME: regularization_loss, which is float32, is casted into float64.
@@ -611,6 +614,7 @@ class Neural_network(object):
             if not self.inputs['train']:
                 self._make_iterator_from_handle(test_iter, aw_tag)
 
+        self.stress_coeff = self._get_decay_param(self.inputs['stress_coeff'])
         self.force_coeff = self._get_decay_param(self.inputs['force_coeff'])
         self.energy_coeff = self._get_decay_param(self.inputs['energy_coeff'])
 
@@ -648,8 +652,11 @@ class Neural_network(object):
                     for item in self.parent.inputs['atom_types']:
                         if modifier_tag[item] and 'v_F_{}_sparse'.format(item) in self.inputs['save_criteria']:
                             prev_criteria.append(float('inf'))
-            prev_criteria = np.array(prev_criteria)
 
+                if 'v_S' in self.inputs['save_criteria']:
+                    prev_criteria.append(float('inf'))
+
+            prev_criteria = np.array(prev_criteria)
             #prev_eloss = float('inf')
             #prev_floss = float('inf')
             save_stack = 1
@@ -704,6 +711,7 @@ class Neural_network(object):
 
                 time_begin = timeit.default_timer()
                 for epoch in tqdm(range(total_epoch)):
+                    print(epoch)
                     if self.inputs['full_batch']:
                         if self.inputs['method'] == 'Adam':
                             [flat_grad] = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=False)
@@ -963,7 +971,7 @@ class Neural_network(object):
 
     # TODO: check memory leak!
     def _get_loss_for_print(self, sess, fdict, full_batch=False, iter_for_initialize=None, modifier_tag=None):
-        eloss = floss = 0
+        eloss = floss = sloss = 0
         num_tot_struc = num_tot_atom = 0
         aw_floss = {}
         str_eloss = {}
@@ -979,16 +987,17 @@ class Neural_network(object):
             str_tot_struc[item] = 0
             str_tot_atom[item] = 0
         """        
-
         if full_batch:
             # TODO: check the error
             sess.run(iter_for_initialize.initializer)
             while True:
                 try:
+                    print('I''m here')
                     if self.inputs['use_force']:
                         next_elem, tmp_eloss, tmp_f, tmp_floss, tmp_str_eloss, tmp_str_floss, tmp_str_atom = sess.run(
                             [self.next_elem, self.e_loss, self.F, self.f_loss, self.str_e_loss, 
                              self.str_f_loss, self.str_num_batch_atom], feed_dict=fdict)
+                        print(' use_force=true')
                         num_batch_atom = np.sum(next_elem['tot_num'])
                         if self.inputs['F_loss'] == 1:
                             floss += tmp_floss * num_batch_atom
@@ -1010,6 +1019,7 @@ class Neural_network(object):
                     else:
                         next_elem, tmp_eloss, tmp_str_eloss, tmp_str_atom = sess.run(
                             [self.next_elem, self.e_loss, self.str_e_loss, self.str_num_batch_atom], feed_dict=fdict)
+                        print(' use_force=false')
                     num_batch_struc = next_elem['num_seg'] - 1
                     eloss += tmp_eloss * num_batch_struc
                     num_tot_struc += num_batch_struc
