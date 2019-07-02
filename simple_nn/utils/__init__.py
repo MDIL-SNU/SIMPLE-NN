@@ -11,6 +11,7 @@ from collections import OrderedDict
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
 from .mpiclass import DummyMPI, MPI4PY
+from scipy.integrate import nquad
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
@@ -118,7 +119,7 @@ def _make_full_featurelist(filelist, feature_tag, atom_types=None, use_idx=False
     return feature_list, idx_list
 
 
-def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scale_type='minmax', scale_scale=1.0, comm=DummyMPI(), log=None):
+def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scale_type='minmax', scale_scale=1.0, comm=DummyMPI(), scale_rho=None, params=None, log=None):
     scale = dict()
     for item in atom_types:
         inp_size = feature_list[item].shape[1]
@@ -129,12 +130,50 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
             if scale_type == 'minmax':
                 scale[item][0,:] = 0.5*(np.amax(feature_list[item], axis=0) + np.amin(feature_list[item], axis=0))
                 scale[item][1,:] = 0.5*(np.amax(feature_list[item], axis=0) - np.amin(feature_list[item], axis=0)) / scale_scale
+                is_scaled[scale[item][1,:] < 1e-15] = False
+                scale[item][1, scale[item][1,:] < 1e-15] = 1.
             elif scale_type == 'meanstd':
                 scale[item][0,:] = np.mean(feature_list[item], axis=0)
                 scale[item][1,:] = np.std(feature_list[item], axis=0) / scale_scale
-
-            is_scaled[scale[item][1,:] < 1e-15] = False
-            scale[item][1, scale[item][1,:] < 1e-15] = 1.
+                is_scaled[scale[item][1,:] < 1e-15] = False
+                scale[item][1, scale[item][1,:] < 1e-15] = 1.
+            elif scale_type == 'uniform gas':
+                assert params is not None and scale_rho is not None
+                scale[item][0,:] = np.mean(feature_list[item], axis=0)
+                scale[item][1,:] = 1.0
+                for p in range(scale[item][0,:].size):
+                    if params[item]['i'][p,0] == 2:
+                        ti = atom_types[params[item]['i'][p,1] - 1]
+                        eta = params[item]['d'][p,1]
+                        rc = params[item]['d'][p,0]
+                        rs = params[item]['d'][p,2]
+                        def G2(r):
+                            return r**2 * np.exp(-eta * (r - rs)**2) * 0.5 * (np.cos(np.pi * r / rc) + 1)
+                        scale[item][1,p] = 4 * np.pi * scale_rho[ti] * nquad(G2, [[0, rc]])[0]
+                    elif params[item]['i'][p,0] == 4:
+                        ti = atom_types[params[item]['i'][p,1] - 1]
+                        tj = atom_types[params[item]['i'][p,2] - 1]
+                        eta = params[item]['d'][p,1]
+                        rc = params[item]['d'][p,0]
+                        zeta = params[item]['d'][p,2]
+                        lamb = params[item]['d'][p,3]
+                        def G4(r1, r2, t):
+                            r3 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*np.cos(t))
+                            fc3 = 0.5 * (np.cos(np.pi * r3 / rc) + 1) if r3 < rc else 0.0
+                            return r1**2 * r2**2 * np.sin(t) * 2**(1-zeta) * (1 + lamb * np.cos(t))**zeta * np.exp(-eta * (r1**2 + r2**2 + r3**2)) * 0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1) * fc3
+                        scale[item][1,p] = 8 * np.pi**2 * scale_rho[ti] * scale_rho[tj] * nquad(G4, [[0, rc], [0, rc], [0, np.pi]])[0]
+                    elif params[item]['i'][p,0] == 5:
+                        ti = atom_types[params[item]['i'][p,1] - 1]
+                        tj = atom_types[params[item]['i'][p,2] - 1]
+                        eta = params[item]['d'][p,1]
+                        rc = params[item]['d'][p,0]
+                        zeta = params[item]['d'][p,2]
+                        lamb = params[item]['d'][p,3]
+                        def G4(r1, r2, t):
+                            return r1**2 * r2**2 * np.sin(t) * 2**(1-zeta) * (1 + lamb * np.cos(t))**zeta * np.exp(-eta * (r1**2 + r2**2)) * 0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1)
+                        scale[item][1,p] = 8 * np.pi**2 * scale_rho[ti] * scale_rho[tj] * nquad(G4, [[0, rc], [0, rc], [0, np.pi]])[0]
+                    else:
+                        assert False
 
             if log is not None and comm.rank == 0:
                 log.write("{:-^70}\n".format(" Scaling information for {:} ".format(item)))
@@ -356,11 +395,14 @@ def read_lammps_potential(filename):
                 tmp_weights = np.zeros([dims[j], dims[j+1]])
                 tmp_bias = np.zeros([dims[j+1]])
 
-                fil.readline()
+                # Since PCA will be dealt separately, skip PCA layer.
+                skip = True if fil.readline().split()[-1] == 'PCA' else False
                 for k in range(dims[j+1]):
                     tmp_weights[:,k] = list(map(lambda x: float(x), fil.readline().split()[1:]))
                     tmp_bias[k] = float(fil.readline().split()[1])
 
+                if skip:
+                    continue
                 weights[item].append(np.copy(tmp_weights))
                 weights[item].append(np.copy(tmp_bias))
 

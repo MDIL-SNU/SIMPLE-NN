@@ -151,6 +151,7 @@ class Simple_nn(object):
         """
 
         self.descriptor.set_inputs()
+        self.model.set_inputs()
         modifier = None
         if self.descriptor.inputs['weight_modifier']['type'] == 'modified sigmoid':
             modifier = dict()
