@@ -78,6 +78,7 @@ class Neural_network(object):
                                       'cache': False,
                                       'pca': False,
                                       'pca_whiten': True,
+                                      'pca_min_whiten_level': 1e-8,
                                   }
                               }
         self.inputs = dict()
@@ -108,9 +109,9 @@ class Neural_network(object):
         self.scale = pickle_load(scale_file)
         if self.inputs['pca']:
             if not os.path.exists("./pca"):
-                err = "PCA components must be calculated in the preprocess part."
+                err = "File not found: './pca'. PCA components must be calculated in the preprocess part."
                 self.parent.logfile.write("Error: {:}\n".format(err))
-                raise FileNotFoundError(err)
+                raise OSError(err)
             self.pca = pickle_load("./pca")
         # TODO: add the check code for valid scale file
 
@@ -201,8 +202,13 @@ class Neural_network(object):
                 dense_basic_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][0])
                 dense_basic_setting['bias_initializer'] = tf.constant_initializer(saved_weights[item][1])
 
+            # Input dimension to the first layer can be changed due to truncation of principal components.
+            if self.inputs['pca']:
+                input_dim = self.pca[item][0].shape[1]
+            else:
+                input_dim = self.inp_size[item]
             model.add(tf.keras.layers.Dense(nodes[0], activation=acti_func, \
-                                            input_dim=self.inp_size[item],
+                                            input_dim=input_dim,
                                             #kernel_initializer=tf.initializers.random_normal(stddev=1./self.inp_size[item], dtype=dtype),
                                             #use_bias=False,
                                             **dense_basic_setting))
@@ -397,7 +403,7 @@ class Neural_network(object):
             nlayers = len(self.nodes[item])
             # An extra linear layer is used for PCA transformation.
             if self.inputs['pca']:
-                nodes = [self.pca[item][0].shape[0]] + self.nodes[item]
+                nodes = [self.pca[item][0].shape[1]] + self.nodes[item]
                 joffset = 1
             else:
                 nodes = self.nodes[item]
@@ -407,11 +413,15 @@ class Neural_network(object):
             # PCA transformation layer.
             if self.inputs['pca']:
                 FIL.write('LAYER 0 linear PCA\n')
-                pca_mat = self.pca[item][0] / self.pca[item][1].reshape([1, -1])
+                pca_mat = np.copy(self.pca[item][0])
+                pca_mean = np.copy(self.pca[item][2])
+                if self.inputs['pca_whiten']:
+                    pca_mat /= self.pca[item][1].reshape([1, -1])
+                    pca_mean /= self.pca[item][1]
 
                 for k in range(nodes[0]):
                     FIL.write('w{} {}\n'.format(k, ' '.join(pca_mat[:,k].astype(np.str))))
-                    FIL.write('b{} {}\n'.format(k, 0.0))
+                    FIL.write('b{} {}\n'.format(k, -pca_mean[k]))
 
             for j in range(nlayers):
                 # FIXME: add activation function type if new activation is added
@@ -512,7 +522,7 @@ class Neural_network(object):
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
             if self.inputs['pca']:
-                self.next_elem['x_'+item] = tf.matmul(self.next_elem['x_'+item], self.pca[item][0])
+                self.next_elem['x_'+item] = tf.matmul(self.next_elem['x_'+item], self.pca[item][0]) - self.pca[item][2]
                 if self.inputs['pca_whiten']:
                     self.next_elem['x_'+item] /= self.pca[item][1].reshape([1, -1])
 
