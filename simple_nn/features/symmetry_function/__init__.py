@@ -12,6 +12,7 @@ from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file
 from ...utils import graph as grp
 from ...utils.mpiclass import DummyMPI, MPI4PY
 from braceexpand import braceexpand
+from sklearn.decomposition import PCA
 
 
 def _read_params(filename):
@@ -54,6 +55,7 @@ class Symmetry_function(object):
                                       },
                                       'scale_type': 'minmax',
                                       'scale_scale': 1.0,
+                                      'scale_rho': None,
                                   }
                               }
         self.structure_list = './str_list'
@@ -277,13 +279,34 @@ class Symmetry_function(object):
 
         # calculate scale
         scale = None
+        params_set = dict()
+        for item in self.parent.inputs['atom_types']:
+            params_set[item] = dict()
+            params_set[item]['i'], params_set[item]['d'] = _read_params(self.inputs['params'][item])
         if calc_scale:
             scale = _generate_scale_file(feature_list_train, self.parent.inputs['atom_types'], 
                                          scale_type=self.inputs['scale_type'],
                                          scale_scale=self.inputs['scale_scale'],
-                                         log=self.parent.logfile)
+                                         scale_rho=self.inputs['scale_rho'],
+                                         params=params_set,
+                                         log=self.parent.logfile,
+                                         comm=comm)
         else:
             scale = pickle_load('./scale_factor')
+
+        # Fit PCA.
+        if self.parent.model.inputs['pca']:
+            pca = {}
+            for item in self.parent.inputs['atom_types']:
+                pca_temp = PCA()
+                pca_temp.fit((feature_list_train[item] - scale[item][0:1,:]) / scale[item][1:2,:])
+                min_level = self.parent.model.inputs['pca_min_whiten_level']
+                # PCA transformation = x * pca[0] - pca[2] (divide by pca[1] if whiten)
+                pca[item] = [pca_temp.components_.T,
+                             np.sqrt(pca_temp.explained_variance_ + min_level),
+                             np.dot(pca_temp.mean_, pca_temp.components_.T)]
+            with open("./pca", "wb") as fil:
+                pickle.dump(pca, fil, protocol=2)
 
         # calculate gdf
         atomic_weights_train = atomic_weights_valid = None
@@ -551,16 +574,21 @@ class Symmetry_function(object):
                                      params_set[jtem]['ip'], params_set[jtem]['dp'], params_set[jtem]['num'], \
                                      x_p, dx_p)
                     comm.barrier()
-                    if errno == 1:
-                        err = "Not implemented symmetry function type."
-                        self.parent.logfile.write("Error: {:}\n".format(err))
-                        raise NotImplementedError(err)
-                    elif errno == 2:
-                       err = "Zeta in G4/G5 must be greater or equal to 1.0."
-                       self.parent.logfile.write("Error: {:}\n".format(err))
-                       raise ValueError(err)
-                    else:
-                        assert errno == 0
+                    errnos = comm.gather(errno)
+                    errnos = comm.bcast(errnos)
+                    for errno in errnos:
+                        if errno == 1:
+                            err = "Not implemented symmetry function type."
+                            if comm.rank == 0:
+                                self.parent.logfile.write("\nError: {:}\n".format(err))
+                            raise NotImplementedError(err)
+                        elif errno == 2:
+                            err = "Zeta in G4/G5 must be greater or equal to 1.0."
+                            if comm.rank == 0:
+                                self.parent.logfile.write("\nError: {:}\n".format(err))
+                            raise ValueError(err)
+                        else:
+                            assert errno == 0
 
 
                     if type_num[jtem] != 0:
@@ -635,12 +663,13 @@ class Symmetry_function(object):
                         structure_weights.append(weight)
                         if weight < 0:
                             err = "Structure weight must be greater than or equal to zero."
-                            self.parent.logfile.write("Error: {:}\n".format(err))
+                            if self.comm.rank == 0:
+                                self.parent.logfile.write("Error: {:}\n".format(err))
                             raise ValueError(err)
-                        if np.isclose(weight, 0):
+                        if np.isclose(weight, 0) and self.comm.rank == 0:
                             self.parent.logfile.write("Warning: Structure weight for '{:}' is set to zero.\n".format(name))
                     old_weight = structure_weights[structure_names.index(name)]
-                    if not np.isclose(old_weight - weight, 0):
+                    if not np.isclose(old_weight - weight, 0) and self.comm.rank == 0:
                         self.parent.logfile.write("Warning: Structure weight for '{:}' is set to {:} (previously set to {:}). New value will be ignored\n".format(name, weight, old_weight))
                     continue
 
