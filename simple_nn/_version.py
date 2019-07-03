@@ -1,2 +1,2 @@
-__version__ = "0.8.0"
-__git_sha__ = "unknown"
+__version__ = "0.9.0"
+__git_sha__ = "f9f1009"

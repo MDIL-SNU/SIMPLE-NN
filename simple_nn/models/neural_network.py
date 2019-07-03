@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import random
 import six
+import os
 from six.moves import cPickle as pickle
 import collections
 import functools
@@ -41,7 +42,13 @@ class Neural_network(object):
                                       },
                                       'use_force': False,
                                       'double_precision': True,
-                                      'stddev': 0.3,
+                                      'weight_initializer': {
+                                          'type': 'truncated normal',
+                                          'params': {
+                                              'stddev': 0.3,
+                                          },
+                                      },
+                                      'dropout': None,
 
                                       # Optimization related
                                       'method': 'Adam',
@@ -62,8 +69,6 @@ class Neural_network(object):
                                       'save_interval': 1000,
                                       'show_interval': 100,
                                       'save_criteria': [],
-                                      #'echeck': True,
-                                      #'fcheck': True,
                                       'break_max': 10,
                                       'print_structure_rmse': False,
                                       
@@ -71,7 +76,9 @@ class Neural_network(object):
                                       'inter_op_parallelism_threads': 0,
                                       'intra_op_parallelism_threads': 0,
                                       'cache': False,
-                                      
+                                      'pca': False,
+                                      'pca_whiten': True,
+                                      'pca_min_whiten_level': 1e-8,
                                   }
                               }
         self.inputs = dict()
@@ -100,6 +107,12 @@ class Neural_network(object):
 
     def _set_scale_parameter(self, scale_file):
         self.scale = pickle_load(scale_file)
+        if self.inputs['pca']:
+            if not os.path.exists("./pca"):
+                err = "File not found: './pca'. PCA components must be calculated in the preprocess part."
+                self.parent.logfile.write("Error: {:}\n".format(err))
+                raise OSError(err)
+            self.pca = pickle_load("./pca")
         # TODO: add the check code for valid scale file
 
     def _set_gdf_parameters(self, atomic_weights_file, modifier=None):
@@ -121,11 +134,20 @@ class Neural_network(object):
         else:
             dtype = tf.float32
 
+        if self.inputs['weight_initializer']['type'] == 'truncated normal':
+            initializer = tf.initializers.truncated_normal(
+                    stddev=self.inputs['weight_initializer']['params']['stddev'], dtype=dtype)
+        elif self.inputs['weight_initializer']['type'] == 'he normal':
+            initializer = tf.initializers.variance_scaling(scale=2.0, mode='fan_in',
+                    distribution="normal", dtype=dtype)
+        else:
+            raise NotImplementedError("Not implemented weight initializer type!")
+
         # TODO: input validation for stddev.
         dense_basic_setting = {
             'dtype': dtype,
-            'kernel_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype),
-            'bias_initializer': tf.initializers.truncated_normal(stddev=self.inputs['stddev'], dtype=dtype)
+            'kernel_initializer': initializer,
+            'bias_initializer': initializer,
         }
         dense_last_setting = copy.deepcopy(dense_basic_setting)
 
@@ -180,8 +202,13 @@ class Neural_network(object):
                 dense_basic_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][0])
                 dense_basic_setting['bias_initializer'] = tf.constant_initializer(saved_weights[item][1])
 
+            # Input dimension to the first layer can be changed due to truncation of principal components.
+            if self.inputs['pca']:
+                input_dim = self.pca[item][0].shape[1]
+            else:
+                input_dim = self.inp_size[item]
             model.add(tf.keras.layers.Dense(nodes[0], activation=acti_func, \
-                                            input_dim=self.inp_size[item],
+                                            input_dim=input_dim,
                                             #kernel_initializer=tf.initializers.random_normal(stddev=1./self.inp_size[item], dtype=dtype),
                                             #use_bias=False,
                                             **dense_basic_setting))
@@ -195,6 +222,8 @@ class Neural_network(object):
                                                 #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[i-1], dtype=dtype),
                                                 #use_bias=False,
                                                 **dense_basic_setting))
+                if self.inputs['dropout'] is not None:
+                    model.add(tf.keras.layers.Dropout(self.inputs['dropout']))
 
             if self.inputs['continue'] == 'weights':
                 dense_last_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][-2])
@@ -369,10 +398,30 @@ class Neural_network(object):
 
             FIL.write('scale1 {}\n'.format(' '.join(self.scale[item][0,:].astype(np.str))))
             FIL.write('scale2 {}\n'.format(' '.join(self.scale[item][1,:].astype(np.str))))
-            
+
             weights = sess.run(self.models[item].weights)
             nlayers = len(self.nodes[item])
-            FIL.write('NET {} {}\n'.format(nlayers-1, ' '.join(map(str, self.nodes[item]))))
+            # An extra linear layer is used for PCA transformation.
+            if self.inputs['pca']:
+                nodes = [self.pca[item][0].shape[1]] + self.nodes[item]
+                joffset = 1
+            else:
+                nodes = self.nodes[item]
+                joffset = 0
+            FIL.write('NET {} {}\n'.format(len(nodes)-1, ' '.join(map(str, nodes))))
+
+            # PCA transformation layer.
+            if self.inputs['pca']:
+                FIL.write('LAYER 0 linear PCA\n')
+                pca_mat = np.copy(self.pca[item][0])
+                pca_mean = np.copy(self.pca[item][2])
+                if self.inputs['pca_whiten']:
+                    pca_mat /= self.pca[item][1].reshape([1, -1])
+                    pca_mean /= self.pca[item][1]
+
+                for k in range(nodes[0]):
+                    FIL.write('w{} {}\n'.format(k, ' '.join(pca_mat[:,k].astype(np.str))))
+                    FIL.write('b{} {}\n'.format(k, -pca_mean[k]))
 
             for j in range(nlayers):
                 # FIXME: add activation function type if new activation is added
@@ -381,7 +430,7 @@ class Neural_network(object):
                 else:
                     acti = 'sigmoid'
 
-                FIL.write('LAYER {} {}\n'.format(j, acti))
+                FIL.write('LAYER {} {}\n'.format(j+joffset, acti))
 
                 for k in range(self.nodes[item][j]):
                     FIL.write('w{} {}\n'.format(k, ' '.join(weights[j*2][:,k].astype(np.str))))
@@ -472,6 +521,10 @@ class Neural_network(object):
 
             self.next_elem['x_'+item] -= self.scale[item][0:1,:]
             self.next_elem['x_'+item] /= self.scale[item][1:2,:]
+            if self.inputs['pca']:
+                self.next_elem['x_'+item] = tf.matmul(self.next_elem['x_'+item], self.pca[item][0]) - self.pca[item][2]
+                if self.inputs['pca_whiten']:
+                    self.next_elem['x_'+item] /= self.pca[item][1].reshape([1, -1])
 
             if self.inputs['use_force']:
                 dx_shape = tf.shape(self.next_elem['dx_'+item])
@@ -493,6 +546,10 @@ class Neural_network(object):
                                                                     [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['dx_'+item])[2]], [0,0]]))
              
                 self.next_elem['dx_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
+                if self.inputs['pca']:
+                    self.next_elem['dx_'+item] = tf.einsum('ijkl,jm->imkl', self.next_elem['dx_'+item], tf.constant(self.pca[item][0]))
+                    if self.inputs['pca_whiten']:
+                        self.next_elem['dx_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
                                                      lambda: tf.zeros([1], tf.int32), 
@@ -1107,3 +1164,6 @@ class Neural_network(object):
             except tf.errors.OutOfRangeError:
                 break
         return res
+
+    def set_inputs(self):
+        self.inputs = self.parent.inputs['neural_network']
