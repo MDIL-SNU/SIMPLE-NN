@@ -180,7 +180,7 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
 
         for (int j=0; j < nneigh; ++j) {
             // calculate radial symmetry function
-            double* lcoeff = new double[3];
+            double* lcoeff = new double[3]();
             rRij = nei_list_d[j*4 + 3];
 
             for (int k=0; k < 3; ++k) {

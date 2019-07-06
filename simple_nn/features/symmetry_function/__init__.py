@@ -266,7 +266,7 @@ class Symmetry_function(object):
  
         if valid or full_batch:
             dataset = dataset.padded_batch(batch_size, batch_dict)
-            dataser = dataset.prefetch(buffer_size=1)
+            dataset = dataset.prefetch(buffer_size=1)
             #dataset = dataset.cache()
             iterator = dataset.make_initializable_iterator()
         else:
