@@ -230,7 +230,6 @@ class Neural_network(object):
 
     def _calc_output(self):
         self.E = self.F = self.S = 0
-        self.max = {}
 
         for item in self.parent.inputs['atom_types']:
             zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
@@ -319,7 +318,7 @@ class Neural_network(object):
 
             if self.inputs['use_stress']:
                 self.ax_s_loss = tf.square(self.next_elem['S'] - self.S)
-                self.s_loss = tf.reduce_mean(self.ax_s_loss, axis=1)
+                self.s_loss = tf.reduce_mean(self.ax_s_loss, axis=1, keepdims=True)
                 self.sw_s_loss = self.s_loss * self.next_elem['struct_weight']
                 self.s_loss = tf.reshape(self.s_loss,[-1])
                 self.str_s_loss = tf.unsorted_segment_mean(self.s_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
@@ -720,7 +719,7 @@ class Neural_network(object):
                 valid_fdict = {self.handle: valid_handle}
 
                 # Log validation set statistics.
-                _, _, _, _, _, _, _, _, str_tot_struc, str_tot_atom, str_weight, str_set = self._get_loss_for_print(
+                _, _, _, _, _, _, _, str_tot_struc, str_tot_atom, str_weight, str_set = self._get_loss_for_print(
                     sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter, modifier_tag=modifier_tag)
 
                 self._log_statistics(str_tot_struc, str_tot_atom, str_weight)
@@ -776,7 +775,6 @@ class Neural_network(object):
                             lbfgs.update_lists(np.copy(alpha_vals[0] - zero_vals[0]), np.copy(z))
 
                     else:
-                        print(sess.run(self.max, feed_dict=train_fdict))
                         self.minim.run(feed_dict=train_fdict)
                     #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
 
@@ -795,11 +793,11 @@ class Neural_network(object):
 
                         result = "epoch {:7d} ".format(sess.run(self.global_step)+1)
 
-                        t_eloss, t_floss, t_sloss, t_aw_floss, t_ax_sloss, t_str_eloss, t_str_floss, t_str_s_loss, _, _, _, t_str_set = \
+                        t_eloss, t_floss, t_sloss, t_aw_floss, t_str_eloss, t_str_floss, t_str_s_loss, _, _, _, t_str_set = \
                             self._get_loss_for_print(sess, train_fdict, full_batch=self.inputs['full_batch'], 
                                                     iter_for_initialize=train_iter, modifier_tag=modifier_tag)
 
-                        eloss, floss, sloss, aw_floss, ax_sloss, str_eloss, str_floss, str_s_loss, _, _, _, _ = self._get_loss_for_print(
+                        eloss, floss, sloss, aw_floss, str_eloss, str_floss, str_s_loss, _, _, _, _ = self._get_loss_for_print(
                             sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter, modifier_tag=modifier_tag)
 
                         full_str_set = list(set(t_str_set + str_set))
@@ -1052,7 +1050,7 @@ class Neural_network(object):
         eloss = floss = sloss = 0
         num_tot_struc = num_tot_atom = 0
         aw_floss = {}
-        ax_sloss = 0
+#       ax_sloss = 0
         str_eloss = {}
         str_floss = {}
         str_sloss = {}
@@ -1074,14 +1072,13 @@ class Neural_network(object):
                 try:
                     if self.inputs['use_force']:
                         if self.inputs['use_stress']:
-                            next_elem, tmp_eloss, tmp_f, tmp_floss, tmp_s, tmp_sloss, tmp_ax_sloss, \
+                            next_elem, tmp_eloss, tmp_f, tmp_floss, tmp_sloss, \
                             tmp_str_eloss, tmp_str_floss, tmp_str_sloss, tmp_str_atom = sess.run(
-                                    [self.next_elem, self.e_loss, self.F, self.f_loss, self.S, self.s_loss, self.ax_s_loss, \
+                                    [self.next_elem, self.e_loss, self.F, self.f_loss, self.s_loss, \
                                     self.str_e_loss, self.str_f_loss, self.str_s_loss, self.str_num_batch_atom],
                                     feed_dict = fdict)
                             num_batch_struc = next_elem['num_seg'] - 1
                             sloss += tmp_sloss * num_batch_struc
-                            ax_sloss += tmp_ax_sloss * num_batch_struc
                         else:
                             next_elem, tmp_eloss, tmp_f, tmp_floss, tmp_str_eloss, tmp_str_floss, tmp_str_atom = sess.run(
                                     [self.next_elem, self.e_loss, self.F, self.f_loss, self.str_e_loss,
@@ -1159,8 +1156,8 @@ class Neural_network(object):
         else:
             if self.inputs['use_force']:
                 if self.inputs['use_stress']:
-                    next_elem, eloss, tmp_f, floss, sloss, ax_sloss, tmp_str_eloss, tmp_str_floss, tmp_str_sloss = sess.run(
-                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.s_loss, self.ax_s_loss,
+                    next_elem, eloss, tmp_f, floss, sloss, sw_sloss, tmp_str_eloss, tmp_str_floss, tmp_str_sloss = sess.run(
+                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.s_loss, self.sw_s_loss,
                             self.str_e_loss, self.str_f_loss, self.str_s_loss], feed_dict = fdict)
                     sloss = np.sqrt(sloss*6)
                     tmp_str_sloss = np.sqrt(tmp_str_sloss*6)
@@ -1204,7 +1201,7 @@ class Neural_network(object):
                                       next_elem['struct_weight'].reshape([-1])):
                 str_weight[struct] = weight
 
-        return eloss, floss, sloss, aw_floss, ax_sloss, str_eloss, str_floss, str_sloss, str_tot_struc, str_tot_atom, str_weight, list(str_eloss.keys())
+        return eloss, floss, sloss, aw_floss, str_eloss, str_floss, str_sloss, str_tot_struc, str_tot_atom, str_weight, list(str_eloss.keys())
 
 
     def _get_grad_dict(self, flat_grad):
