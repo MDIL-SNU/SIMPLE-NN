@@ -594,6 +594,12 @@ class Neural_network(object):
                                                          lambda: self.next_elem['da_'+item],
                                                          lambda: tf.pad(self.next_elem['da_'+item],
                                                                         [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['da_'+item])[2]], [0, 0], [0, 0]]))
+                    
+                    self.next_elem['da_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1, 1])
+                    if self.inputs['pca']:
+                        self.next_elem['da_'+item] = tf.einsum('ijklm,jn->inklm', self.next_elem['da_'+item], tf.constant(self.pca[item][0]))
+                        if self.inputs['pca_whiten']:
+                            self.next_elem['da_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
                                                      lambda: tf.zeros([1], tf.int32), 
@@ -687,7 +693,6 @@ class Neural_network(object):
                                                                    batch_size=self.inputs['batch_size'], use_force=self.inputs['use_force'], 
                                                                    use_stress=self.inputs['use_stress'],
                                                                    valid=True, atomic_weights=aw_tag)
-#                                                                   valid=True, atomic_weights=aw_tag)
             self._make_iterator_from_handle(train_iter, aw_tag, modifier=aw_modifier)
 
         if self.inputs['test']:
@@ -701,7 +706,6 @@ class Neural_network(object):
 
             test_iter = self.parent.descriptor._tfrecord_input_fn(test_filequeue, self.inp_size, 
                                                                   batch_size=self.inputs['batch_size'], cache=self.inputs['cache'],
-                                                                  #use_force=self.inputs['use_force'], valid=True, atomic_weights=False)
                                                                   use_force=self.inputs['use_force'], use_stress=self.inputs['use_stress'],
                                                                   valid=True, atomic_weights=aw_tag)
             if not self.inputs['train']:
@@ -746,8 +750,9 @@ class Neural_network(object):
                         if modifier_tag[item] and 'v_F_{}_sparse'.format(item) in self.inputs['save_criteria']:
                             prev_criteria.append(float('inf'))
 
-                if 'v_S' in self.inputs['save_criteria']:
-                    prev_criteria.append(float('inf'))
+                if self.inputs['use_stress']:
+                    if 'v_S' in self.inputs['save_criteria']:
+                        prev_criteria.append(float('inf'))
 
             prev_criteria = np.array(prev_criteria)
             #prev_eloss = float('inf')
@@ -1209,12 +1214,15 @@ class Neural_network(object):
 
                             for struct in str_sloss.keys():
                                 str_sloss[struct] = np.sqrt(str_sloss[struct]*6/str_tot_atom[struct])
+                            print(eloss)
+                            print(floss)
+                            print(sloss)
                     break
         else:
             if self.inputs['use_force']:
                 if self.inputs['use_stress']:
-                    next_elem, eloss, tmp_f, floss, sloss, sw_sloss, tmp_str_eloss, tmp_str_floss, tmp_str_sloss = sess.run(
-                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.s_loss, self.sw_s_loss,
+                    next_elem, eloss, tmp_f, floss, sloss, tmp_str_eloss, tmp_str_floss, tmp_str_sloss = sess.run(
+                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.s_loss, 
                             self.str_e_loss, self.str_f_loss, self.str_s_loss], feed_dict = fdict)
                     sloss = np.sqrt(sloss*6)
                     tmp_str_sloss = np.sqrt(tmp_str_sloss*6)
