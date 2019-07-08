@@ -6,6 +6,7 @@ import numpy as np
 import six
 from six.moves import cPickle as pickle
 from ase import io
+from ase import units
 from ._libsymf import lib, ffi
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
@@ -67,7 +68,7 @@ class Symmetry_function(object):
     def set_inputs(self):
         self.inputs = self.parent.inputs['symmetry_function']
 
-    def _write_tfrecords(self, res, writer, use_force=False, atomic_weights=False):
+    def _write_tfrecords(self, res, writer, use_force=False, use_stress=False, atomic_weights=False):
         # TODO: after stabilize overall tfrecord related part,
         # this part will replace the part of original 'res' dict
          
@@ -96,6 +97,9 @@ class Symmetry_function(object):
 #            if atomic_weights:
 #                feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         
+            if use_stress:
+                feature['S'] = _bytes_feature(res['S'].tobytes())
+
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
             feature['N_'+item] = _bytes_feature(res['N'][item].tobytes())
@@ -107,6 +111,13 @@ class Symmetry_function(object):
                 feature['dx_indices_'+item] = _bytes_feature(dx_indices.tobytes())
                 feature['dx_values_'+item] = _bytes_feature(dx_values.tobytes())
                 feature['dx_dense_shape_'+item] = _bytes_feature(dx_dense_shape.tobytes())
+
+                if use_stress:
+                    da_indices, da_values, da_dense_shape = _gen_1dsparse(res['da'][item].reshape([-1]))
+
+                    feature['da_indices_'+item] = _bytes_feature(da_indices.tobytes())
+                    feature['da_values_'+item] = _bytes_feature(da_values.tobytes())
+                    feature['da_dense_shape_'+item] = _bytes_feature(da_dense_shape.tobytes())
 
             feature['partition_'+item] = _bytes_feature(res['partition_'+item].tobytes())
 
@@ -122,7 +133,7 @@ class Symmetry_function(object):
         writer.write(example.SerializeToString())
 
 
-    def _parse_data(self, serialized, inp_size, use_force=False, atomic_weights=False):
+    def _parse_data(self, serialized, inp_size, use_force=False, use_stress=False, atomic_weights=False):
         features = {
             'E': tf.FixedLenFeature([], dtype=tf.string),
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
@@ -139,6 +150,10 @@ class Symmetry_function(object):
                 features['dx_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
                 features['dx_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
                 features['dx_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+                if use_stress:
+                    features['da_indices_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+                    features['da_values_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+                    features['da_dense_shape_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             features['partition_'+item] = tf.FixedLenFeature([], dtype=tf.string)
             if atomic_weights:
                 features['atomic_weights_'+item] = tf.FixedLenFeature([], dtype=tf.string)
@@ -149,6 +164,9 @@ class Symmetry_function(object):
                 features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
             #if atomic_weights:
             #    features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
+
+            if use_stress:
+                features['S'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
@@ -181,6 +199,16 @@ class Symmetry_function(object):
                                                 output_shape=tf.decode_raw(read_data['dx_dense_shape_'+item], tf.int32),
                                                 sparse_values=tf.decode_raw(read_data['dx_values_'+item], tf.float64)), 
                                             [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3]))
+
+                if use_stress:
+                    res['da_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
+                                              lambda: tf.zeros([0, inp_size[item], 0, 3, 6], dtype=tf.float64),
+                                              lambda: tf.reshape(
+                                                tf.sparse_to_dense(
+                                                    sparse_indices=tf.decode_raw(read_data['da_indices_'+item], tf.int32),
+                                                    output_shape=tf.decode_raw(read_data['da_dense_shape_'+item], tf.int32),
+                                                    sparse_values=tf.decode_raw(read_data['da_values_'+item], tf.float64)),
+                                                [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3, 6]))
  
             res['partition_'+item] = tf.decode_raw(read_data['partition_'+item], tf.int32)
 
@@ -194,13 +222,16 @@ class Symmetry_function(object):
             #if atomic_weights:
             #    res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
+            if use_stress:
+                res['S'] = tf.decode_raw(read_data['S'], tf.float64)
+        
         return res
 
 
-    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, use_force=False, valid=False, cache=False, full_batch=False, atomic_weights=False):
+    def _tfrecord_input_fn(self, filename_queue, inp_size, batch_size=1, use_force=False, use_stress=False, valid=False, cache=False, full_batch=False, atomic_weights=False):
         dataset = tf.data.TFRecordDataset(filename_queue)
         #dataset = dataset.cache() # for test
-        dataset = dataset.map(lambda x: self._parse_data(x, inp_size, use_force=use_force, atomic_weights=atomic_weights), 
+        dataset = dataset.map(lambda x: self._parse_data(x, inp_size, use_force=use_force, use_stress=use_stress, atomic_weights=atomic_weights), 
                               num_parallel_calls=self.inputs['num_parallel_calls'])
         if cache:
             dataset = dataset.take(-1).cache() # for test
@@ -219,11 +250,18 @@ class Symmetry_function(object):
             #if atomic_weights:
             #    batch_dict['atomic_weights'] = [None]
 
+            # CHECK
+            if use_stress:
+                batch_dict['S'] = [None]
+#                batch_dict['S'] = [6]
+
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
             batch_dict['N_'+item] = [None]
             if use_force:
                 batch_dict['dx_'+item] = [None, inp_size[item], None, 3]
+                if use_stress:
+                    batch_dict['da_'+item] = [None, inp_size[item], None, 3, 6]
             batch_dict['partition_'+item] = [None]
             if atomic_weights:
                 batch_dict['atomic_weights_'+item] = [None]
@@ -234,7 +272,7 @@ class Symmetry_function(object):
             #dataset = dataset.cache()
             iterator = dataset.make_initializable_iterator()
         else:
-            dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(200, None))
+            dataset = dataset.apply(tf.data.experimental.shuffle_and_repeat(200, None))
             dataset = dataset.padded_batch(batch_size, batch_dict)
             # prefetch test
             dataset = dataset.prefetch(buffer_size=1)
@@ -243,7 +281,7 @@ class Symmetry_function(object):
         return iterator  
 
 
-    def preprocess(self, calc_scale=True, use_force=False, get_atomic_weights=None, **kwargs):
+    def preprocess(self, calc_scale=True, use_force=False, use_stress=False, get_atomic_weights=None, **kwargs):
         
         comm = self.get_comm()
 
@@ -399,7 +437,7 @@ class Symmetry_function(object):
                     #tmp_aw = np.concatenate(tmp_aw)
                     tmp_res['atomic_weights'] = tmp_aw
                 
-                self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
+                self._write_tfrecords(tmp_res, writer, use_force=use_force, use_stress=use_stress, atomic_weights=aw_tag)
  
                 if not self.inputs['remain_pickle']:
                     os.remove(ptem)
@@ -447,7 +485,7 @@ class Symmetry_function(object):
                         #tmp_aw = np.concatenate(tmp_aw)
                         tmp_res['atomic_weights'] = tmp_aw
  
-                    self._write_tfrecords(tmp_res, writer, use_force=use_force, atomic_weights=aw_tag)
+                    self._write_tfrecords(tmp_res, writer, use_force=use_force, use_stress=use_stress, atomic_weights=aw_tag)
  
                     if not self.inputs['remain_pickle']:
                         os.remove(ptem)
@@ -482,7 +520,6 @@ class Symmetry_function(object):
         data_idx = 1
         for item, ind in zip(structures, structure_ind):
             # FIXME: add another input type
-            
             if len(item) == 1:
                 index = 0
                 if comm.rank == 0:
@@ -540,12 +577,14 @@ class Symmetry_function(object):
                 res = dict()
                 res['x'] = dict()
                 res['dx'] = dict()
+                res['da'] = dict()
                 res['params'] = dict()
                 res['N'] = type_num
                 res['tot_num'] = np.sum(list(type_num.values()))
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
+                res['S'] = -atoms.get_stress()/units.GPa*10
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
                 res['atom_idx'] = atom_i
@@ -565,14 +604,16 @@ class Symmetry_function(object):
 
                     x = np.zeros([cal_num, params_set[jtem]['num']], dtype=np.float64, order='C')
                     dx = np.zeros([cal_num, atom_num * params_set[jtem]['num'] * 3], dtype=np.float64, order='C')
+                    da = np.zeros([cal_num, atom_num * params_set[jtem]['num'] * 3 * 6], dtype=np.float64, order='C')
 
                     x_p = _gen_2Darray_for_ffi(x, ffi)
                     dx_p = _gen_2Darray_for_ffi(dx, ffi)
+                    da_p = _gen_2Darray_for_ffi(da, ffi)
 
                     errno = lib.calculate_sf(cell_p, cart_p, scale_p, \
                                      atom_i_p, atom_num, cal_atoms_p, cal_num, \
                                      params_set[jtem]['ip'], params_set[jtem]['dp'], params_set[jtem]['num'], \
-                                     x_p, dx_p)
+                                     x_p, dx_p, da_p)
                     comm.barrier()
                     errnos = comm.gather(errno)
                     errnos = comm.bcast(errnos)
@@ -594,14 +635,19 @@ class Symmetry_function(object):
                     if type_num[jtem] != 0:
                         res['x'][jtem] = np.array(comm.gather(x, root=0))
                         res['dx'][jtem] = np.array(comm.gather(dx, root=0))
+                        res['da'][jtem] = np.array(comm.gather(da, root=0))
                         if comm.rank == 0:
-                            res['x'][jtem] = np.concatenate(res['x'][jtem], axis=0).reshape([type_num[jtem], params_set[jtem]['num']])
+                            res['x'][jtem] = np.concatenate(res['x'][jtem], axis=0).\
+                                                reshape([type_num[jtem], params_set[jtem]['num']])
                             res['dx'][jtem] = np.concatenate(res['dx'][jtem], axis=0).\
                                                 reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3])
+                            res['da'][jtem] = np.concatenate(res['da'][jtem], axis=0).\
+                                                reshape([type_num[jtem], params_set[jtem]['num'], atom_num, 3, 6])
                             res['partition_'+jtem] = np.ones([type_num[jtem]]).astype(np.int32)
                     else:
                         res['x'][jtem] = np.zeros([0, params_set[jtem]['num']])
                         res['dx'][jtem] = np.zeros([0, params_set[jtem]['num'], atom_num, 3])
+                        res['da'][jtem] = np.zeros([0, params_set[jtem]['num'], atom_num, 3, 6])
                         res['partition_'+jtem] = np.ones([0]).astype(np.int32)
                     res['params'][jtem] = params_set[jtem]['total']
 
