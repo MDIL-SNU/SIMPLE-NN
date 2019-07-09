@@ -272,7 +272,7 @@ class Symmetry_function(object):
             #dataset = dataset.cache()
             iterator = dataset.make_initializable_iterator()
         else:
-            dataset = dataset.apply(tf.data.experimental.shuffle_and_repeat(200, None))
+            dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(200, None))
             dataset = dataset.padded_batch(batch_size, batch_dict)
             # prefetch test
             dataset = dataset.prefetch(buffer_size=1)

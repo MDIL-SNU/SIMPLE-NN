@@ -298,7 +298,7 @@ class Neural_network(object):
                                       lambda: tf.cast(0., tf.float64),
                                       lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
                                                     num_segments=self.next_elem['num_seg'])[1:])
-                    self.S /= 1.60217646*1e3
+                    self.S *= 1.60217646*1e3
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         if self.inputs['E_loss'] == 1:
@@ -480,6 +480,8 @@ class Neural_network(object):
         cutline = '----------------------------------------------'
         if self.inputs['use_force']:
             cutline += '------------------------'
+            if self.inputs['use_stress']:
+                cutline += '------------------------'
 
         if not self.inputs['print_structure_rmse']:
             self.parent.logfile.write(cutline + "\n")
@@ -1214,15 +1216,12 @@ class Neural_network(object):
 
                             for struct in str_sloss.keys():
                                 str_sloss[struct] = np.sqrt(str_sloss[struct]*6/str_tot_atom[struct])
-                            print(eloss)
-                            print(floss)
-                            print(sloss)
                     break
         else:
             if self.inputs['use_force']:
                 if self.inputs['use_stress']:
-                    next_elem, eloss, tmp_f, floss, sloss, tmp_str_eloss, tmp_str_floss, tmp_str_sloss = sess.run(
-                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.s_loss, 
+                    next_elem, eloss, tmp_f, floss, tmp_s, sloss, tmp_str_eloss, tmp_str_floss, tmp_str_sloss = sess.run(
+                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.S, self.s_loss, 
                             self.str_e_loss, self.str_f_loss, self.str_s_loss], feed_dict = fdict)
                     sloss = np.sqrt(sloss*6)
                     tmp_str_sloss = np.sqrt(tmp_str_sloss*6)

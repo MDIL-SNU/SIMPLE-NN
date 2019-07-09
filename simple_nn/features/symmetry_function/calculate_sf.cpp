@@ -22,7 +22,8 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
     // originally, dsymf is 4D array (dimension: [# of atoms, # of symfuncs, # of atoms, 3])
     // in this function, we use 2D array ([# of atoms, # of symfuncs * # of atoms * 3])
     // Similarly, dsymfa is 5D array (dimension: [# of atoms, # of symfuncs, # of atoms, 3, 6])
-    // in this function, we use 2D array ([# of atoms, # of symfuncs * # of atoms * 3])
+    // in this function, we use 2D array ([# of atoms, # of symfuncs * # of atoms * 3 * 6])
+    // voigt order : xx yy zz yz zx xy
 
     int total_bins, max_atoms_bin, bin_num, neigh_check_bins, nneigh;
     int bin_range[3], nbins[3], cell_shift[3], max_bin[3], min_bin[3], pbc_bin[3];
@@ -209,11 +210,11 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                         dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 2] = 
                             dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2]*lcoeff[t]*cell[t][2]/vol;
                         dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 3] = 
-                            dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
-                        dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 4] = 
                             dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1]*lcoeff[t]*cell[t][2]/vol;
-                        dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 5] = 
+                        dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 4] = 
                             dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2]*lcoeff[t]*cell[t][0]/vol;
+                        dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 5] = 
+                            dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
                     }    
                 }
                 else continue;
@@ -280,11 +281,11 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 2] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2]*lcoeff[t]*cell[t][2]/vol;
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 3] = 
-                                dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
-                            dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 4] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1]*lcoeff[t]*cell[t][2]/vol;
-                            dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 5] = 
+                            dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 4] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2]*lcoeff[t]*cell[t][0]/vol;
+                            dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 5] = 
+                                dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
 
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]*lcoeff[t]*cell[t][0]/vol;
@@ -293,11 +294,11 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 2] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2]*lcoeff[t]*cell[t][2]/vol;
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 3] = 
-                                dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
-                            dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 4] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1]*lcoeff[t]*cell[t][2]/vol;
-                            dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 5] = 
+                            dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 4] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2]*lcoeff[t]*cell[t][0]/vol;
+                            dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 5] = 
+                                dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
                         }
                     }
                     else if ((params_i[s][0] == 5) &&
@@ -333,11 +334,11 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 2] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2]*lcoeff[t]*cell[t][2]/vol;
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 3] = 
-                                dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
-                            dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 4] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1]*lcoeff[t]*cell[t][2]/vol;
-                            dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 5] = 
+                            dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 4] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2]*lcoeff[t]*cell[t][0]/vol;
+                            dsymfa[ii][s*natoms*3*6 + nei_list_i[j*2 +1]*3*6 + t*6 + 5] = 
+                                dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
 
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]*lcoeff[t]*cell[t][0]/vol;
@@ -346,11 +347,11 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 2] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2]*lcoeff[t]*cell[t][2]/vol;
                             dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 3] = 
-                                dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
-                            dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 4] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1]*lcoeff[t]*cell[t][2]/vol;
-                            dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 5] = 
+                            dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 4] = 
                                 dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2]*lcoeff[t]*cell[t][0]/vol;
+                            dsymfa[ii][s*natoms*3*6 + nei_list_i[k*2 +1]*3*6 + t*6 + 5] = 
+                                dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]*lcoeff[t]*cell[t][1]/vol;
                         }
                     }
                     else continue;
