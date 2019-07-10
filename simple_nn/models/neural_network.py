@@ -279,26 +279,26 @@ class Neural_network(object):
                                   lambda: tf.cast(0., tf.float64),
                                   lambda: tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                                self.next_elem['partition'], 2)[1])
-                if self.inputs['use_stress']:
-                    tmp_stress = self.next_elem['da_'+item] * \
+            if self.inputs['use_stress']:
+                tmp_stress = self.next_elem['da_'+item] * \
+                             tf.expand_dims(\
                                  tf.expand_dims(\
-                                     tf.expand_dims(\
-                                         tf.expand_dims(self.dys[item], axis=2),
-                                         axis=3),
-                                     axis=4)
-                    tmp_stress = tf.reduce_sum(\
-                                     tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
-                                                           num_segments=self.next_elem['num_seg'])[1:],
-                                     axis=[1,3])
-                    tmp_stress = tf.cond(zero_cond,
-                                      lambda: tf.cast(0., tf.float64),
-                                      lambda: tf.dynamic_partition(tf.reshape(tmp_stress, [-1,6]),
-                                                                   self.next_elem['partition'], 2)[1])
-                    self.S -= tf.cond(zero_cond,
-                                      lambda: tf.cast(0., tf.float64),
-                                      lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
-                                                    num_segments=self.next_elem['num_seg'])[1:])
-                    self.S *= 1.60217646*1e3
+                                     tf.expand_dims(self.dys[item], axis=2),
+                                     axis=3),
+                                 axis=4)
+                tmp_stress = tf.reduce_sum(\
+                                 tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
+                                                       num_segments=self.next_elem['num_seg'])[1:],
+                                 axis=[1,3])
+                tmp_stress = tf.cond(zero_cond,
+                                  lambda: tf.cast(0., tf.float64),
+                                  lambda: tf.dynamic_partition(tf.reshape(tmp_stress, [-1,6]),
+                                                               self.next_elem['partition'], 2)[1])
+                self.S -= tf.cond(zero_cond,
+                                  lambda: tf.cast(0., tf.float64),
+                                  lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+                                                num_segments=self.next_elem['num_seg'])[1:])
+                self.S *= 1.60217646*1e3
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         if self.inputs['E_loss'] == 1:
@@ -345,16 +345,16 @@ class Neural_network(object):
                                                  num_segments=self.next_elem['num_seg'])[1:])
                 self.total_loss += self.f_loss * self.force_coeff
 
-            if self.inputs['use_stress']:
-                self.ax_s_loss = tf.square(self.next_elem['S'] - self.S)
-                self.s_loss = tf.reduce_mean(self.ax_s_loss, axis=1, keepdims=True)
-                self.sw_s_loss = self.s_loss * self.next_elem['struct_weight']
-                self.s_loss = tf.reshape(self.s_loss,[-1])
-                self.str_s_loss = tf.unsorted_segment_mean(self.s_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
-                self.str_s_loss = tf.reshape(self.str_s_loss, [-1])
-                self.s_loss = tf.reduce_mean(self.s_loss)
-                self.sw_s_loss = tf.reduce_mean(self.sw_s_loss)
-                self.total_loss += self.sw_s_loss * self.stress_coeff
+        if self.inputs['use_stress']:
+            self.ax_s_loss = tf.square(self.next_elem['S'] - self.S)
+            self.s_loss = tf.reduce_mean(self.ax_s_loss, axis=1, keepdims=True)
+            self.sw_s_loss = self.s_loss * self.next_elem['struct_weight']
+            self.s_loss = tf.reshape(self.s_loss,[-1])
+            self.str_s_loss = tf.unsorted_segment_mean(self.s_loss, self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set']))
+            self.str_s_loss = tf.reshape(self.str_s_loss, [-1])
+            self.s_loss = tf.reduce_mean(self.s_loss)
+            self.sw_s_loss = tf.reduce_mean(self.sw_s_loss)
+            self.total_loss += self.sw_s_loss * self.stress_coeff
 
         if self.inputs['regularization']['type'] is not None:
             # FIXME: regularization_loss, which is float32, is casted into float64.
@@ -480,8 +480,8 @@ class Neural_network(object):
         cutline = '----------------------------------------------'
         if self.inputs['use_force']:
             cutline += '------------------------'
-            if self.inputs['use_stress']:
-                cutline += '------------------------'
+        if self.inputs['use_stress']:
+            cutline += '------------------------'
 
         if not self.inputs['print_structure_rmse']:
             self.parent.logfile.write(cutline + "\n")
@@ -567,13 +567,13 @@ class Neural_network(object):
                                                      lambda: tf.dynamic_partition(tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
                                                                                   self.next_elem['partition_'+item], 2
                                                                                   )[1])
-                if self.inputs['use_stress']:
-                    da_shape = tf.shape(self.next_elem['da_'+item])
-                    self.next_elem['da_'+item] = tf.cond(zero_cond,
-                                                        lambda: tf.zeros([1, da_shape[2], 1, da_shape[4], da_shape[5]], dtype=tf.float64),
-                                                        lambda: tf.dynamic_partition(tf.reshape(self.next_elem['da_'+item], [-1, da_shape[2], da_shape[3], da_shape[4], da_shape[5]]),
-                                                                                     self.next_elem['partition_'+item], 2
-                                                                                     )[1])
+            if self.inputs['use_stress']:
+                da_shape = tf.shape(self.next_elem['da_'+item])
+                self.next_elem['da_'+item] = tf.cond(zero_cond,
+                                                    lambda: tf.zeros([1, da_shape[2], 1, da_shape[4], da_shape[5]], dtype=tf.float64),
+                                                    lambda: tf.dynamic_partition(tf.reshape(self.next_elem['da_'+item], [-1, da_shape[2], da_shape[3], da_shape[4], da_shape[5]]),
+                                                                                 self.next_elem['partition_'+item], 2
+                                                                                 )[1])
 
             self.next_elem['struct_type_set'], self.next_elem['struct_ind'], self.next_elem['struct_N'] = \
                     tf.unique_with_counts(tf.reshape(self.next_elem['struct_type'], [-1]))
@@ -591,17 +591,17 @@ class Neural_network(object):
                     if self.inputs['pca_whiten']:
                         self.next_elem['dx_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1])
 
-                if self.inputs['use_stress']:
-                    self.next_elem['da_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['da_'+item])[2], max_totnum),
-                                                         lambda: self.next_elem['da_'+item],
-                                                         lambda: tf.pad(self.next_elem['da_'+item],
-                                                                        [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['da_'+item])[2]], [0, 0], [0, 0]]))
-                    
-                    self.next_elem['da_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1, 1])
-                    if self.inputs['pca']:
-                        self.next_elem['da_'+item] = tf.einsum('ijklm,jn->inklm', self.next_elem['da_'+item], tf.constant(self.pca[item][0]))
-                        if self.inputs['pca_whiten']:
-                            self.next_elem['da_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1, 1])
+            if self.inputs['use_stress']:
+                self.next_elem['da_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['da_'+item])[2], max_totnum),
+                                                     lambda: self.next_elem['da_'+item],
+                                                     lambda: tf.pad(self.next_elem['da_'+item],
+                                                                    [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['da_'+item])[2]], [0, 0], [0, 0]]))
+                
+                self.next_elem['da_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1, 1])
+                if self.inputs['pca']:
+                    self.next_elem['da_'+item] = tf.einsum('ijklm,jn->inklm', self.next_elem['da_'+item], tf.constant(self.pca[item][0]))
+                    if self.inputs['pca_whiten']:
+                        self.next_elem['da_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
                                                      lambda: tf.zeros([1], tf.int32), 
@@ -752,9 +752,9 @@ class Neural_network(object):
                         if modifier_tag[item] and 'v_F_{}_sparse'.format(item) in self.inputs['save_criteria']:
                             prev_criteria.append(float('inf'))
 
-                if self.inputs['use_stress']:
-                    if 'v_S' in self.inputs['save_criteria']:
-                        prev_criteria.append(float('inf'))
+            if self.inputs['use_stress']:
+                if 'v_S' in self.inputs['save_criteria']:
+                    prev_criteria.append(float('inf'))
 
             prev_criteria = np.array(prev_criteria)
             #prev_eloss = float('inf')
@@ -869,8 +869,8 @@ class Neural_network(object):
                         result += 'E RMSE(T V) = {:6.4e} {:6.4e}'.format(t_eloss, eloss)
                         if self.inputs['use_force']:
                             result += ' F RMSE(T V) = {:6.4e} {:6.4e}'.format(t_floss, floss)
-                            if self.inputs['use_stress']:
-                                result += ' S RMSE(T V) = {:6.4e} {:6.4e}'.format(t_sloss, sloss)
+                        if self.inputs['use_stress']:
+                            result += ' S RMSE(T V) = {:6.4e} {:6.4e}'.format(t_sloss, sloss)
 
                         if self.inputs['method'] != 'L-BFGS':
                             lr = sess.run(self.learning_rate)
@@ -897,15 +897,15 @@ class Neural_network(object):
                             cutline = '----------------------------------------------'
                             if self.inputs['use_force']:
                                 cutline += '------------------------'
-                                if self.inputs['use_stress']:
-                                    cutline += '------------------------'
+                            if self.inputs['use_stress']:
+                                cutline += '------------------------'
                             result += cutline + '\n'
                             result += 'structural breakdown:\n'
                             result += '  label                  E_RMSE(T)   E_RMSE(V)'
                             if self.inputs['use_force']:
                                 result += '   F_RMSE(T)   F_RMSE(V)'
-                                if self.inputs['use_stress']:
-                                    result += '   S_RMSE(T)   S_RMSE(V)'
+                            if self.inputs['use_stress']:
+                                result += '   S_RMSE(T)   S_RMSE(V)'
                             result += '\n'
                             for struct in sorted(full_str_set):
                                 label = str(struct).replace(' ', '_')
@@ -917,8 +917,8 @@ class Neural_network(object):
                                     teloss = '{:>11.4e}'.format(t_str_eloss[struct])
                                     if self.inputs['use_force']:
                                         tfloss = '{:>11.4e}'.format(t_str_floss[struct])
-                                        if self.inputs['use_stress']:
-                                            tsloss = '{:>11.4e}'.format(t_str_sloss[struct])
+                                    if self.inputs['use_stress']:
+                                        tsloss = '{:>11.4e}'.format(t_str_sloss[struct])
                                 if struct not in str_eloss:
                                     veloss = '          -'
                                     vfloss = '          -'
@@ -927,13 +927,13 @@ class Neural_network(object):
                                     veloss = '{:>11.4e}'.format(str_eloss[struct])
                                     if self.inputs['use_force']:
                                         vfloss = '{:>11.4e}'.format(str_floss[struct])
-                                        if self.inputs['use_stress']:
-                                            vsloss = '{:>11.4e}'.format(str_sloss[struct])
+                                    if self.inputs['use_stress']:
+                                        vsloss = '{:>11.4e}'.format(str_sloss[struct])
                                 result += '  {:<20.20} {:} {:}'.format(label, teloss, veloss)
                                 if self.inputs['use_force']:
                                     result += ' {:} {:}'.format(tfloss, vfloss)
-                                    if self.inputs['use_stress']:
-                                        result += ' {:} {:}'.format(tsloss, vsloss)
+                                if self.inputs['use_stress']:
+                                    result += ' {:} {:}'.format(tsloss, vsloss)
                                 result += '\n'
                             result += cutline + '\n'
 
@@ -954,9 +954,9 @@ class Neural_network(object):
                                     if modifier_tag[atem] and 'v_F_{}_sparse'.format(atem) in self.inputs['save_criteria']:
                                         cur_criteria.append(aw_floss[atem][0])
                             
-                            if self.inputs['use_stress']:
-                                if 'v_S' in self.inputs['save_criteria']:
-                                    cur_criteria.append(sloss)
+                        if self.inputs['use_stress']:
+                            if 'v_S' in self.inputs['save_criteria']:
+                                cur_criteria.append(sloss)
                 
                         cur_criteria = np.array(cur_criteria)
                         
@@ -1007,9 +1007,9 @@ class Neural_network(object):
                     if aw_tag:
                         test_save['atomic_weights'] = list()
 
-                    if self.inputs['use_stress']:
-                        test_save['DFT_S'] = list()
-                        test_save['NN_S'] = list()
+                if self.inputs['use_stress']:
+                    test_save['DFT_S'] = list()
+                    test_save['NN_S'] = list()
 
                 eloss = floss = sloss = 0.
                 test_tot_struc = test_tot_atom = 0
@@ -1033,9 +1033,6 @@ class Neural_network(object):
                             eloss += tmp_eloss * num_batch_struc
                             floss += tmp_floss * num_batch_atom
                             
-                            test_save['DFT_E'].append(test_elem['E'])
-                            test_save['NN_E'].append(tmp_nne)
-                            test_save['N'].append(test_elem['tot_num'])
                             test_save['DFT_F'].append(test_elem['F'])
                             test_save['NN_F'].append(tmp_nnf)
 
@@ -1047,15 +1044,23 @@ class Neural_network(object):
                                 test_save['atomic_weights'].append(test_elem['atomic_weights_org'])
                             
                             test_tot_atom += num_batch_atom
+                        elif self.inputs['use_stress']:
+                            test_elem, tmp_nne, tmp_nns, tmp_eloss, tmp_sloss = sess.run(
+                                    [self.next_elem, self.E, self.S, self.e_loss, self.s_loss],
+                                    feed_dict=test_fdict)
+                            num_batch_struc = test.elem['num_seg'] - 1
+                            sloss += tmp_sloss * num_batch_struc
+                            test_save['DFT_S'].append(test_elem['S'])
+                            test_save['NN_S'].append(tmp_nns)
                         else:
                             test_elem, tmp_nne, tmp_eloss = \
                                 sess.run([self.next_elem, self.E, self.e_loss], feed_dict=test_fdict)
-                            num_batch_struc = test_elem['num_seg'] - 1
-                            eloss += tmp_eloss * num_batch_struc
+                        num_batch_struc = test_elem['num_seg'] - 1
+                        eloss += tmp_eloss * num_batch_struc
 
-                            test_save['DFT_E'].append(test_elem['E'])
-                            test_save['NN_E'].append(tmp_nne)
-                            test_save['N'].append(test_elem['tot_num'])
+                        test_save['DFT_E'].append(test_elem['E'])
+                        test_save['NN_E'].append(tmp_nne)
+                        test_save['N'].append(test_elem['tot_num'])
 
                         test_tot_struc += num_batch_struc
                     except tf.errors.OutOfRangeError:
@@ -1076,12 +1081,12 @@ class Neural_network(object):
                             if aw_tag:
                                 test_save['atomic_weights'] = np.concatenate(test_save['atomic_weights'], axis=0)
 
-                            if self.inputs['use_stress']:
-                                sloss = np.sqrt(sloss*6/test_tot_struc)
-                                result += ', S RMSE = {:6.4e}'.format(sloss)
+                        if self.inputs['use_stress']:
+                            sloss = np.sqrt(sloss*6/test_tot_struc)
+                            result += ', S RMSE = {:6.4e}'.format(sloss)
 
-                                test_save['DFT_S'] = np.concatenate(test_save['DFT_S'], axis=0)
-                                test_save['NN_S'] = np.concatenate(test_save['NN_S'], axis=0)
+                            test_save['DFT_S'] = np.concatenate(test_save['DFT_S'], axis=0)
+                            test_save['NN_S'] = np.concatenate(test_save['NN_S'], axis=0)
                         break
                 
                 with open('./test_result', 'wb') as fil:
@@ -1165,6 +1170,12 @@ class Neural_network(object):
                                 aw_floss[item][0].append(tmp_floss_not_packed[np.logical_and(tmp_sparse_idx, next_elem['atom_idx'] == (i+1))])
                                 aw_floss[item][1].append(tmp_floss_not_packed[np.logical_and(tmp_dense_idx, next_elem['atom_idx'] == (i+1))])
                         num_tot_atom += num_batch_atom
+                    elif self.inputs['use_stress']:
+                        next_elem, tmp_eloss, tmp_sloss, tmp_str_eloss, tmp_str_sloss, tmp_str_atom = sess.run(
+                                [self.next_elem, self.e_loss, self.s_loss, self.str_e_loss, self.str_s_loss, self.str_num_batch_atom],
+                                feed_dict=fdict)
+                        num_batch_struc = next_elem['num_seg'] - 1
+                        sloss += tmp_sloss * num_batch_struc
                     else:
                         next_elem, tmp_eloss, tmp_str_eloss, tmp_str_atom = sess.run(
                             [self.next_elem, self.e_loss, self.str_e_loss, self.str_num_batch_atom], feed_dict=fdict)
@@ -1185,8 +1196,8 @@ class Neural_network(object):
                         str_tot_atom[struct] += tmp_str_atom[i]
                         if self.inputs['use_force']:
                             str_floss[struct] += tmp_str_floss[i] * tmp_str_atom[i]
-                            if self.inputs['use_stress']:
-                                str_sloss[struct] += tmp_str_sloss[i] * next_elem['struct_N'][i]
+                        if self.inputs['use_stress']:
+                            str_sloss[struct] += tmp_str_sloss[i] * next_elem['struct_N'][i]
 
                     for struct, weight in zip(next_elem['struct_type'].reshape([-1]),
                                               next_elem['struct_weight'].reshape([-1])):
@@ -1211,17 +1222,17 @@ class Neural_network(object):
                                 aw_floss[item][0] = np.sqrt(np.mean(np.concatenate(aw_floss[item][0], axis=0)))
                                 aw_floss[item][1] = np.sqrt(np.mean(np.concatenate(aw_floss[item][1], axis=0)))
                         
-                        if self.inputs['use_stress']:
-                            sloss = np.sqrt(sloss*6/num_tot_struc)
+                    if self.inputs['use_stress']:
+                        sloss = np.sqrt(sloss*6/num_tot_struc)
 
-                            for struct in str_sloss.keys():
-                                str_sloss[struct] = np.sqrt(str_sloss[struct]*6/str_tot_atom[struct])
+                        for struct in str_sloss.keys():
+                            str_sloss[struct] = np.sqrt(str_sloss[struct]*6/str_tot_atom[struct])
                     break
         else:
             if self.inputs['use_force']:
                 if self.inputs['use_stress']:
-                    next_elem, eloss, tmp_f, floss, tmp_s, sloss, tmp_str_eloss, tmp_str_floss, tmp_str_sloss = sess.run(
-                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.S, self.s_loss, 
+                    next_elem, eloss, tmp_f, floss, sloss, tmp_str_eloss, tmp_str_floss, tmp_str_sloss = sess.run(
+                            [self.next_elem, self.e_loss, self.F, self.f_loss, self.s_loss, 
                             self.str_e_loss, self.str_f_loss, self.str_s_loss], feed_dict = fdict)
                     sloss = np.sqrt(sloss*6)
                     tmp_str_sloss = np.sqrt(tmp_str_sloss*6)
@@ -1241,6 +1252,12 @@ class Neural_network(object):
                             aw_floss[item] = [list(), list()]
                         aw_floss[item][0] = np.sqrt(np.mean(tmp_floss_not_packed[np.logical_and(tmp_sparse_idx, next_elem['atom_idx'] == (i+1))]))
                         aw_floss[item][1] = np.sqrt(np.mean(tmp_floss_not_packed[np.logical_and(tmp_dense_idx, next_elem['atom_idx'] == (i+1))]))
+            elif self.inputs['use_stress']:
+                next_elem, eloss, sloss, tmp_str_eloss, tmp_str_sloss = sess.run(
+                        [self.next_elem, self.e_loss, self.s_loss, self.str_e_loss, self.str_s_loss],
+                        feed_dict = fdict)
+                sloss = np.sqrt(sloss*6)
+                tmp_str_sloss = np.sqrt(tmp_str_sloss*6)
             else:
                 next_elem, eloss, tmp_str_eloss = sess.run(
                     [self.next_elem, self.e_loss, self.str_e_loss], feed_dict=fdict)
@@ -1258,8 +1275,8 @@ class Neural_network(object):
                 str_eloss[struct] = tmp_str_eloss[i]
                 if self.inputs['use_force']:
                     str_floss[struct] = tmp_str_floss[i]
-                    if self.inputs['use_stress']:
-                        str_sloss[struct] = tmp_str_sloss[i]
+                if self.inputs['use_stress']:
+                    str_sloss[struct] = tmp_str_sloss[i]
 
             for struct, weight in zip(next_elem['struct_type'].reshape([-1]),
                                       next_elem['struct_weight'].reshape([-1])):
