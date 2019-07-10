@@ -583,7 +583,8 @@ class Symmetry_function(object):
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
-                res['S'] = -atoms.get_stress()/units.GPa*10[[0, 1, 2, 5, 3, 4]]
+                res['S'] = -atoms.get_stress()/units.GPa*10
+                res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
                 res['atom_idx'] = atom_i
