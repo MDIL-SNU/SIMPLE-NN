@@ -251,7 +251,7 @@ class Neural_network(object):
                 if loss not in reg_losses:
                     tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, loss)
 
-            if self.inputs['use_force']:
+            if self.inputs['use_force'] or self.inputs['use_stress']:
                 self.dys[item] = tf.gradients(self.ys[item], self.next_elem['x_'+item])[0]
             else:
                 self.dys[item] = None
@@ -497,24 +497,27 @@ class Neural_network(object):
             self.handle, training_dataset.output_types, training_dataset.output_shapes)
         self.next_elem = self.iterator.get_next()
 
-        if self.inputs['use_force']:
+        max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
+        
+        if self.inputs['use_force'] or self.inputs['use_stress']:
             self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
-            F_shape = tf.shape(self.next_elem['F'])
-            self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [F_shape[1]]), # dx_shape[1]
+#            F_shape = tf.shape(self.next_elem['F'])
+            self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [max_totnum]), # dx_shape[1]
                                                                                   tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
                                                                         self.next_elem['partition'], 2)[1]
 
-            self.next_elem['F'] = \
-                tf.dynamic_partition(
-                    tf.reshape(self.next_elem['F'], [-1, 3]),
-                    self.next_elem['partition'], 2
-                )[1]
-            self.next_elem['atom_idx'] = \
-                tf.dynamic_partition(
-                    tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
-                    self.next_elem['partition'], 2
-                )[1]
-            # which place?
+            if self.inputs['use_force']:
+                self.next_elem['F'] = \
+                    tf.dynamic_partition(
+                        tf.reshape(self.next_elem['F'], [-1, 3]),
+                        self.next_elem['partition'], 2
+                    )[1]
+                self.next_elem['atom_idx'] = \
+                    tf.dynamic_partition(
+                        tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
+                        self.next_elem['partition'], 2
+                    )[1]
+                # which place?
 
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
 
@@ -577,7 +580,6 @@ class Neural_network(object):
 
             self.next_elem['struct_type_set'], self.next_elem['struct_ind'], self.next_elem['struct_N'] = \
                     tf.unique_with_counts(tf.reshape(self.next_elem['struct_type'], [-1]))
-            max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
 
             if self.inputs['use_force']:
                 self.next_elem['dx_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['dx_'+item])[2], max_totnum),
