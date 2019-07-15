@@ -183,6 +183,8 @@ Methods
 
     Method for optimizing neural network potential.
 
+.. rubric:: References
+
 .. [#f1] `J. Behler, M. Parrinello, Phys. Rev. Lett. 98 (2007) 146401`_
 
 .. _J. Behler, M. Parrinello, Phys. Rev. Lett. 98 (2007) 146401: https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.98.146401

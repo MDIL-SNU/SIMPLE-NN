@@ -166,6 +166,7 @@ Methods
     Method for preprocessing the training data. 
     Process like calculating scaling factor and calculating atomic weights are contained in this method.
 
+.. rubric:: References
 
 .. [#f1] `J. Behler, J. Chem. Phys. 134 (2011) 074106`_
 
