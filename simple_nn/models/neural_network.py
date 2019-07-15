@@ -11,6 +11,7 @@ import copy
 from ..utils import _make_data_list, pickle_load, _generate_gdf_file, modified_sigmoid, memory, repeat, read_lammps_potential
 from ..utils.lbfgs import L_BFGS
 from tqdm import tqdm
+from ase import units
 #from tensorflow.python.client import timeline
 
 """
@@ -290,15 +291,11 @@ class Neural_network(object):
                                  tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
                                                        num_segments=self.next_elem['num_seg'])[1:],
                                  axis=[1,3])
-                tmp_stress = tf.cond(zero_cond,
-                                  lambda: tf.cast(0., tf.float64),
-                                  lambda: tf.dynamic_partition(tf.reshape(tmp_stress, [-1,6]),
-                                                               self.next_elem['partition'], 2)[1])
                 self.S -= tf.cond(zero_cond,
                                   lambda: tf.cast(0., tf.float64),
-                                  lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+                                  lambda: tf.sparse_segment_sum(tf.reshape(tmp_stress, [-1,6]), self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
                                                 num_segments=self.next_elem['num_seg'])[1:])
-                self.S *= 1.60217646*1e3
+                self.S /= units.GPa/10
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         if self.inputs['E_loss'] == 1:
