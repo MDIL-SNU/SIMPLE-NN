@@ -54,7 +54,7 @@ double G4(double Rij, double Rik, double Rjk, double powtwo, \
                ((-2*par[1]*Rik*precal[2] + precal[3])*cosv + \
                par[2]*par[3]*precal[2]*precal[9]); // ik
     deriv[2] = expl*powcos*precal[0]*precal[2] * \
-               ((-2*par[1]*Rjk*precal[4] + precal[5])*cosv - \
+               ((-2*par[1]*Rjk*precal[4] + precal[5])*cosv + \
                par[2]*par[3]*precal[4]*precal[10]); // jk
 
     return powcos*cosv * expl * precal[0] * precal[2] * precal[4];
@@ -79,7 +79,7 @@ double G5(double Rij, double Rik, double powtwo, \
                ((-2*par[1]*Rik*precal[2] + precal[3])*cosv + \
                par[2]*par[3]*precal[2]*precal[9]); // ik
     deriv[2] = expl*powcos*precal[0]*precal[2] * \
-               -par[2]*par[3]*precal[10]; // jk
+               (par[2]*par[3]*precal[10]); // jk
 
     return powcos*cosv * expl * precal[0] * precal[2];
 }

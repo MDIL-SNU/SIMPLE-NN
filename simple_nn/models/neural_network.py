@@ -283,18 +283,22 @@ class Neural_network(object):
             if self.inputs['use_stress']:
                 tmp_stress = self.next_elem['da_'+item] * \
                              tf.expand_dims(\
-                                 tf.expand_dims(\
-                                     tf.expand_dims(self.dys[item], axis=2),
-                                     axis=3),
-                                 axis=4)
-                tmp_stress = tf.reduce_sum(\
-                                 tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
-                                                       num_segments=self.next_elem['num_seg'])[1:],
-                                 axis=[1,3])
-                self.S -= tf.cond(zero_cond,
-                                  lambda: tf.cast(0., tf.float64),
-                                  lambda: tf.sparse_segment_sum(tf.reshape(tmp_stress, [-1,6]), self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
-                                                num_segments=self.next_elem['num_seg'])[1:])
+                                 tf.expand_dims(self.dys[item], axis=2),
+                                     axis=3)
+                self.S -= tf.reduce_sum(\
+                              tf.cond(zero_cond,
+                                      lambda: tf.cast(0., tf.float64),
+                                      lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
+                                                                    num_segments=self.next_elem['num_seg'])[1:]),
+                                      axis=[1,2])
+#                tmp_stress = tf.reduce_sum(\
+#                                 tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
+#                                                       num_segments=self.next_elem['num_seg'])[1:],
+#                                 axis=[1,3])
+#                self.S -= tf.cond(zero_cond,
+#                                  lambda: tf.cast(0., tf.float64),
+#                                  lambda: tf.sparse_segment_sum(tf.reshape(tmp_stress, [-1,6]), self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+#                                                num_segments=self.next_elem['num_seg'])[1:])
                 self.S /= units.GPa/10
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
@@ -496,10 +500,10 @@ class Neural_network(object):
 
         max_totnum = tf.cast(tf.reduce_max(self.next_elem['tot_num']), tf.int32)
         
-        if self.inputs['use_force'] or self.inputs['use_stress']:
+        if self.inputs['use_force']:
             self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
-#            F_shape = tf.shape(self.next_elem['F'])
-            self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [max_totnum]), # dx_shape[1]
+            F_shape = tf.shape(self.next_elem['F'])
+            self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [F_shape[1]]), # dx_shape[1]
                                                                                   tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
                                                                         self.next_elem['partition'], 2)[1]
 
@@ -565,15 +569,13 @@ class Neural_network(object):
                 self.next_elem['dx_'+item] = tf.cond(zero_cond, 
                                                      lambda: tf.zeros([1, dx_shape[2], 1, dx_shape[4]], dtype=tf.float64), 
                                                      lambda: tf.dynamic_partition(tf.reshape(self.next_elem['dx_'+item], [-1, dx_shape[2], dx_shape[3], dx_shape[4]]),
-                                                                                  self.next_elem['partition_'+item], 2
-                                                                                  )[1])
+                                                                                  self.next_elem['partition_'+item], 2)[1])
             if self.inputs['use_stress']:
                 da_shape = tf.shape(self.next_elem['da_'+item])
                 self.next_elem['da_'+item] = tf.cond(zero_cond,
-                                                    lambda: tf.zeros([1, da_shape[2], 1, da_shape[4], da_shape[5]], dtype=tf.float64),
-                                                    lambda: tf.dynamic_partition(tf.reshape(self.next_elem['da_'+item], [-1, da_shape[2], da_shape[3], da_shape[4], da_shape[5]]),
-                                                                                 self.next_elem['partition_'+item], 2
-                                                                                 )[1])
+                                                     lambda: tf.zeros([1, da_shape[2], da_shape[3], da_shape[4]], dtype=tf.float64),
+                                                     lambda: tf.dynamic_partition(tf.reshape(self.next_elem['da_'+item], [-1, da_shape[2], da_shape[3], da_shape[4]]),
+                                                                                  self.next_elem['partition_'+item], 2)[1])
 
             self.next_elem['struct_type_set'], self.next_elem['struct_ind'], self.next_elem['struct_N'] = \
                     tf.unique_with_counts(tf.reshape(self.next_elem['struct_type'], [-1]))
@@ -591,16 +593,11 @@ class Neural_network(object):
                         self.next_elem['dx_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1])
 
             if self.inputs['use_stress']:
-                self.next_elem['da_'+item] = tf.cond(tf.equal(tf.shape(self.next_elem['da_'+item])[2], max_totnum),
-                                                     lambda: self.next_elem['da_'+item],
-                                                     lambda: tf.pad(self.next_elem['da_'+item],
-                                                                    [[0, 0], [0, 0], [0, max_totnum-tf.shape(self.next_elem['da_'+item])[2]], [0, 0], [0, 0]]))
-                
-                self.next_elem['da_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1, 1])
+                self.next_elem['da_'+item] /= self.scale[item][1:2,:].reshape([1, self.inp_size[item], 1, 1])
                 if self.inputs['pca']:
-                    self.next_elem['da_'+item] = tf.einsum('ijklm,jn->inklm', self.next_elem['da_'+item], tf.constant(self.pca[item][0]))
+                    self.next_elem['da_'+item] = tf.einsum('ijkl,jm->imkl', self.next_elem['da_'+item], tf.constant(self.pca[item][0]))
                     if self.inputs['pca_whiten']:
-                        self.next_elem['da_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1, 1])
+                        self.next_elem['da_'+item] /= self.pca[item][1].reshape([1, -1, 1, 1])
 
             self.next_elem['seg_id_'+item] = tf.cond(zero_cond,
                                                      lambda: tf.zeros([1], tf.int32), 
@@ -1047,7 +1044,7 @@ class Neural_network(object):
                             test_elem, tmp_nne, tmp_nns, tmp_eloss, tmp_sloss = sess.run(
                                     [self.next_elem, self.E, self.S, self.e_loss, self.s_loss],
                                     feed_dict=test_fdict)
-                            num_batch_struc = test.elem['num_seg'] - 1
+                            num_batch_struc = test_elem['num_seg'] - 1
                             sloss += tmp_sloss * num_batch_struc
                             test_save['DFT_S'].append(test_elem['S'])
                             test_save['NN_S'].append(tmp_nns)
