@@ -291,14 +291,6 @@ class Neural_network(object):
                                       lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
                                                                     num_segments=self.next_elem['num_seg'])[1:]),
                                       axis=[1,2])
-#                tmp_stress = tf.reduce_sum(\
-#                                 tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
-#                                                       num_segments=self.next_elem['num_seg'])[1:],
-#                                 axis=[1,3])
-#                self.S -= tf.cond(zero_cond,
-#                                  lambda: tf.cast(0., tf.float64),
-#                                  lambda: tf.sparse_segment_sum(tf.reshape(tmp_stress, [-1,6]), self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
-#                                                num_segments=self.next_elem['num_seg'])[1:])
                 self.S /= units.GPa/10
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
