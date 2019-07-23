@@ -83,3 +83,30 @@ double G5(double Rij, double Rik, double powtwo, \
 
     return powcos*cosv * expl * precal[0] * precal[2];
 }
+
+// Modified angular symmetry function from ANI-1.
+// J. S. Smith et al., Chem. Sci., 2017, 8, 3192.
+double G6(double Rij, double Rik, double powtwo, double sin_ts, double cos_ts, \
+          double *precal, double *par, double *deriv) {
+    // cosv: cos(theta)
+    // par[0] = cutoff_dist
+    // par[1] = eta
+    // par[2] = zeta
+    // par[3] = lambda
+    double expl = exp(-par[1]*precal[6]) * powtwo;
+    double cosv = 1 + par[3]*precal[7];
+    //double powcos = pow_int(cosv, par[2]-1);
+    double powcos = pow(fabs(cosv), fabs(par[2]-1));
+
+    deriv[0] = expl*powcos*precal[2]*precal[4] * \
+               ((-2*par[1]*Rij*precal[0] + precal[1])*cosv + \
+               par[2]*par[3]*precal[0]*precal[8]); // ij
+    deriv[1] = expl*powcos*precal[0]*precal[4] * \
+               ((-2*par[1]*Rik*precal[2] + precal[3])*cosv + \
+               par[2]*par[3]*precal[2]*precal[9]); // ik
+    deriv[2] = expl*powcos*precal[0]*precal[2] * \
+               ((-2*par[1]*Rjk*precal[4] + precal[5])*cosv - \
+               par[2]*par[3]*precal[4]*precal[10]); // jk
+
+    return powcos*cosv * expl * precal[0] * precal[2] * precal[4];
+}
