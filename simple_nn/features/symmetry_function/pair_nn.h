@@ -71,6 +71,7 @@ class PairNN : public Pair {
   int nelements;   // # of unique elements
   int *map;        // mapping from atom types to elements
   double cutmax;
+  double max_rc_ang;
 
   virtual void allocate();
   virtual void read_file(char *);

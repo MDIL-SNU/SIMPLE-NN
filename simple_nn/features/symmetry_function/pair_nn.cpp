@@ -216,6 +216,7 @@ void PairNN::compute(int eflag, int vflag)
         delik[1] = x[k][1] - ytmp;
         delik[2] = x[k][2] - ztmp;
         Rik = delik[0]*delik[0] + delik[1]*delik[1] + delik[2]*delik[2];
+        if (Rik < 0.0001) continue;
         rRik = sqrt(Rik);
         ktype = type[k];
         kelem = map[ktype];
@@ -224,9 +225,9 @@ void PairNN::compute(int eflag, int vflag)
         deljk[1] = x[k][1] - x[j][1];
         deljk[2] = x[k][2] - x[j][2];
         Rjk = deljk[0]*deljk[0] + deljk[1]*deljk[1] + deljk[2]*deljk[2];
+        if (Rjk < 0.0001) continue;
         rRjk = sqrt(Rjk);
-
-        if (Rjk < 0.0001 || Rik < 0.0001 || Rik > cutsq[itype][ktype]) continue;
+        if (rRik > max_rc_ang) continue;
 
         vecik[0] = delik[0]/rRik;
         vecik[1] = delik[1]/rRik;
@@ -235,8 +236,6 @@ void PairNN::compute(int eflag, int vflag)
         vecjk[0] = deljk[0]/rRjk;
         vecjk[1] = deljk[1]/rRjk;
         vecjk[2] = deljk[2]/rRjk;
-
-        // Assume that cutoff radius for all symmetry functions are same
 
         precal[6] = rRij*rRij+rRik*rRik+rRjk*rRjk;
         precal[7] = (rRij*rRij + rRik*rRik - rRjk*rRjk)/2/rRij/rRik;
@@ -474,6 +473,7 @@ void PairNN::read_file(char *fname) {
   int valid_count = 0;
   bool valid = false;
   cutmax = 0;
+  max_rc_ang = 0.0;
    
   while (1) {
     if (comm->me == 0) {
@@ -561,7 +561,10 @@ void PairNN::read_file(char *fname) {
           break;
         }
       }
+      // In this code, SF type >= 4 means that it is angular function.
       if (nets[nnet].slists[isym].stype >= 4) {
+        // Find maximum cutoff distance among angular functions.
+        max_rc_ang = max(max_rc_ang, nets[nnet].slists[isym].coefs[0]);
         tstr = strtok(NULL," \t\n\r\f");
         nets[nnet].slists[isym].atype[1] = nelements;
         for (i=0; i<nelements; i++) {
