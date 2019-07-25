@@ -247,19 +247,25 @@ void PairNN::compute(int eflag, int vflag)
         vecjk[1] = deljk[1]/rRjk;
         vecjk[2] = deljk[2]/rRjk;
 
-        precal[7] = (rRij*rRij + rRik*rRik - rRjk*rRjk)/2/rRij/rRik;
-        precal[8] = 0.5*(1/rRik + 1/rRij/rRij*(rRjk*rRjk/rRik - rRik));
-        precal[9] = 0.5*(1/rRij + 1/rRik/rRik*(rRjk*rRjk/rRij - rRij));
+        // Note that Rij = rRij * rRij.
+        precal[7] = (Rij + Rik - Rjk)/2/rRij/rRik;
+        precal[8] = 0.5*(1/rRik + 1/Rij*(Rjk/rRik - rRik));
+        precal[9] = 0.5*(1/rRij + 1/Rik*(Rjk/rRij - rRij));
         precal[10] = rRjk/rRij/rRik;
         // Calculate precal[6] only when there is at least one G4.
         // (precal[6] is only used by G4.)
         if (nsf[4] > 0) {
-          precal[6] = rRij*rRij+rRik*rRik+rRjk*rRjk;
+          precal[6] = Rij+Rik+Rjk;
         }
         if (nsf[5] > 0) {
-          precal[11] = rRij*rRij+rRik*rRik;
+          precal[11] = Rij+Rik;
         }
         if (nsf[6] > 0) {
+          precal[12] = sqrt(fabs(1-precal[7]*precal[7]));
+          precal[13] = Rij-Rik-Rjk;
+          precal[14] = sqrt((rRjk + rRij - rRik)*(rRjk - rRij + rRik));
+          precal[15] = sqrt((-rRjk + rRij + rRik)*(rRjk + rRij + rRik));
+          precal[16] = 1 / (4 * Rij * Rik * sqrt(rRij * rRik));
         }
 
         // calc angular symfunc
@@ -332,6 +338,13 @@ void PairNN::compute(int eflag, int vflag)
             tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
           }
           else if ((sym->stype) == 6) {
+            precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
+            precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
+            precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
+            precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
+
+            symvec[tt] += G6(rRij, rRik, rRjk, powtwo[tt], sin_ts[tt], cos_ts[tt], \
+                             precal, sym->coefs, dangtmp, powint[tt]);
           }
           else continue;
         }
