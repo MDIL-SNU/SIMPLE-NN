@@ -47,7 +47,7 @@ class PairNN : public Pair {
 // have to change
   struct Symc {
     int stype; // symmetry function type
-    double coefs[4]; // symmetry function coefficients
+    double coefs[5]; // symmetry function coefficients
     int atype[2]; // related atom type(tmp)
   };
 

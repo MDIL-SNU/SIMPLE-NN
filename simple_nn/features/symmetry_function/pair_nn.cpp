@@ -551,6 +551,7 @@ void PairNN::read_file(char *fname) {
       nets[nnet].slists[isym].coefs[1] = atof(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists[isym].coefs[2] = atof(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists[isym].coefs[3] = atof(strtok(NULL," \t\n\r\f"));
+      nets[nnet].slists[isym].coefs[4] = atof(strtok(NULL," \t\n\r\f"));
 
       tstr = strtok(NULL," \t\n\r\f");
       nets[nnet].slists[isym].atype[0] = nelements;
@@ -560,7 +561,7 @@ void PairNN::read_file(char *fname) {
           break;
         }
       }
-      if (nets[nnet].slists[isym].stype > 2) {
+      if (nets[nnet].slists[isym].stype >= 4) {
         tstr = strtok(NULL," \t\n\r\f");
         nets[nnet].slists[isym].atype[1] = nelements;
         for (i=0; i<nelements; i++) {
