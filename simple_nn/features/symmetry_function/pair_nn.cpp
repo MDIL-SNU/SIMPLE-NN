@@ -134,6 +134,7 @@ void PairNN::compute(int eflag, int vflag)
     double *dsymvec = new double[nsym];
     double *tmpf = new double[nsym*(jnum+1)*3];
     double *powtwo = new double[nsym];
+    bool *powint = new bool[nsym];
 
     // add scale criteria ----
     double *scale1 = new double[nsym];
@@ -146,11 +147,15 @@ void PairNN::compute(int eflag, int vflag)
       symvec[tt] = 0;
       dsymvec[tt] = 0;
       powtwo[tt] = 0;
+      powint[tt] = false;
 
       if (nets[ielem].slists[tt].stype == 4 || nets[ielem].slists[tt].stype == 5) {
         if (nets[ielem].slists[tt].coefs[2] < 1.0)
             error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
         powtwo[tt] = pow(2, 1-nets[ielem].slists[tt].coefs[2]);
+        // powint indicates whether zeta is (almost) integer so that we can treat it as integer and use pow_int.
+        // This is used because pow_int is much faster than pow.
+        powint[tt] = (nets[ielem].slists[tt].coefs[2] - int(nets[ielem].slists[tt].coefs[2])) < 1e-6;
       }
     }
 
@@ -252,7 +257,7 @@ void PairNN::compute(int eflag, int vflag)
             precal[4] = cutf(rRjk/nets[ielem].slists[tt].coefs[0]);
             precal[5] = dcutf(rRjk, nets[ielem].slists[tt].coefs[0]);
             
-            symvec[tt] += G4(rRij, rRik, rRjk, powtwo[tt], precal, sym->coefs, dangtmp);
+            symvec[tt] += G4(rRij, rRik, rRjk, powtwo[tt], precal, sym->coefs, dangtmp, powint[tt]);
 
             tmpd[0] = dangtmp[0]*vecij[0];
             tmpd[1] = dangtmp[0]*vecij[1];
@@ -284,7 +289,7 @@ void PairNN::compute(int eflag, int vflag)
             precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
             precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
 
-            symvec[tt] += G5(rRij, rRik, powtwo[tt], precal, sym->coefs, dangtmp);
+            symvec[tt] += G5(rRij, rRik, powtwo[tt], precal, sym->coefs, dangtmp, powint[tt]);
 
             tmpd[0] = dangtmp[0]*vecij[0];
             tmpd[1] = dangtmp[0]*vecij[1];
@@ -341,6 +346,7 @@ void PairNN::compute(int eflag, int vflag)
     delete [] dsymvec;
     delete [] tmpf;
     delete [] powtwo;
+    delete [] powint;
     delete [] scale1;
   }
   
