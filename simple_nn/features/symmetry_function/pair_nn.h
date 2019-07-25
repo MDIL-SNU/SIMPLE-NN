@@ -72,6 +72,7 @@ class PairNN : public Pair {
   int *map;        // mapping from atom types to elements
   double cutmax;
   double max_rc_ang;
+  int nsf[6+1];   // number of symmetry functions with type N.
 
   virtual void allocate();
   virtual void read_file(char *);

@@ -247,12 +247,20 @@ void PairNN::compute(int eflag, int vflag)
         vecjk[1] = deljk[1]/rRjk;
         vecjk[2] = deljk[2]/rRjk;
 
-        precal[6] = rRij*rRij+rRik*rRik+rRjk*rRjk;
         precal[7] = (rRij*rRij + rRik*rRik - rRjk*rRjk)/2/rRij/rRik;
         precal[8] = 0.5*(1/rRik + 1/rRij/rRij*(rRjk*rRjk/rRik - rRik));
         precal[9] = 0.5*(1/rRij + 1/rRik/rRik*(rRjk*rRjk/rRij - rRij));
         precal[10] = rRjk/rRij/rRik;
-        precal[11] = rRij*rRij+rRik*rRik;
+        // Calculate precal[6] only when there is at least one G4.
+        // (precal[6] is only used by G4.)
+        if (nsf[4] > 0) {
+          precal[6] = rRij*rRij+rRik*rRik+rRjk*rRjk;
+        }
+        if (nsf[5] > 0) {
+          precal[11] = rRij*rRij+rRik*rRik;
+        }
+        if (nsf[6] > 0) {
+        }
 
         // calc angular symfunc
         for (tt=0; tt<nsym; tt++) {
@@ -322,6 +330,8 @@ void PairNN::compute(int eflag, int vflag)
             tmpf[tt*(jnum+1)*3 + jnum*3 + 0] -= tmpd[0] + tmpd[3];
             tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1] + tmpd[4];
             tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
+          }
+          else if ((sym->stype) == 6) {
           }
           else continue;
         }
@@ -484,7 +494,10 @@ void PairNN::read_file(char *fname) {
   bool valid = false;
   cutmax = 0;
   max_rc_ang = 0.0;
-   
+  for (int i=0; i<6+1; i++) {
+    nsf[i] = 0;
+  }
+
   while (1) {
     if (comm->me == 0) {
       ptr = fgets(line,MAXLINE,fp);
@@ -575,6 +588,7 @@ void PairNN::read_file(char *fname) {
       if (nets[nnet].slists[isym].stype >= 4) {
         // Find maximum cutoff distance among angular functions.
         max_rc_ang = max(max_rc_ang, nets[nnet].slists[isym].coefs[0]);
+        nsf[nets[nnet].slists[isym].stype] += 1;
         tstr = strtok(NULL," \t\n\r\f");
         nets[nnet].slists[isym].atype[1] = nelements;
         for (i=0; i<nelements; i++) {
