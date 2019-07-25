@@ -47,14 +47,13 @@ class PairNN : public Pair {
 // have to change
   struct Symc {
     int stype; // symmetry function type
-    //double coefs[4];
     double coefs[4]; // symmetry function coefficients
     int atype[2]; // related atom type(tmp)
   };
 
   struct Net {
     // do not include input layer and dE/dG
-    char *elem; // elements 
+    char *elem; // elements
     int *nnode; // number of nodes
     int nlayer; // number of layers
     int *acti; // activation function types
@@ -74,7 +73,7 @@ class PairNN : public Pair {
   double cutmax;
 
   virtual void allocate();
-  virtual void read_file(char *);  
+  virtual void read_file(char *);
   void free_net(Net &);
   double evalNet(const double *, double *, Net &);
 };
