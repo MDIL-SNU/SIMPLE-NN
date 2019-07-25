@@ -77,7 +77,7 @@ void PairNN::compute(int eflag, int vflag)
   double xtmp,ytmp,ztmp,evdwl,fpair,dradtmp,tmpc,tmpE;
   double dangtmp[3];
   double tmpd[9];
-  double precal[12];
+  double precal[17];
   // precal: cfij, dcfij, cfik, dcfik, cfjk, dcfjk, dist_square_sum,
   //         cosval, dcosval/dij, dcosval/dik, dcosval/djk
   double delij[3],delik[3],deljk[3],vecij[3],vecik[3],vecjk[3];
@@ -249,6 +249,9 @@ void PairNN::compute(int eflag, int vflag)
 
         // Note that Rij = rRij * rRij.
         precal[7] = (Rij + Rik - Rjk)/2/rRij/rRik;
+        // dcos(theta)/db = precal[8]
+        // dcos(theta)/dc = precal[9]
+        // dcos(theta)/da = -precal[10]
         precal[8] = 0.5*(1/rRik + 1/Rij*(Rjk/rRik - rRik));
         precal[9] = 0.5*(1/rRij + 1/Rik*(Rjk/rRij - rRij));
         precal[10] = rRjk/rRij/rRik;
@@ -262,10 +265,17 @@ void PairNN::compute(int eflag, int vflag)
         }
         if (nsf[6] > 0) {
           precal[12] = sqrt(fabs(1-precal[7]*precal[7]));
-          precal[13] = Rij-Rik-Rjk;
-          precal[14] = sqrt((rRjk + rRij - rRik)*(rRjk - rRij + rRik));
-          precal[15] = sqrt((-rRjk + rRij + rRik)*(rRjk + rRij + rRik));
-          precal[16] = 1 / (4 * Rij * Rik * sqrt(rRij * rRik));
+          // dsin(theta)/db = precal[13] * precal[14]
+          // dsin(theta)/dc = precal[13] * precal[15]
+          // dsin(theta)/da = precal[13] * precal[16]
+          // precal[13] need special treatment at theta=0,pi.
+          precal[13] = 2*Rij*Rik*sqrt(fabs((-rRjk+rRij+rRik)*(rRjk+rRij-rRik)*(rRjk-rRij+rRik)*(rRjk+rRij+rRik)));
+          if (precal[13] > 1e-6) {
+            precal[13] = 1 / precal[13];
+          }
+          precal[14] = rRik * ((Rjk - Rik) * (Rjk - Rik) - Rij * Rij);
+          precal[15] = rRij * ((Rjk - Rij) * (Rjk - Rij) - Rik * Rik);
+          precal[16] = 2*rRjk*rRij*rRik*(-Rjk+Rij+Rik);
         }
 
         // calc angular symfunc
@@ -343,8 +353,30 @@ void PairNN::compute(int eflag, int vflag)
             precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
             precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
 
-            symvec[tt] += G6(rRij, rRik, rRjk, powtwo[tt], sin_ts[tt], cos_ts[tt], \
+            symvec[tt] += G6(rRij, rRik, powtwo[tt], sin_ts[tt], cos_ts[tt], \
                              precal, sym->coefs, dangtmp, powint[tt]);
+
+            tmpd[0] = dangtmp[0]*vecij[0];
+            tmpd[1] = dangtmp[0]*vecij[1];
+            tmpd[2] = dangtmp[0]*vecij[2];
+            tmpd[3] = dangtmp[1]*vecik[0];
+            tmpd[4] = dangtmp[1]*vecik[1];
+            tmpd[5] = dangtmp[1]*vecik[2];
+            tmpd[6] = dangtmp[2]*vecjk[0];
+            tmpd[7] = dangtmp[2]*vecjk[1];
+            tmpd[8] = dangtmp[2]*vecjk[2];
+
+            tmpf[tt*(jnum+1)*3 + jj*3 + 0] += tmpd[0] - tmpd[6];
+            tmpf[tt*(jnum+1)*3 + jj*3 + 1] += tmpd[1] - tmpd[7];
+            tmpf[tt*(jnum+1)*3 + jj*3 + 2] += tmpd[2] - tmpd[8];
+
+            tmpf[tt*(jnum+1)*3 + kk*3 + 0] += tmpd[3] + tmpd[6];
+            tmpf[tt*(jnum+1)*3 + kk*3 + 1] += tmpd[4] + tmpd[7];
+            tmpf[tt*(jnum+1)*3 + kk*3 + 2] += tmpd[5] + tmpd[8];
+
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 0] -= tmpd[0] + tmpd[3];
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1] + tmpd[4];
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
           }
           else continue;
         }

@@ -98,7 +98,7 @@ static inline double G5(const double Rij, const double Rik, const double powtwo,
 
 // Modified angular symmetry function from ANI-1.
 // J. S. Smith et al., Chem. Sci., 2017, 8, 3192.
-static inline double G6(const double Rij, const double Rik, const double Rjk, const double powtwo, \
+static inline double G6(const double Rij, const double Rik, const double powtwo, \
           const double sin_ts, const double cos_ts, const double *precal, const double *par, \
           double *deriv, bool powint) {
     // par[0] = R_c
@@ -106,28 +106,22 @@ static inline double G6(const double Rij, const double Rik, const double Rjk, co
     // par[2] = zeta
     // par[3] = R_s
     // par[4] = theta_s
-    // precal[12] = sin(theta)
-    // precal[13] = a*a - b*b - c*c
-    // precal[14] = sqrt((a+b-c)*(a-b+c))
-    // precal[15] = sqrt((-a+b+c)*(a+b+c))
-    // precal[16] = 1 / (4*b*b*c*c*sqrt(b*c))
-    double expl = exp(-par[1]*(0.5 * (Rij + Rik) - par[3]) * (0.5 * (Rij + Rik) - par[3])) * powtwo;
+    // dcos(theta)/db = precal[8]
+    // dcos(theta)/dc = precal[9]
+    // dcos(theta)/da = -precal[10]
+    // dsin(theta)/db = precal[13] * precal[14]
+    // dsin(theta)/dc = precal[13] * precal[15]
+    // dsin(theta)/da = precal[13] * precal[16]
+    double expo = (0.5 * (Rij + Rik) - par[3]);
+    double expl = exp(-par[1]*expo*expo) * powtwo;
     double cosv = 1 + cos_ts * precal[7] + sin_ts * precal[12];
     double powcos = powint ? pow_int(fabs(cosv), par[2]-1) : pow(fabs(cosv), fabs(par[2]-1));
 
-    double dsindx2 = (Rij - Rik) * precal[15] * precal[13] * precal[16];
-    double dsindy2 = (Rij + Rik) * precal[14] * precal[13] * precal[16];
-    double dcosdx2 = -(Rij - Rik) * precal[14] * precal[15] * precal[15] * precal[16];
-    double dcosdy2 = (Rij + Rik) * precal[15] * precal[14] * precal[14] * precal[16];
-    double cos_theta_2 = precal[15] / (2 * Rij * Rik);
-    double sin_theta_2 = precal[14] / (2 * Rij * Rik);
-
-    deriv[0] = sin_theta_2 * powcos*cosv * expl * (-precal[1] * precal[2] + precal[0] * precal[3]);
-    deriv[1] = cos_theta_2 * powcos*cosv * expl * (-par[1] * ((Rij + Rik) - 2 * par[3]) * precal[0] * precal[2] + \
-                                     precal[1] * precal[2] + precal[0] * precal[3]);
-    deriv[0] += powcos * expl * precal[0] * precal[2] * par[2] * (cos_ts * dcosdx2 + sin_ts * dsindx2);
-    deriv[1] += powcos * expl * precal[0] * precal[2] * par[2] * (cos_ts * dcosdy2 + sin_ts * dsindy2);
-    deriv[2] = 0;
+    deriv[0] = expl*powcos*precal[2] * (precal[0] * par[2] * (cos_ts*precal[8] + sin_ts*precal[13]*precal[14]) + \
+               cosv * (precal[1] - par[1] * expo * precal[0])); // ij
+    deriv[1] = expl*powcos*precal[0] * (precal[2] * par[2] * (cos_ts*precal[9] + sin_ts*precal[13]*precal[15]) + \
+               cosv * (precal[3] - par[1] * expo * precal[2])); // ik
+    deriv[2] = expl*powcos*precal[0]*precal[2]*par[2]*(-cos_ts*precal[10] + sin_ts*precal[13]*precal[16]);    // jk
 
     return powcos*cosv * expl * precal[0] * precal[2];
 }
