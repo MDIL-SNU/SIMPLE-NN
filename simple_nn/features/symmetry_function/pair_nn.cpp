@@ -134,6 +134,8 @@ void PairNN::compute(int eflag, int vflag)
     double *dsymvec = new double[nsym];
     double *tmpf = new double[nsym*(jnum+1)*3];
     double *powtwo = new double[nsym];
+    double *cos_ts = new double[nsym];
+    double *sin_ts = new double[nsym];
     bool *powint = new bool[nsym];
 
     // add scale criteria ----
@@ -147,15 +149,23 @@ void PairNN::compute(int eflag, int vflag)
       symvec[tt] = 0;
       dsymvec[tt] = 0;
       powtwo[tt] = 0;
+      cos_ts[tt] = 0.0;
+      sin_ts[tt] = 0.0;
       powint[tt] = false;
 
-      if (nets[ielem].slists[tt].stype == 4 || nets[ielem].slists[tt].stype == 5) {
+      if (nets[ielem].slists[tt].stype == 4 || \
+          nets[ielem].slists[tt].stype == 5 || \
+          nets[ielem].slists[tt].stype == 6) {
         if (nets[ielem].slists[tt].coefs[2] < 1.0)
             error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
         powtwo[tt] = pow(2, 1-nets[ielem].slists[tt].coefs[2]);
         // powint indicates whether zeta is (almost) integer so that we can treat it as integer and use pow_int.
         // This is used because pow_int is much faster than pow.
         powint[tt] = (nets[ielem].slists[tt].coefs[2] - int(nets[ielem].slists[tt].coefs[2])) < 1e-6;
+        if (nets[ielem].slists[tt].stype == 6) {
+          cos_ts[tt] = cos(nets[ielem].slists[tt].coefs[4]);
+          sin_ts[tt] = sin(nets[ielem].slists[tt].coefs[4]);
+        }
       }
     }
 
