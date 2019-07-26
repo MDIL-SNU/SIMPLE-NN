@@ -218,6 +218,7 @@ void PairNN::compute(int eflag, int vflag)
         else continue;
       }
 
+      if (rRij > max_rc_ang) continue;
       for (kk = jj+1; kk < jnum; kk++) {
         k = jlist[kk];
         //k &= NEIGHMASK;
@@ -228,6 +229,7 @@ void PairNN::compute(int eflag, int vflag)
         Rik = delik[0]*delik[0] + delik[1]*delik[1] + delik[2]*delik[2];
         if (Rik < 0.0001) continue;
         rRik = sqrt(Rik);
+        if (rRik > max_rc_ang) continue;
         ktype = type[k];
         kelem = map[ktype];
 
@@ -237,7 +239,6 @@ void PairNN::compute(int eflag, int vflag)
         Rjk = deljk[0]*deljk[0] + deljk[1]*deljk[1] + deljk[2]*deljk[2];
         if (Rjk < 0.0001) continue;
         rRjk = sqrt(Rjk);
-        if (rRik > max_rc_ang) continue;
 
         vecik[0] = delik[0]/rRik;
         vecik[1] = delik[1]/rRik;
