@@ -1,4 +1,3 @@
-//#include <mpi.h>
 #include <math.h>
 #include <stdio.h>
 #include "calculate_sf.h"
@@ -26,9 +25,15 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
     int bin_range[3], nbins[3], cell_shift[3], max_bin[3], min_bin[3], pbc_bin[3];
     //int bin_i[natoms][4];
     double vol, tmp, cutoff, dradtmp, rRij, rRik, rRjk;
-    double plane_d[3], total_shift[3], precal[12], tmpd[9], dangtmp[3];
+    double plane_d[3], total_shift[3], precal[17], tmpd[9], dangtmp[3];
     double vecij[3], vecik[3], vecjk[3], deljk[3];
-    double cross[3][3], reci[3][3];//, powtwo[nsyms];
+    double cross[3][3], reci[3][3];
+    double max_rc_ang = 0.0;
+    int nsf[6+1];
+
+    for (int i=0; i<6+1; i++) {
+        nsf[i] = 0;
+    }
 
     // Check for not implemented symfunc type.
     for (int s=0; s < nsyms; ++s) {
@@ -48,17 +53,37 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
     }
 
     double *powtwo = new double[nsyms];
+    double *cos_ts = new double[nsyms];
+    double *sin_ts = new double[nsyms];
+    bool *powint = new bool[nsyms];
+
+    for (int s=0; s < nsyms; ++s) {
+        powtwo[s] = 0.0;
+        cos_ts[s] = 0.0;
+        sin_ts[s] = 0.0;
+        powint[s] = false;
+        if (params_i[s][0] >= 4) {
+            // Max operation.
+            max_rc_ang = max_rc_ang > params_d[s][0] ? max_rc_ang : params_d[s][0];
+            nsf[params_i[s][0]] += 1;
+        }
+    }
 
     cutoff = 0.0;
     for (int s=0; s < nsyms; ++s) {
         if (cutoff < params_d[s][0])
             cutoff = params_d[s][0];
 
-        if ((params_i[s][0] == 4 || params_i[s][0] == 5) &&
-             params_d[s][2] < 1.0)
-            return 2;
+        if (params_i[s][0] == 4 || params_i[s][0] == 5 || params_i[s][0] == 6) {
+            if (params_d[s][2] < 1.0) return 2;
 
-        powtwo[s] = pow(2, 1.-params_d[s][2]);
+            powtwo[s] = pow(2, 1.-params_d[s][2]);
+            powint[s] = (params_d[s][2] - int(params_d[s][2])) < 1e-6;
+            if (params_i[s][0] == 6) {
+                cos_ts[s] = cos(params_d[s][4]);
+                sin_ts[s] = sin(params_d[s][4]);
+            }
+        }
     }
 
     total_bins = 1;
@@ -154,7 +179,7 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                         tmp = sqrt(total_shift[0]*total_shift[0] + total_shift[1]*total_shift[1] + total_shift[2]*total_shift[2]);
 
                         if (tmp < cutoff) {
-                            for (int a=0; a < 3; ++a) 
+                            for (int a=0; a < 3; ++a)
                                 nei_list_d[nneigh*4 + a] = total_shift[a];
                             nei_list_d[nneigh*4 + 3] = tmp;
                             nei_list_i[nneigh*2]    = atom_i[j];
@@ -174,7 +199,9 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
             vecij[2] =  nei_list_d[j*4 + 2] / rRij;
 
             for (int s=0; s < nsyms; ++s) {
-                if ((params_i[s][0] == 2) && (params_i[s][1] == nei_list_i[j*2])) { // FIXME:
+                if (rRij > params_d[s][0]) continue;
+                if (params_i[s][1] != nei_list_i[j*2]) continue;
+                if (params_i[s][0] == 2) {
                     precal[0] = cutf(rRij / params_d[s][0]);
                     precal[1] = dcutf(rRij, params_d[s][0]);
 
@@ -194,9 +221,11 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                 else continue;
             }
 
+            if (rRij > max_rc_ang) continue;
             for (int k=j+1; k < nneigh; ++k) {
                 // calculate angular symmetry function
                 rRik = nei_list_d[k*4 + 3];
+                if (rRik > max_rc_ang) continue;
                 vecik[0] = nei_list_d[k*4]     / rRik;
                 vecik[1] = nei_list_d[k*4 + 1] / rRik;
                 vecik[2] = nei_list_d[k*4 + 2] / rRik;
@@ -212,18 +241,33 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                 vecjk[1] = deljk[1] / rRjk;
                 vecjk[2] = deljk[2] / rRjk;
 
-                precal[6]  = rRij*rRij+rRik*rRik+rRjk*rRjk;
                 precal[7]  = (rRij*rRij + rRik*rRik - rRjk*rRjk)/2/rRij/rRik;
                 precal[8]  = 0.5*(1/rRik + 1/rRij/rRij*(rRjk*rRjk/rRik - rRik));
                 precal[9]  = 0.5*(1/rRij + 1/rRik/rRik*(rRjk*rRjk/rRij - rRij));
                 precal[10] = rRjk/rRij/rRik;
-                precal[11] = rRij*rRij+rRik*rRik;
+                if (nsf[4] > 0) {
+                    precal[6]  = rRij*rRij+rRik*rRik+rRjk*rRjk;
+                }
+                if (nsf[5] > 0) {
+                    precal[11] = rRij*rRij+rRik*rRik;
+                }
+                if (nsf[6] > 0) {
+                    precal[12] = sqrt(fabs(1-precal[7]*precal[7]));
+                    precal[13] = 2*rRij*rRij*rRik*rRik*sqrt(fabs((-rRjk+rRij+rRik)*(rRjk+rRij-rRik)*(rRjk-rRij+rRik)*(rRjk+rRij+rRik)));
+                    if (precal[13] > 1e-6) {
+                        precal[13] = 1 / precal[13];
+                    }
+                    precal[14] = rRik * ((rRjk*rRjk - rRik*rRik)*(rRjk*rRjk - rRik*rRik) - rRij*rRij*rRij*rRij);
+                    precal[15] = rRij * ((rRjk*rRjk - rRij*rRij)*(rRjk*rRjk - rRij*rRij) - rRik*rRik*rRik*rRik);
+                    precal[16] = 2*rRjk*rRij*rRik*(-rRjk*rRjk + rRij*rRij + rRik*rRik);
+                }
 
                 for (int s=0; s < nsyms; ++s) {
-                    if ((params_i[s][0] == 4) &&
-                       (((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) ||
-                        ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2]))) ) { // FIXME:
-
+                    if (rRik > params_d[s][0]) continue;
+                    if (!(((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) ||
+                        ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2])))) continue;
+                    if (params_i[s][0] == 4) {
+                        if (rRjk > params_d[s][0]) continue;
                         precal[0] = cutf(rRij / params_d[s][0]);
                         precal[1] = dcutf(rRij, params_d[s][0]);
                         precal[2] = cutf(rRik / params_d[s][0]);
@@ -231,7 +275,7 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                         precal[4] = cutf(rRjk / params_d[s][0]);
                         precal[5] = dcutf(rRjk, params_d[s][0]);
 
-                        symf[ii][s] += G4(rRij, rRik, rRjk, powtwo[s], precal, params_d[s], dangtmp);
+                        symf[ii][s] += G4(rRij, rRik, rRjk, powtwo[s], precal, params_d[s], dangtmp, powint[s]);
 
                         tmpd[0] = dangtmp[0]*vecij[0];
                         tmpd[1] = dangtmp[0]*vecij[1];
@@ -255,16 +299,44 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                         dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
                         dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
                     }
-                    else if ((params_i[s][0] == 5) &&
-                           (((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) ||
-                            ((params_i[s][1] == nei_list_i[k*2]) && (params_i[s][2] == nei_list_i[j*2]))) ) {
-
+                    else if (params_i[s][0] == 5) {
                         precal[0] = cutf(rRij / params_d[s][0]);
                         precal[1] = dcutf(rRij, params_d[s][0]);
                         precal[2] = cutf(rRik / params_d[s][0]);
                         precal[3] = dcutf(rRik, params_d[s][0]);
 
-                        symf[ii][s] += G5(rRij, rRik, powtwo[s], precal, params_d[s], dangtmp);
+                        symf[ii][s] += G5(rRij, rRik, powtwo[s], precal, params_d[s], dangtmp, powint[s]);
+
+                        tmpd[0] = dangtmp[0]*vecij[0];
+                        tmpd[1] = dangtmp[0]*vecij[1];
+                        tmpd[2] = dangtmp[0]*vecij[2];
+                        tmpd[3] = dangtmp[1]*vecik[0];
+                        tmpd[4] = dangtmp[1]*vecik[1];
+                        tmpd[5] = dangtmp[1]*vecik[2];
+                        tmpd[6] = dangtmp[2]*vecjk[0];
+                        tmpd[7] = dangtmp[2]*vecjk[1];
+                        tmpd[8] = dangtmp[2]*vecjk[2];
+
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0] - tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1] - tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2] - tmpd[8];
+
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]     += tmpd[3] + tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1] += tmpd[4] + tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2] += tmpd[5] + tmpd[8];
+
+                        dsymf[ii][s*natoms*3 + i*3]     -= tmpd[0] + tmpd[3];
+                        dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
+                        dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
+                    }
+                    else if (params_i[s][0] == 6) {
+                        precal[0] = cutf(rRij / params_d[s][0]);
+                        precal[1] = dcutf(rRij, params_d[s][0]);
+                        precal[2] = cutf(rRik / params_d[s][0]);
+                        precal[3] = dcutf(rRik, params_d[s][0]);
+
+                        symf[ii][s] += G6(rRij, rRik, powtwo[s], sin_ts[s], cos_ts[s],
+                                          precal, params_d[s], dangtmp, powint[s]);
 
                         tmpd[0] = dangtmp[0]*vecij[0];
                         tmpd[1] = dangtmp[0]*vecij[1];
@@ -302,6 +374,9 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
     }
     delete[] bin_i;
     delete[] powtwo;
+    delete[] cos_ts;
+    delete[] sin_ts;
+    delete[] powint;
     return 0;
 }
 

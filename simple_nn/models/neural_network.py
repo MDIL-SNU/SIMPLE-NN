@@ -101,11 +101,8 @@ class Neural_network(object):
                     tmp = line.split()
                     self.params[item] += [list(map(float, tmp))]
 
+            # Since it is only used to write lammps potential, it does not need degree to radian conversion.
             self.params[item] = np.array(self.params[item])
-            # Convert degrees in params file to radians.
-            for s in range(self.params[item].shape[0]):
-                if self.params[item][s,0] == 6:
-                    self.params[item][s,7] *= np.pi / 180.0
             self.inp_size[item] = self.params[item].shape[0]
 
 
