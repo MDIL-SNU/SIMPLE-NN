@@ -412,6 +412,8 @@ void PairNN::compute(int eflag, int vflag)
     delete [] dsymvec;
     delete [] tmpf;
     delete [] powtwo;
+    delete [] cos_ts;
+    delete [] sin_ts;
     delete [] powint;
     delete [] scale1;
   }
