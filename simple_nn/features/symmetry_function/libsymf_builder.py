@@ -12,7 +12,6 @@ ffibuilder.set_source(
     '#include "calculate_sf.h"',
     sources=[
         "simple_nn/features/symmetry_function/calculate_sf.cpp",
-        "simple_nn/features/symmetry_function/symmetry_functions.cpp",
     ],
     source_extension=".cpp",
     include_dirs=["simple_nn/features/symmetry_function/"],
