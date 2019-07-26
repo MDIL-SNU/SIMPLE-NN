@@ -26,6 +26,15 @@ def _read_params(filename):
 
     params_i = np.asarray(params_i, dtype=np.intc, order='C')
     params_d = np.asarray(params_d, dtype=np.float64, order='C')
+    for s in range(params_i.shape[0]):
+        # Convert degrees in params file to radians.
+        if params_i[s,0] == 6:
+            if not 0 <= params_d[s,4] <= 180:
+                err = "Theta_s in G6 must be between 0 and 180 degrees."
+                if comm.rank == 0:
+                    self.parent.logfile.write("\nError: {:}\n".format(err))
+                raise ValueError(err)
+            params_d[s,4] *= np.pi / 180.0
 
     return params_i, params_d
 

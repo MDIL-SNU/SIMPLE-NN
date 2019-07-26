@@ -102,6 +102,10 @@ class Neural_network(object):
                     self.params[item] += [list(map(float, tmp))]
 
             self.params[item] = np.array(self.params[item])
+            # Convert degrees in params file to radians.
+            for s in range(self.params[item].shape[0]):
+                if self.params[item][s,0] == 6:
+                    self.params[item][s,7] *= np.pi / 180.0
             self.inp_size[item] = self.params[item].shape[0]
 
 

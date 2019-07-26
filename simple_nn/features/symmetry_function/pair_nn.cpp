@@ -165,6 +165,11 @@ void PairNN::compute(int eflag, int vflag)
         if (nets[ielem].slists[tt].stype == 6) {
           cos_ts[tt] = cos(nets[ielem].slists[tt].coefs[4]);
           sin_ts[tt] = sin(nets[ielem].slists[tt].coefs[4]);
+          // Convert degrees (as written in params or potential file) to radians.
+          nets[ielem].slists[tt].coefs[5] *= M_PI / 180.0;
+          if (nets[ielem].slists[tt].coefs[5] > 180.0 || nets[ielem].slists[tt].coefs[5] < 0.0) {
+            error->all(FLERR, "Theta_s in G6 must be between 0 and 180 degrees!");
+          }
         }
       }
     }
