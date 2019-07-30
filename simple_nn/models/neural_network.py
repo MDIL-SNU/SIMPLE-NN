@@ -515,14 +515,15 @@ class Neural_network(object):
         
         if self.inputs['use_force'] or self.inputs['use_stress']:
 #            F_shape = tf.shape(self.next_elem['F'])
-            self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [max_totnum]), # dx_shape[1]
-                                                                                  tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
-                                                                        self.next_elem['partition'], 2)[1]
             self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
             self.next_elem['atom_idx'] = tf.dynamic_partition(\
                                              tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
                                              self.next_elem['partition'], 2
                                          )[1]
+
+            self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [max_totnum]), # dx_shape[1]
+                                                                                  tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
+                                                                        self.next_elem['partition'], 2)[1]
 
             if self.inputs['use_force']:
                 self.next_elem['F'] = \
@@ -1083,7 +1084,7 @@ class Neural_network(object):
 
                             test_save['DFT_S'] = np.concatenate(test_save['DFT_S'], axis=0)
                             test_save['NN_S'] = np.concatenate(test_save['NN_S'], axis=0)
-                            test_save['NN_atomic_S'] = np.concatenate(test_saave['NN_atomic_S'], axis=0)
+                            test_save['NN_atomic_S'] = np.concatenate(test_save['NN_atomic_S'], axis=0)
                         break
                 
                 with open('./test_result', 'wb') as fil:
