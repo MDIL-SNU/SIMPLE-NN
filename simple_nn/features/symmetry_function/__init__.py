@@ -100,6 +100,7 @@ class Symmetry_function(object):
         
         if use_stress:
             feature['S'] = _bytes_feature(res['S'].tobytes())
+            feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
 
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
@@ -162,6 +163,7 @@ class Symmetry_function(object):
 
         if use_stress:
             features['S'] = tf.FixedLenFeature([], dtype=tf.string)
+            features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
@@ -199,11 +201,6 @@ class Symmetry_function(object):
                 res['da_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
                                           lambda: tf.zeros([0, inp_size[item], 3, 6], dtype=tf.float64),
                                           lambda: tf.reshape(tf.decode_raw(read_data['da_'+item], tf.float64), [-1, inp_size[item], 3, 6]))
-#                                            tf.sparse_to_dense(
-#                                                sparse_indices=tf.decode_raw(read_data['da_indices_'+item], tf.int32),
-#                                                output_shape=tf.decode_raw(read_data['da_dense_shape_'+item], tf.int32),
-#                                                sparse_values=tf.decode_raw(read_data['da_values_'+item], tf.float64)),
-#                                            [tf.shape(res['x_'+item])[0], inp_size[item], -1, 3, 6]))
  
             res['partition_'+item] = tf.decode_raw(read_data['partition_'+item], tf.int32)
 
@@ -219,6 +216,7 @@ class Symmetry_function(object):
  
         if use_stress:
             res['S'] = tf.decode_raw(read_data['S'], tf.float64)
+            res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
         
         return res
 
@@ -247,6 +245,7 @@ class Symmetry_function(object):
 
         if use_stress:
             batch_dict['S'] = [None]
+            batch_dict['atom_idx'] = [None, 1]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
@@ -445,7 +444,6 @@ class Symmetry_function(object):
             if self.inputs['valid_rate'] != 0.0:
                 # valid
                 tmp_pickle_valid_list = _make_data_list(tmp_pickle_valid)
-                #np.random.shuffle(tmp_pickle_valid_list)
                 num_tmp_pickle_valid = len(tmp_pickle_valid_list)
                 num_tfrecord_valid = int(num_tmp_pickle_valid / self.inputs['data_per_tfrecord'])
                 valid_list = open(self.valid_data_list, 'w')
