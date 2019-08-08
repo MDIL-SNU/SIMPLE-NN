@@ -294,7 +294,7 @@ class Neural_network(object):
 
                 for j in range(len(self.parent.inputs['atom_types'])):
                     if not j == i:
-                        except_idx[j] = tf.tile(tf.expand_dims(tf.cast([0.]*6, tf.float64), axis=1), [tf.shape(each_atom_idx[j])[0], 1])
+                        except_idx[j] = tf.tile(tf.expand_dims(tf.cast([0.], tf.float64), axis=1), [tf.shape(each_atom_idx[j])[0], 6])
                     else:
                         except_idx[j] = tmp_stress
 
@@ -302,12 +302,12 @@ class Neural_network(object):
                                   lambda: tf.cast(0., tf.float64),
                                   lambda: tf.dynamic_stitch(each_atom_idx, except_idx))
                 
-                self.atomic_S = tf.reduce_mean(self.S[:,:3], axis=1, keepdims=True)
 #                self.S -= tf.cond(zero_cond,
 #                                  lambda: tf.cast(0., tf.float64),
 #                                  lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
 #                                                                num_segments=self.next_elem['num_seg'])[1:])
         if self.inputs['use_stress']:
+            self.atomic_S = self.S
             self.S = tf.sparse_segment_sum(self.S, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
                                            num_segments=self.next_elem['num_seg'])[1:]
 
