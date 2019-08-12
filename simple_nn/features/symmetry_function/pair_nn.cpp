@@ -83,7 +83,7 @@ void PairNN::compute(int eflag, int vflag)
   //         cosval, dcosval/dij, dcosval/dik, dcosval/djk
   double delij[3],delik[3],deljk[3],vecij[3],vecik[3],vecjk[3];
   double cell[3][3], cross[3][3], inv[3][3];
-  double Rij,Rik,Rjk,rRij,rRik,rRjk,cutij,cutik,cutjk;
+  double vol,Rij,Rik,Rjk,rRij,rRik,rRjk,cutij,cutik,cutjk;
   int *ilist,*jlist,*numneigh,**firstneigh;
 
   evdwl = 0.0;
@@ -92,8 +92,12 @@ void PairNN::compute(int eflag, int vflag)
 
   double **x = atom->x;
   double **f = atom->f;
-  double boxlo = domain->boxlo;
-  double boxhi = domain->boxhi;
+  double boxxlo = domain->boxlo[0];
+  double boxxhi = domain->boxhi[0];
+  double boxylo = domain->boxlo[1];
+  double boxyhi = domain->boxhi[1];
+  double boxzlo = domain->boxlo[2];
+  double boxzhi = domain->boxhi[2];
   double xy = domain->xy;
   double xz = domain->xz;
   double yz = domain->yz;
@@ -111,15 +115,15 @@ void PairNN::compute(int eflag, int vflag)
   // loop over neighbors of my atoms
 
   if (vflag_atom) {
-    cell[0][0] = boxhi[0] - boxlo[0];
+    cell[0][0] = boxxhi - boxxlo;
     cell[0][1] = 0;
     cell[0][2] = 0;
     cell[1][0] = xy;
-    cell[1][1] = boxhi[1] - boxlo[1];
+    cell[1][1] = boxyhi - boxylo;
     cell[1][2] = 0;
     cell[2][0] = xz;
     cell[2][1] = yz;
-    cell[2][2] = boxhi[2] - boxlo[2];
+    cell[2][2] = boxzhi - boxzlo;
 
     cross[0][0] = cell[1][1]*cell[2][2] - cell[1][2]*cell[2][1];
     cross[0][1] = cell[1][2]*cell[2][0] - cell[1][0]*cell[2][2];
