@@ -228,7 +228,7 @@ void PairNN::compute(int eflag, int vflag)
           
           for (int a=0; a < 3; ++a) {
             tmpd[a] = dradtmp*vecij[a];
-            tmpf[tt*(jnum+1)*3 + jj*3 + a] += tmpd[a];
+            tmpf[tt*(jnum+1)*3 + jj*3 + a]   += tmpd[a];
             tmpf[tt*(jnum+1)*3 + jnum*3 + a] -= tmpd[a];
 
             if (vflag_atom) {
@@ -246,6 +246,11 @@ void PairNN::compute(int eflag, int vflag)
         k = jlist[kk];
         //k &= NEIGHMASK;
         kp = tag[k] - 1;
+        delik[0] = x[k][0] - xtmp;
+        delik[1] = x[k][1] - ytmp;
+        delik[2] = x[k][2] - ztmp;
+        Rik = delik[0]*delik[0] + delik[1]*delik[1] + delik[2]*delik[2];
+        rRik = sqrt(Rik);
         ktype = type[k];
         kelem = map[ktype];
         
@@ -257,12 +262,6 @@ void PairNN::compute(int eflag, int vflag)
 
         if (Rjk < 0.0001 || Rik < 0.0001 || Rik > cutsq[itype][ktype]) continue;
 
-        delik[0] = x[k][0] - xtmp;
-        delik[1] = x[k][1] - ytmp;
-        delik[2] = x[k][2] - ztmp;
-        Rik = delik[0]*delik[0] + delik[1]*delik[1] + delik[2]*delik[2];
-        rRik = sqrt(Rik);
-        
         for (int a=0; a < 3; ++a){
           vecik[a] = delik[a]/rRik;
           vecjk[a] = deljk[a]/rRjk;
@@ -343,13 +342,13 @@ void PairNN::compute(int eflag, int vflag)
             tmpd[8] = dangtmp[2]*vecjk[2];
 
             for (int a=0; a < 3; ++a) {
-              tmpf[tt*(jnum+1)*3 + jj*3 + a] += tmpd[a] - tmpd[a + 6];
-              tmpf[tt*(jnum+1)*3 + kk*3 + a] += tmpd[a + 3] + tmpd[a + 6];
+              tmpf[tt*(jnum+1)*3 + jj*3 + a]   += tmpd[a] - tmpd[a + 6];
+              tmpf[tt*(jnum+1)*3 + kk*3 + a]   += tmpd[a + 3] + tmpd[a + 6];
               tmpf[tt*(jnum+1)*3 + jnum*3 + a] -= tmpd[a] + tmpd[a + 3];
 
               if (vflag_atom) {
                 for (int b=0; b < 3; ++b) {
-                  tmps[tt*3*6 + b*6 + a] += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3])*cell[b][a]/vol;
+                  tmps[tt*3*6 + b*6 + a]     += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3])*cell[b][a]/vol;
                   tmps[tt*3*6 + b*6 + a + 3] += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3])*cell[b][(a+1)%3]/vol;
                 }
               }
@@ -386,12 +385,12 @@ void PairNN::compute(int eflag, int vflag)
       if (vflag_atom) {
         for (int l=0; l < 3; ++l) {
           // Caution: xx yy zz xy xz yz
-          vatom[i][0] -= tmps[tt*l*6 + l*6 + 0]*tmpc;
-          vatom[i][1] -= tmps[tt*l*6 + l*6 + 1]*tmpc;
-          vatom[i][2] -= tmps[tt*l*6 + l*6 + 2]*tmpc;
-          vatom[i][3] -= tmps[tt*l*6 + l*6 + 3]*tmpc;
-          vatom[i][4] -= tmps[tt*l*6 + l*6 + 5]*tmpc;
-          vatom[i][5] -= tmps[tt*l*6 + l*6 + 4]*tmpc;
+          vatom[i][0] += tmps[tt*3*6 + l*6 + 0]*tmpc/1000;
+          vatom[i][1] += tmps[tt*3*6 + l*6 + 1]*tmpc/1000;
+          vatom[i][2] += tmps[tt*3*6 + l*6 + 2]*tmpc/1000;
+          vatom[i][3] += tmps[tt*3*6 + l*6 + 3]*tmpc/1000;
+          vatom[i][4] += tmps[tt*3*6 + l*6 + 5]*tmpc/1000;
+          vatom[i][5] += tmps[tt*3*6 + l*6 + 4]*tmpc/1000;
         }
       }
     }

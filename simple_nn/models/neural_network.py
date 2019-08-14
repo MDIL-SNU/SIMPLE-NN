@@ -58,7 +58,7 @@ class Neural_network(object):
                                       'full_batch': False,
                                       'total_epoch': 10000,
                                       'learning_rate': 0.0001,
-                                      'stress_coeff': 0.01,
+                                      'stress_coeff': 0.000001,
                                       'force_coeff': 0.1, 
                                       'energy_coeff': 1.,
                                       'loss_scale': 1.,
