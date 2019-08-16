@@ -385,12 +385,12 @@ void PairNN::compute(int eflag, int vflag)
       if (vflag_atom) {
         for (int l=0; l < 3; ++l) {
           // Caution: xx yy zz xy xz yz
-          vatom[i][0] += tmps[tt*3*6 + l*6 + 0]*tmpc/1000;
-          vatom[i][1] += tmps[tt*3*6 + l*6 + 1]*tmpc/1000;
-          vatom[i][2] += tmps[tt*3*6 + l*6 + 2]*tmpc/1000;
-          vatom[i][3] += tmps[tt*3*6 + l*6 + 3]*tmpc/1000;
-          vatom[i][4] += tmps[tt*3*6 + l*6 + 5]*tmpc/1000;
-          vatom[i][5] += tmps[tt*3*6 + l*6 + 4]*tmpc/1000;
+          vatom[i][0] += tmps[tt*3*6 + l*6 + 0]*tmpc;
+          vatom[i][1] += tmps[tt*3*6 + l*6 + 1]*tmpc;
+          vatom[i][2] += tmps[tt*3*6 + l*6 + 2]*tmpc;
+          vatom[i][3] += tmps[tt*3*6 + l*6 + 3]*tmpc;
+          vatom[i][4] += tmps[tt*3*6 + l*6 + 5]*tmpc;
+          vatom[i][5] += tmps[tt*3*6 + l*6 + 4]*tmpc;
         }
       }
     }
