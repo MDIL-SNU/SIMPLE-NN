@@ -176,8 +176,7 @@ void PairNN::compute(int eflag, int vflag)
         if (rRij > sym->coefs[0]) continue;
         if (sym->atype[0] != jelem) continue;
         if (sym->stype == 2) {
-          precal[0] = cutf(rRij / sym->coefs[0]);
-          precal[1] = dcutf(rRij, sym->coefs[0]);
+          cutf2(rRij, sym->coefs[0], precal[0], precal[1], 0);
 
           symvec[tt] += G2(rRij, precal, sym->coefs, dradtmp);
           tmpd[0] = dradtmp*vecij[0];
@@ -264,12 +263,9 @@ void PairNN::compute(int eflag, int vflag)
                (sym->atype[0] == kelem && sym->atype[1] == jelem))) continue;
           if ((sym->stype) == 4) {
             if (rRjk > sym->coefs[0]) continue;
-            precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
-            precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
-            precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
-            precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
-            precal[4] = cutf(rRjk/nets[ielem].slists[tt].coefs[0]);
-            precal[5] = dcutf(rRjk, nets[ielem].slists[tt].coefs[0]);
+            cutf2(rRij, nets[ielem].slists[tt].coefs[0], precal[0], precal[1], 0);
+            cutf2(rRik, nets[ielem].slists[tt].coefs[0], precal[2], precal[3], 1);
+            cutf2(rRjk, nets[ielem].slists[tt].coefs[0], precal[4], precal[5], 2);
 
             symvec[tt] += G4(rRij, rRik, rRjk, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp, nets[ielem].powint[tt]);
 
@@ -296,10 +292,8 @@ void PairNN::compute(int eflag, int vflag)
             tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
           }
           else if ((sym->stype) == 5) {
-            precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
-            precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
-            precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
-            precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
+            cutf2(rRij, nets[ielem].slists[tt].coefs[0], precal[0], precal[1], 0);
+            cutf2(rRik, nets[ielem].slists[tt].coefs[0], precal[2], precal[3], 1);
 
             symvec[tt] += G5(rRij, rRik, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp, nets[ielem].powint[tt]);
 
@@ -326,10 +320,8 @@ void PairNN::compute(int eflag, int vflag)
             tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
           }
           else if ((sym->stype) == 6) {
-            precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
-            precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
-            precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
-            precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
+            cutf2(rRij, nets[ielem].slists[tt].coefs[0], precal[0], precal[1], 0);
+            cutf2(rRik, nets[ielem].slists[tt].coefs[0], precal[2], precal[3], 1);
 
             symvec[tt] += G6(rRij, rRik, nets[ielem].powtwo[tt], nets[ielem].sin_ts[tt], nets[ielem].cos_ts[tt], \
                              precal, sym->coefs, dangtmp, nets[ielem].powint[tt]);
