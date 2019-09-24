@@ -326,10 +326,9 @@ class Neural_network(object):
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         if self.inputs['atomic_E']:
-            self.e_loss = tf.square(self.next_elem['atomic_E'] - self.E)
+            self.e_loss = tf.square(self.next_elem['atomic_E'] - self.atomic_E)
             self.e_loss = tf.sparse_segment_mean(self.e_loss, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
                                                  num_segments=self.next_elem['num_seg'])[1:]
-            self.e_loss_size = tf.shape(self.e_loss)
         elif self.inputs['E_loss'] == 1:
             self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']) * self.next_elem['tot_num']
         elif self.inputs['E_loss'] == 2:
@@ -529,14 +528,15 @@ class Neural_network(object):
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
         self.next_elem['sparse_indices_'] = tf.cast(tf.range(tf.reduce_sum(self.next_elem['tot_num'])
         ), tf.int32)
+        self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
         self.next_elem['atom_idx'] = tf.dynamic_partition(\
                                          tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
                                          self.next_elem['partition'], 2
                                      )[1]
-        
+        self.next_elem['atomic_E'] = tf.reshape(self.next_elem['atomic_E'], [-1, 1])        
+
         if self.inputs['use_force'] or self.inputs['use_stress']:
 #            F_shape = tf.shape(self.next_elem['F'])
-            self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
 
             self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [max_totnum]), # dx_shape[1]
                                                                                   tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),

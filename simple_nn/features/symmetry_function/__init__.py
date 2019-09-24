@@ -244,17 +244,16 @@ class Symmetry_function(object):
         batch_dict['partition'] = [None]
         batch_dict['struct_type'] = [None]
         batch_dict['struct_weight'] = [None]
+        batch_dict['atom_idx'] = [None, 1]
 
         if use_force:
             batch_dict['F'] = [None, 3]
-            if self.inputs['add_atom_idx']:
-                batch_dict['atom_idx'] = [None, 1]
+            #if self.inputs['add_atom_idx']:
             #if atomic_weights:
             #    batch_dict['atomic_weights'] = [None]
 
         if use_stress:
             batch_dict['S'] = [None]
-            batch_dict['atom_idx'] = [None, 1]
 
         if self.inputs['refdata_format'] == 'openmx':
             batch_dict['atomic_E'] = [None, 1]
