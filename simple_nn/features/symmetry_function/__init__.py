@@ -102,7 +102,7 @@ class Symmetry_function(object):
             feature['S'] = _bytes_feature(res['S'].tobytes())
             feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
 
-        if self.inputs['refdata_format'] == 'openmx'
+        if self.inputs['refdata_format'] == 'openmx':
             feature['atomic_E'] = _bytes_feature(res['atomic_E'].tobytes())
 
         for item in self.parent.inputs['atom_types']:

@@ -413,12 +413,12 @@ def read_lammps_potential(filename):
     return weights
 
 class openmx:
-    self.symbols = list()
-    self.cell = np.zeros((3,3))
-    self.dE_da = np.zeros((3,3))
-    self.stress = np.zeros(6)
-
     def __init__(self, filename):
+        self.symbols = list()
+        self.cell = np.zeros((3,3))
+        self.dE_da = np.zeros((3,3))
+        self.stress = np.zeros(6)
+
         with open(filename,'r') as fil:
             line = fil.readline()
 
