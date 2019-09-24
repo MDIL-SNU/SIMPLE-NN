@@ -426,10 +426,10 @@ class openmx:
             while not 'Atoms.Number' in line:
                 line = fil.readline()
             self.atom_num = int(line.split()[1])
-            self.atomic_energy = np.zeros(atom_num)
-            self.scale = np.zeros((atom_num,3))
-            self.cart = np.zeros((atom_num,3))
-            self.forces = np.zeros((atom_num,3))        
+            self.atomic_energy = np.zeros(self.atom_num)
+            self.scale = np.zeros((self.atom_num,3))
+            self.cart = np.zeros((self.atom_num,3))
+            self.forces = np.zeros((self.atom_num,3))        
 
             # Symbols & Total_energies & Atomic_energies
             while not 'Decomposed energies in Hartree unit' in line:
@@ -439,7 +439,7 @@ class openmx:
             self.total_energy = float(line.split()[4])*27.2114
             while not 'Utot' in line:
                 line = fil.readline()
-            for i in range(atom_num):
+            for i in range(self.atom_num):
                 line = fil.readline().split()
                 self.symbols.append(line[1])
                 self.atomic_energy[i] = float(line[2])*27.2114
@@ -466,7 +466,7 @@ class openmx:
                 line = fil.readline()
             for i in range(5):
                 fil.readline()
-            for i in range(atom_num):
+            for i in range(self.atom_num):
                 line = fil.readline().split()
                 self.cart[i] = [float(j) for j in line[2:5]]
                 self.forces[i] = [float(j)*51.4221 for j in line[5:]]

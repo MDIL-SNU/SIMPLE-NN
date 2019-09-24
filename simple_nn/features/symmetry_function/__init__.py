@@ -168,7 +168,7 @@ class Symmetry_function(object):
             features['S'] = tf.FixedLenFeature([], dtype=tf.string)
             features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
 
-        if self.inputs['refdata_format'] = 'openmx':
+        if self.inputs['refdata_format'] == 'openmx':
             features['atomic_E'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
