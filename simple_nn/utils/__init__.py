@@ -450,19 +450,19 @@ class openmx:
             for i in range(4):
                 fil.readline()
             for i in range(3):
-                line = out.readline().split()
+                line = fil.readline().split()
                 self.cell[i] = [float(j) for j in line[2:5]]
-                self.dE_da[i] = [float[j]*51.4221 for j in line[7:10]]
+                self.dE_da[i] = [float(j)*51.4221 for j in line[7:10]]
             for i in range(3):
                 for j in range(3):
-                    self.stress[i] += dE_da[j][i]*cell[j][i]
-                    self.stress[i+3] += dE_da[j][i]*cell[j][(i+1)%3]
-            vol = np.dot(np.cross(cell[0],cell[1]),cell[2])
+                    self.stress[i] += self.dE_da[j][i]*self.cell[j][i]
+                    self.stress[i+3] += self.dE_da[j][i]*self.cell[j][(i+1)%3]
+            vol = np.dot(np.cross(self.cell[0],self.cell[1]),self.cell[2])
             self.stress /= vol
             self.stress *= 1602.1766208
             
             # xyz-coordinates & forces
-            while not 'xyz-coordinates (Ang)' in line:
+            while not 'xyz-coordinates (Ang.)' in line:
                 line = fil.readline()
             for i in range(5):
                 fil.readline()
@@ -476,7 +476,7 @@ class openmx:
                 line = fil.readline()
             for i in range(3):
                 fil.readline()
-            for i in range(self.total_num):
+            for i in range(self.atom_num):
                 self.scale[i] = [float(j) for j in fil.readline().split()[2:]]
 
     def get_positions(self, wrap=True):

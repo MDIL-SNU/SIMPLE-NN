@@ -568,8 +568,8 @@ class Symmetry_function(object):
                 scale_p = _gen_2Darray_for_ffi(scale, ffi)
                 cell_p  = _gen_2Darray_for_ffi(cell, ffi)
             
-                atom_num = len(atoms.positions)
                 symbols = np.array(atoms.get_chemical_symbols())
+                atom_num = len(symbols)
                 atom_i = np.zeros([len(symbols)], dtype=np.intc, order='C')
                 type_num = dict()
                 type_idx = dict()
@@ -593,7 +593,7 @@ class Symmetry_function(object):
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
-                if self.input['refdata_format'] == 'openmx':
+                if self.inputs['refdata_format'] == 'openmx':
                     res['atomic_E'] = atoms.get_atomic_energy()
                     res['S'] = atoms.get_stress()
                 else:
