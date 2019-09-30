@@ -867,11 +867,11 @@ class Neural_network(object):
 
                         result = "epoch {:7d} ".format(sess.run(self.global_step)+1)
 
-                        t_eloss, t_floss, t_sloss, t_aw_floss, t_str_eloss, t_str_floss, t_str_s_loss, _, _, _, t_str_set = \
+                        t_eloss, t_floss, t_sloss, t_aw_floss, t_str_eloss, t_str_floss, t_str_sloss, _, _, _, t_str_set = \
                             self._get_loss_for_print(sess, train_fdict, full_batch=self.inputs['full_batch'], 
                                                     iter_for_initialize=train_iter, modifier_tag=modifier_tag)
 
-                        eloss, floss, sloss, aw_floss, str_eloss, str_floss, str_s_loss, _, _, _, _ = self._get_loss_for_print(
+                        eloss, floss, sloss, aw_floss, str_eloss, str_floss, str_sloss, _, _, _, _ = self._get_loss_for_print(
                             sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter, modifier_tag=modifier_tag)
 
                         full_str_set = list(set(t_str_set + str_set))
@@ -1245,7 +1245,7 @@ class Neural_network(object):
                         sloss = np.sqrt(sloss*6/num_tot_struc)
 
                         for struct in str_sloss.keys():
-                            str_sloss[struct] = np.sqrt(str_sloss[struct]*6/str_tot_atom[struct])
+                            str_sloss[struct] = np.sqrt(str_sloss[struct]*6/str_tot_struc[struct])
                     break
         else:
             if self.inputs['use_force']:

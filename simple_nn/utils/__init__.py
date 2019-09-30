@@ -431,6 +431,13 @@ class openmx:
             self.cart = np.zeros((self.atom_num,3))
             self.forces = np.zeros((self.atom_num,3))        
 
+            # Cell lattice vector
+            while not 'Atoms.UnitVectors' in line:
+                line = fil.readline()
+            fil.readline()
+            for i in range(3):
+                self.cell[i] = [float(j) for j in fil.readline().split()]
+
             # Symbols & Total_energies & Atomic_energies
             while not 'Decomposed energies in Hartree unit' in line:
                 line = fil.readline()
@@ -445,21 +452,21 @@ class openmx:
                 self.atomic_energy[i] = float(line[2])*27.2114
 
             # Cell lattice vector & stress
-            while not 'Cell vectors (Ang.)' in line:
-                line = fil.readline()
-            for i in range(4):
-                fil.readline()
-            for i in range(3):
-                line = fil.readline().split()
-                self.cell[i] = [float(j) for j in line[2:5]]
-                self.dE_da[i] = [float(j)*51.4221 for j in line[7:10]]
-            for i in range(3):
-                for j in range(3):
-                    self.stress[i] += self.dE_da[j][i]*self.cell[j][i]
-                    self.stress[i+3] += self.dE_da[j][i]*self.cell[j][(i+1)%3]
-            vol = np.dot(np.cross(self.cell[0],self.cell[1]),self.cell[2])
-            self.stress /= vol
-            self.stress *= 1602.1766208
+#            while not 'Cell vectors (Ang.)' in line:
+#                line = fil.readline()
+#            for i in range(4):
+#                fil.readline()
+#            for i in range(3):
+#                line = fil.readline().split()
+#                self.cell[i] = [float(j) for j in line[2:5]]
+#                self.dE_da[i] = [float(j)*51.4221 for j in line[7:10]]
+#            for i in range(3):
+#                for j in range(3):
+#                    self.stress[i] -= self.dE_da[j][i]*self.cell[j][i]
+#                    self.stress[i+3] -= self.dE_da[j][i]*self.cell[j][(i+1)%3]
+#            vol = np.dot(np.cross(self.cell[0],self.cell[1]),self.cell[2])
+#            self.stress /= vol
+#            self.stress *= 1602.1766208
             
             # xyz-coordinates & forces
             while not 'xyz-coordinates (Ang.)' in line:

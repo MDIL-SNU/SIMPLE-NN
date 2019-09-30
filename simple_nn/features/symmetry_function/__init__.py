@@ -594,7 +594,7 @@ class Symmetry_function(object):
                 res['F'] = atoms.get_forces()
                 if self.inputs['refdata_format'] == 'openmx':
                     res['atomic_E'] = atoms.get_atomic_energy()
-                    res['S'] = atoms.get_stress()
+                   # res['S'] = atoms.get_stress()
                 else:
                     res['S'] = -atoms.get_stress()/units.GPa*10
                     res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
