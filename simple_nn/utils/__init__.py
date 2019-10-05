@@ -412,4 +412,101 @@ def read_lammps_potential(filename):
 
     return weights
 
+class openmx:
+    def __init__(self, filename):
+        self.symbols = list()
+        self.cell = np.zeros((3,3))
+        self.dE_da = np.zeros((3,3))
+        self.stress = np.zeros(6)
 
+        with open(filename,'r') as fil:
+            line = fil.readline()
+
+            # Total_number & initialization
+            while not 'Atoms.Number' in line:
+                line = fil.readline()
+            self.atom_num = int(line.split()[1])
+            self.atomic_energy = np.zeros(self.atom_num)
+            self.scale = np.zeros((self.atom_num,3))
+            self.cart = np.zeros((self.atom_num,3))
+            self.forces = np.zeros((self.atom_num,3))        
+
+            # Cell lattice vector
+            while not 'Atoms.UnitVectors' in line:
+                line = fil.readline()
+            fil.readline()
+            for i in range(3):
+                self.cell[i] = [float(j) for j in fil.readline().split()]
+
+            # Symbols & Total_energies & Atomic_energies
+            while not 'Decomposed energies in Hartree unit' in line:
+                line = fil.readline()
+            while not 'Total energy (Hartree)' in line:
+                line = fil.readline()
+            self.total_energy = float(line.split()[4])*27.2114
+            while not 'Utot' in line:
+                line = fil.readline()
+            for i in range(self.atom_num):
+                line = fil.readline().split()
+                self.symbols.append(line[1])
+                self.atomic_energy[i] = float(line[2])*27.2114
+
+            # Cell lattice vector & stress
+#            while not 'Cell vectors (Ang.)' in line:
+#                line = fil.readline()
+#            for i in range(4):
+#                fil.readline()
+#            for i in range(3):
+#                line = fil.readline().split()
+#                self.cell[i] = [float(j) for j in line[2:5]]
+#                self.dE_da[i] = [float(j)*51.4221 for j in line[7:10]]
+#            for i in range(3):
+#                for j in range(3):
+#                    self.stress[i] -= self.dE_da[j][i]*self.cell[j][i]
+#                    self.stress[i+3] -= self.dE_da[j][i]*self.cell[j][(i+1)%3]
+#            vol = np.dot(np.cross(self.cell[0],self.cell[1]),self.cell[2])
+#            self.stress /= vol
+#            self.stress *= 1602.1766208
+            
+            # xyz-coordinates & forces
+            while not 'xyz-coordinates (Ang.)' in line:
+                line = fil.readline()
+            for i in range(5):
+                fil.readline()
+            for i in range(self.atom_num):
+                line = fil.readline().split()
+                self.cart[i] = [float(j) for j in line[2:5]]
+                self.forces[i] = [float(j)*51.4221 for j in line[5:]]
+            
+            # fractional coordinate
+            while not 'Fractional coordinates of the final structure' in line:
+                line = fil.readline()
+            for i in range(3):
+                fil.readline()
+            for i in range(self.atom_num):
+                self.scale[i] = [float(j) for j in fil.readline().split()[2:]]
+
+    def get_positions(self, wrap=True):
+        # TODO: wrap coding
+        return self.cart
+    
+    def get_scaled_positions(self):
+        return self.scale
+    
+    def cell(self):
+        return self.cell
+
+    def get_chemical_symbols(self):
+        return self.symbols
+
+    def get_total_energy(self):
+        return self.total_energy
+
+    def get_forces(self):
+        return self.forces
+
+    def get_stress(self):
+        return self.stress
+
+    def get_atomic_energy(self):
+        return self.atomic_energy

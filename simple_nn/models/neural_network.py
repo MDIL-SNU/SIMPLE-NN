@@ -51,6 +51,7 @@ class Neural_network(object):
                                           },
                                       },
                                       'dropout': None,
+                                      'atomic_E': False,
 
                                       # Optimization related
                                       'method': 'Adam',
@@ -261,12 +262,28 @@ class Neural_network(object):
     def _calc_output(self):
         self.E = self.F = self.S = 0
 
+        each_atom_idx = tf.dynamic_partition(self.next_elem['sparse_indices_'],\
+                                             tf.reshape(self.next_elem['atom_idx'],[-1]),\
+                                             len(self.parent.inputs['atom_types']) + 1)[1:]
+        except_idx = [None]*len(self.parent.inputs['atom_types'])    
+
         for i, item in enumerate(self.parent.inputs['atom_types']):
             zero_cond = tf.equal(tf.reduce_sum(self.next_elem['N_'+item]), 0)
+
+            for j in range(len(self.parent.inputs['atom_types'])):
+                if not j == i:
+                    except_idx[j] = tf.tile(tf.expand_dims(tf.cast([0.], tf.float64), axis=1), [tf.shape(each_atom_idx[j])[0], 1])
+                else:
+                    except_idx[j] = self.ys[item]
+
             self.E += tf.cond(zero_cond,
                               lambda: tf.cast(0., tf.float64),
-                              lambda: tf.sparse_segment_sum(self.ys[item], self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
-                                            num_segments=self.next_elem['num_seg'])[1:])
+                              lambda: tf.dynamic_stitch(each_atom_idx, except_idx))
+
+#            self.E += tf.cond(zero_cond,
+#                              lambda: tf.cast(0., tf.float64),
+#                              lambda: tf.sparse_segment_sum(self.ys[item], self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item], 
+#                                            num_segments=self.next_elem['num_seg'])[1:])
             if self.inputs['use_force']:
                 tmp_force = self.next_elem['dx_'+item] * \
                             tf.expand_dims(\
@@ -281,16 +298,12 @@ class Neural_network(object):
                                   lambda: tf.dynamic_partition(tf.reshape(tmp_force, [-1,3]),
                                                                self.next_elem['partition'], 2)[1])
             if self.inputs['use_stress']:
-                each_atom_idx = tf.dynamic_partition(self.next_elem['sparse_indices_'],\
-                                                     tf.reshape(self.next_elem['atom_idx'],[-1]),\
-                                                     len(self.parent.inputs['atom_types']) + 1)[1:]
                 tmp_stress = self.next_elem['da_'+item] * \
                              tf.expand_dims(\
                                  tf.expand_dims(self.dys[item], axis=2),
                                      axis=3)
                 tmp_stress = tf.reduce_sum(tmp_stress, axis=[1,2])
                 tmp_stress /= units.GPa/10
-                except_idx = [None]*len(self.parent.inputs['atom_types'])    
 
                 for j in range(len(self.parent.inputs['atom_types'])):
                     if not j == i:
@@ -302,17 +315,21 @@ class Neural_network(object):
                                   lambda: tf.cast(0., tf.float64),
                                   lambda: tf.dynamic_stitch(each_atom_idx, except_idx))
                 
-#                self.S -= tf.cond(zero_cond,
-#                                  lambda: tf.cast(0., tf.float64),
-#                                  lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
-#                                                                num_segments=self.next_elem['num_seg'])[1:])
+        self.atomic_E = self.E
+        self.E = tf.sparse_segment_sum(self.E, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+                                       num_segments=self.next_elem['num_seg'])[1:]
+
         if self.inputs['use_stress']:
             self.atomic_S = self.S
             self.S = tf.sparse_segment_sum(self.S, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
                                            num_segments=self.next_elem['num_seg'])[1:]
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
-        if self.inputs['E_loss'] == 1:
+        if self.inputs['atomic_E']:
+            self.e_loss = tf.square(self.next_elem['atomic_E'] - self.atomic_E)
+            self.e_loss = tf.sparse_segment_mean(self.e_loss, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+                                                 num_segments=self.next_elem['num_seg'])[1:]
+        elif self.inputs['E_loss'] == 1:
             self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']) * self.next_elem['tot_num']
         elif self.inputs['E_loss'] == 2:
             self.e_loss = tf.square(self.next_elem['E'] - self.E)
@@ -330,9 +347,8 @@ class Neural_network(object):
         self.str_num_batch_atom = tf.reshape(tf.unsorted_segment_sum(self.next_elem['tot_num'], self.next_elem['struct_ind'], tf.size(self.next_elem['struct_type_set'])), [-1])
         if self.inputs['use_force']:
             self.f_loss = tf.reshape(tf.square(self.next_elem['F'] - self.F), [-1, 3])
-            ind = repeat(self.next_elem['struct_ind'],
-                         tf.cast(tf.reshape(self.next_elem['tot_num'], shape=[-1]), tf.int32))
-            ind = tf.reshape(ind, [-1])
+            ind = tf.reshape(repeat(self.next_elem['struct_ind'],
+                         tf.cast(tf.reshape(self.next_elem['tot_num'], shape=[-1]), tf.int32)), [-1])
             self.str_f_loss = tf.unsorted_segment_mean(self.f_loss, ind, tf.size(self.next_elem['struct_type_set']))
             self.str_f_loss = tf.reduce_mean(self.str_f_loss, axis=1)
             if self.parent.descriptor.inputs['atomic_weights']['type'] is not None:
@@ -512,19 +528,19 @@ class Neural_network(object):
         self.next_elem['num_seg'] = tf.shape(self.next_elem['tot_num'])[0] + 1
         self.next_elem['sparse_indices_'] = tf.cast(tf.range(tf.reduce_sum(self.next_elem['tot_num'])
         ), tf.int32)
-        
+        self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
+        self.next_elem['atom_idx'] = tf.dynamic_partition(\
+                                         tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
+                                         self.next_elem['partition'], 2
+                                     )[1]
+        self.next_elem['atomic_E'] = tf.reshape(self.next_elem['atomic_E'], [-1, 1])        
+
         if self.inputs['use_force'] or self.inputs['use_stress']:
 #            F_shape = tf.shape(self.next_elem['F'])
-            self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
-            self.next_elem['atom_idx'] = tf.dynamic_partition(\
-                                             tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
-                                             self.next_elem['partition'], 2
-                                         )[1]
 
             self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [max_totnum]), # dx_shape[1]
                                                                                   tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
                                                                         self.next_elem['partition'], 2)[1]
-
             if self.inputs['use_force']:
                 self.next_elem['F'] = \
                     tf.dynamic_partition(
@@ -851,11 +867,11 @@ class Neural_network(object):
 
                         result = "epoch {:7d} ".format(sess.run(self.global_step)+1)
 
-                        t_eloss, t_floss, t_sloss, t_aw_floss, t_str_eloss, t_str_floss, t_str_s_loss, _, _, _, t_str_set = \
+                        t_eloss, t_floss, t_sloss, t_aw_floss, t_str_eloss, t_str_floss, t_str_sloss, _, _, _, t_str_set = \
                             self._get_loss_for_print(sess, train_fdict, full_batch=self.inputs['full_batch'], 
                                                     iter_for_initialize=train_iter, modifier_tag=modifier_tag)
 
-                        eloss, floss, sloss, aw_floss, str_eloss, str_floss, str_s_loss, _, _, _, _ = self._get_loss_for_print(
+                        eloss, floss, sloss, aw_floss, str_eloss, str_floss, str_sloss, _, _, _, _ = self._get_loss_for_print(
                             sess, valid_fdict, full_batch=True, iter_for_initialize=valid_iter, modifier_tag=modifier_tag)
 
                         full_str_set = list(set(t_str_set + str_set))
@@ -1006,6 +1022,10 @@ class Neural_network(object):
                     test_save['NN_S'] = list()
                     test_save['NN_atomic_S'] = list()
 
+                if self.inputs['atomic_E']:
+                    test_save['DFT_atomic_E'] = list()
+                    test_save['NN_atomic_E'] = list()                    
+
                 eloss = floss = sloss = 0.
                 test_tot_struc = test_tot_atom = 0
                 result = ' Test'
@@ -1013,8 +1033,8 @@ class Neural_network(object):
                     try:
                         if self.inputs['use_force']:
                             if self.inputs['use_stress']:
-                                test_elem, tmp_nne, tmp_nnf, tmp_nns, tmp_nnas, tmp_eloss, tmp_floss, tmp_sloss = sess.run(
-                                        [self.next_elem, self.E, self.F, self.S, self.atomic_S, self.e_loss, self.f_loss, self.s_loss],
+                                test_elem, tmp_nne, tmp_nnae, tmp_nnf, tmp_nns, tmp_nnas, tmp_eloss, tmp_floss, tmp_sloss = sess.run(
+                                        [self.next_elem, self.E, self.atomic_E, self.F, self.S, self.atomic_S, self.e_loss, self.f_loss, self.s_loss],
                                         feed_dict=test_fdict)
                                 num_batch_struc = test_elem['num_seg'] - 1
                                 sloss += tmp_sloss * num_batch_struc
@@ -1022,8 +1042,8 @@ class Neural_network(object):
                                 test_save['NN_S'].append(tmp_nns)
                                 test_save['NN_atomic_S'].append(tmp_nnas)
                             else:
-                                test_elem, tmp_nne, tmp_nnf, tmp_eloss, tmp_floss = sess.run(
-                                        [self.next_elem, self.E, self.F, self.e_loss, self.f_loss], feed_dict=test_fdict)
+                                test_elem, tmp_nne, tmp_nnae, tmp_nnf, tmp_eloss, tmp_floss = sess.run(
+                                        [self.next_elem, self.E, self.atomic_E, self.F, self.e_loss, self.f_loss], feed_dict=test_fdict)
                             num_batch_struc = test_elem['num_seg'] - 1
                             num_batch_atom = np.sum(test_elem['tot_num'])
                             eloss += tmp_eloss * num_batch_struc
@@ -1041,8 +1061,8 @@ class Neural_network(object):
                             
                             test_tot_atom += num_batch_atom
                         elif self.inputs['use_stress']:
-                            test_elem, tmp_nne, tmp_nns, tmp_nnas, tmp_eloss, tmp_sloss = sess.run(
-                                    [self.next_elem, self.E, self.S, self.atomic_S, self.e_loss, self.f_loss, self.s_loss],
+                            test_elem, tmp_nne, tmp_nnae, tmp_nns, tmp_nnas, tmp_eloss, tmp_sloss = sess.run(
+                                    [self.next_elem, self.E, self.atomic_E, self.S, self.atomic_S, self.e_loss, self.f_loss, self.s_loss],
                                     feed_dict=test_fdict)
                             num_batch_struc = test_elem['num_seg'] - 1
                             sloss += tmp_sloss * num_batch_struc
@@ -1050,14 +1070,18 @@ class Neural_network(object):
                             test_save['NN_S'].append(tmp_nns)
                             test_save['NN_atomic_S'].append(tmp_nnas)
                         else:
-                            test_elem, tmp_nne, tmp_eloss = \
-                                sess.run([self.next_elem, self.E, self.e_loss], feed_dict=test_fdict)
+                            test_elem, tmp_nne, tmp_nnae, tmp_eloss = \
+                                sess.run([self.next_elem, self.E, self.atomic_E, self.e_loss], feed_dict=test_fdict)
                         num_batch_struc = test_elem['num_seg'] - 1
                         eloss += tmp_eloss * num_batch_struc
 
                         test_save['DFT_E'].append(test_elem['E'])
                         test_save['NN_E'].append(tmp_nne)
+                        test_save['NN_atomic_E'].append(tmp_nnae)
                         test_save['N'].append(test_elem['tot_num'])
+                        
+                        if self.inputs['atomic_E']:
+                            test_save['DFT_atomic_E'].append(test_elem['atomic_E'])
 
                         test_tot_struc += num_batch_struc
                     except tf.errors.OutOfRangeError:
@@ -1066,6 +1090,7 @@ class Neural_network(object):
 
                         test_save['DFT_E'] = np.concatenate(test_save['DFT_E'], axis=0)
                         test_save['NN_E'] = np.concatenate(test_save['NN_E'], axis=0)
+                        test_save['NN_atomic_E'] = np.concatenate(test_save['NN_atomic_E'], axis=0)
                         test_save['N'] = np.concatenate(test_save['N'], axis=0)
                         if self.inputs['use_force']:
                             floss = np.sqrt(floss*3/test_tot_atom)
@@ -1085,6 +1110,9 @@ class Neural_network(object):
                             test_save['DFT_S'] = np.concatenate(test_save['DFT_S'], axis=0)
                             test_save['NN_S'] = np.concatenate(test_save['NN_S'], axis=0)
                             test_save['NN_atomic_S'] = np.concatenate(test_save['NN_atomic_S'], axis=0)
+
+                        if self.inputs['atomic_E']:
+                            test_save['DFT_atomic_E'] = np.concatenate(test_save['DFT_atomic_E'], axis=0)
                         break
                 
                 with open('./test_result', 'wb') as fil:
@@ -1223,7 +1251,7 @@ class Neural_network(object):
                         sloss = np.sqrt(sloss*6/num_tot_struc)
 
                         for struct in str_sloss.keys():
-                            str_sloss[struct] = np.sqrt(str_sloss[struct]*6/str_tot_atom[struct])
+                            str_sloss[struct] = np.sqrt(str_sloss[struct]*6/str_tot_struc[struct])
                     break
         else:
             if self.inputs['use_force']:

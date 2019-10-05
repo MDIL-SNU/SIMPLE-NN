@@ -8,7 +8,7 @@ from six.moves import cPickle as pickle
 from ase import io
 from ase import units
 from ._libsymf import lib, ffi
-from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
+from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, openmx,\
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
 from ...utils import graph as grp
 from ...utils.mpiclass import DummyMPI, MPI4PY
@@ -102,6 +102,9 @@ class Symmetry_function(object):
             feature['S'] = _bytes_feature(res['S'].tobytes())
             feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
 
+        if self.inputs['refdata_format'] == 'openmx':
+            feature['atomic_E'] = _bytes_feature(res['atomic_E'].tobytes())
+
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
             feature['N_'+item] = _bytes_feature(res['N'][item].tobytes())
@@ -165,6 +168,9 @@ class Symmetry_function(object):
             features['S'] = tf.FixedLenFeature([], dtype=tf.string)
             features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
 
+        if self.inputs['refdata_format'] == 'openmx':
+            features['atomic_E'] = tf.FixedLenFeature([], dtype=tf.string)
+
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
  
@@ -218,6 +224,9 @@ class Symmetry_function(object):
             res['S'] = tf.decode_raw(read_data['S'], tf.float64)
             res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
         
+        if self.inputs['refdata_format'] == 'openmx':
+            res['atomic_E'] = tf.reshape(tf.decode_raw(read_data['atomic_E'], tf.float64), [-1, 1])
+
         return res
 
 
@@ -235,17 +244,19 @@ class Symmetry_function(object):
         batch_dict['partition'] = [None]
         batch_dict['struct_type'] = [None]
         batch_dict['struct_weight'] = [None]
+        batch_dict['atom_idx'] = [None, 1]
 
         if use_force:
             batch_dict['F'] = [None, 3]
-            if self.inputs['add_atom_idx']:
-                batch_dict['atom_idx'] = [None, 1]
+            #if self.inputs['add_atom_idx']:
             #if atomic_weights:
             #    batch_dict['atomic_weights'] = [None]
 
         if use_stress:
             batch_dict['S'] = [None]
-            batch_dict['atom_idx'] = [None, 1]
+
+        if self.inputs['refdata_format'] == 'openmx':
+            batch_dict['atomic_E'] = [None, 1]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
@@ -541,6 +552,9 @@ class Symmetry_function(object):
                         os.remove(tmp_name)
                 else:    
                     snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'], force_consistent=True)
+            # only snapshot available
+            elif self.inputs['refdata_format'] == 'openmx':
+                snapshots = [openmx(item[0])]
             else:
                 snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'])
 
@@ -553,8 +567,8 @@ class Symmetry_function(object):
                 scale_p = _gen_2Darray_for_ffi(scale, ffi)
                 cell_p  = _gen_2Darray_for_ffi(cell, ffi)
             
-                atom_num = len(atoms.positions)
                 symbols = np.array(atoms.get_chemical_symbols())
+                atom_num = len(symbols)
                 atom_i = np.zeros([len(symbols)], dtype=np.intc, order='C')
                 type_num = dict()
                 type_idx = dict()
@@ -578,8 +592,12 @@ class Symmetry_function(object):
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
-                res['S'] = -atoms.get_stress()/units.GPa*10
-                res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
+                if self.inputs['refdata_format'] == 'openmx':
+                    res['atomic_E'] = atoms.get_atomic_energy()
+                   # res['S'] = atoms.get_stress()
+                else:
+                    res['S'] = -atoms.get_stress()/units.GPa*10
+                    res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
                 res['atom_idx'] = atom_i
