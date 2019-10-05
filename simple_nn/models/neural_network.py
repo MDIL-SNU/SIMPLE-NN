@@ -1033,8 +1033,8 @@ class Neural_network(object):
                     try:
                         if self.inputs['use_force']:
                             if self.inputs['use_stress']:
-                                test_elem, tmp_nne, tmp_nnf, tmp_nns, tmp_nnas, tmp_eloss, tmp_floss, tmp_sloss = sess.run(
-                                        [self.next_elem, self.E, self.F, self.S, self.atomic_S, self.e_loss, self.f_loss, self.s_loss],
+                                test_elem, tmp_nne, tmp_nnae, tmp_nnf, tmp_nns, tmp_nnas, tmp_eloss, tmp_floss, tmp_sloss = sess.run(
+                                        [self.next_elem, self.E, self.atomic_E, self.F, self.S, self.atomic_S, self.e_loss, self.f_loss, self.s_loss],
                                         feed_dict=test_fdict)
                                 num_batch_struc = test_elem['num_seg'] - 1
                                 sloss += tmp_sloss * num_batch_struc
@@ -1042,8 +1042,8 @@ class Neural_network(object):
                                 test_save['NN_S'].append(tmp_nns)
                                 test_save['NN_atomic_S'].append(tmp_nnas)
                             else:
-                                test_elem, tmp_nne, tmp_nnf, tmp_eloss, tmp_floss = sess.run(
-                                        [self.next_elem, self.E, self.F, self.e_loss, self.f_loss], feed_dict=test_fdict)
+                                test_elem, tmp_nne, tmp_nnae, tmp_nnf, tmp_eloss, tmp_floss = sess.run(
+                                        [self.next_elem, self.E, self.atomic_E, self.F, self.e_loss, self.f_loss], feed_dict=test_fdict)
                             num_batch_struc = test_elem['num_seg'] - 1
                             num_batch_atom = np.sum(test_elem['tot_num'])
                             eloss += tmp_eloss * num_batch_struc
@@ -1061,8 +1061,8 @@ class Neural_network(object):
                             
                             test_tot_atom += num_batch_atom
                         elif self.inputs['use_stress']:
-                            test_elem, tmp_nne, tmp_nns, tmp_nnas, tmp_eloss, tmp_sloss = sess.run(
-                                    [self.next_elem, self.E, self.S, self.atomic_S, self.e_loss, self.f_loss, self.s_loss],
+                            test_elem, tmp_nne, tmp_nnae, tmp_nns, tmp_nnas, tmp_eloss, tmp_sloss = sess.run(
+                                    [self.next_elem, self.E, self.atomic_E, self.S, self.atomic_S, self.e_loss, self.f_loss, self.s_loss],
                                     feed_dict=test_fdict)
                             num_batch_struc = test_elem['num_seg'] - 1
                             sloss += tmp_sloss * num_batch_struc
@@ -1077,8 +1077,11 @@ class Neural_network(object):
 
                         test_save['DFT_E'].append(test_elem['E'])
                         test_save['NN_E'].append(tmp_nne)
-                        test_save['NN_atomicE'].append(tmp_nnae)
+                        test_save['NN_atomic_E'].append(tmp_nnae)
                         test_save['N'].append(test_elem['tot_num'])
+                        
+                        if self.inputs['atomic_E']:
+                            test_save['DFT_atomic_E'].append(test_elem['atomic_E'])
 
                         test_tot_struc += num_batch_struc
                     except tf.errors.OutOfRangeError:
@@ -1107,6 +1110,9 @@ class Neural_network(object):
                             test_save['DFT_S'] = np.concatenate(test_save['DFT_S'], axis=0)
                             test_save['NN_S'] = np.concatenate(test_save['NN_S'], axis=0)
                             test_save['NN_atomic_S'] = np.concatenate(test_save['NN_atomic_S'], axis=0)
+
+                        if self.inputs['atomic_E']:
+                            test_save['DFT_atomic_E'] = np.concatenate(test_save['DFT_atomic_E'], axis=0)
                         break
                 
                 with open('./test_result', 'wb') as fil:
