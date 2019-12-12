@@ -50,6 +50,7 @@ class Neural_network(object):
                                               'stddev': 0.3,
                                           },
                                       },
+                                      'acti_func': 'sigmoid',
                                       'dropout': None,
                                       'atomic_E': False,
 
@@ -141,6 +142,9 @@ class Neural_network(object):
         if self.inputs['weight_initializer']['type'] == 'truncated normal':
             initializer = tf.initializers.truncated_normal(
                     stddev=self.inputs['weight_initializer']['params']['stddev'], dtype=dtype)
+        elif self.inputs['weight_initializer']['type'] == 'xavier normal':
+            initializer = tf.initializers.variance_scaling(scale=1.0, mode='fan_avg',
+                    distribution="normal", dtype=dtype)
         elif self.inputs['weight_initializer']['type'] == 'he normal':
             initializer = tf.initializers.variance_scaling(scale=2.0, mode='fan_in',
                     distribution="normal", dtype=dtype)
@@ -174,7 +178,7 @@ class Neural_network(object):
 
         #acti_func = 'selu'
         #acti_func = 'elu'
-        acti_func = 'sigmoid'
+        #acti_func = 'sigmoid'
         #acti_func = 'tanh'
 
         self.nodes = dict()
@@ -211,7 +215,7 @@ class Neural_network(object):
                 input_dim = self.pca[item][0].shape[1]
             else:
                 input_dim = self.inp_size[item]
-            model.add(tf.keras.layers.Dense(nodes[0], activation=acti_func, \
+            model.add(tf.keras.layers.Dense(nodes[0], activation=self.inputs['acti_func'], \
                                             input_dim=input_dim,
                                             #kernel_initializer=tf.initializers.random_normal(stddev=1./self.inp_size[item], dtype=dtype),
                                             #use_bias=False,
@@ -222,7 +226,7 @@ class Neural_network(object):
                     dense_basic_setting['kernel_initializer'] = tf.constant_initializer(saved_weights[item][2*i+0])
                     dense_basic_setting['bias_initializer'] = tf.constant_initializer(saved_weights[item][2*i+1])
 
-                model.add(tf.keras.layers.Dense(nodes[i], activation=acti_func,
+                model.add(tf.keras.layers.Dense(nodes[i], activation=self.inputs['acti_func'],
                                                 #kernel_initializer=tf.initializers.random_normal(stddev=1./nodes[i-1], dtype=dtype),
                                                 #use_bias=False,
                                                 **dense_basic_setting))
@@ -487,7 +491,7 @@ class Neural_network(object):
                 if j == nlayers-1:
                     acti = 'linear'
                 else:
-                    acti = 'sigmoid'
+                    acti = self.inputs['acti_func']
 
                 FIL.write('LAYER {} {}\n'.format(j+joffset, acti))
 
@@ -533,7 +537,9 @@ class Neural_network(object):
                                          tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
                                          self.next_elem['partition'], 2
                                      )[1]
-        self.next_elem['atomic_E'] = tf.reshape(self.next_elem['atomic_E'], [-1, 1])        
+
+        if self.inputs['atomic_E']:
+            self.next_elem['atomic_E'] = tf.reshape(self.next_elem['atomic_E'], [-1, 1])        
 
         if self.inputs['use_force'] or self.inputs['use_stress']:
 #            F_shape = tf.shape(self.next_elem['F'])
@@ -1044,11 +1050,8 @@ class Neural_network(object):
                             else:
                                 test_elem, tmp_nne, tmp_nnae, tmp_nnf, tmp_eloss, tmp_floss = sess.run(
                                         [self.next_elem, self.E, self.atomic_E, self.F, self.e_loss, self.f_loss], feed_dict=test_fdict)
-                            num_batch_struc = test_elem['num_seg'] - 1
                             num_batch_atom = np.sum(test_elem['tot_num'])
-                            eloss += tmp_eloss * num_batch_struc
                             floss += tmp_floss * num_batch_atom
-                            
                             test_save['DFT_F'].append(test_elem['F'])
                             test_save['NN_F'].append(tmp_nnf)
 

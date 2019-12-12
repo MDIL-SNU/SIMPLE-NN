@@ -8,6 +8,12 @@ double sigm(double x, double &deriv) {
     return expl;
 }
 
+double tanh(double x, double &deriv) {
+    double expl = 2./(1.+exp(-2.*x))-1;
+    deriv = 1.-expl*expl;
+    return expl;
+}
+
 double cutf(double frac) {
     // frac = dist / cutoff_dist
     if (frac >= 1.0) {

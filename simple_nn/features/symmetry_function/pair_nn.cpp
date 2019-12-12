@@ -680,7 +680,8 @@ void PairNN::read_file(char *fname) {
       tstr = strtok(NULL," \t\n\r\f");
       tstr = strtok(NULL," \t\n\r\f");
       if (strncmp(tstr, "linear", 6) == 0) nets[nnet].acti[ilayer] = 0;
-      else nets[nnet].acti[ilayer] = 1;
+      else if (strncmp(tstr, "sigmoid", 7) == 0) nets[nnet].acti[ilayer] = 1;
+      else nets[nnet].acti[ilayer] = 2;
       inode = 0;
       stats = 7;
       t_wb = 0;
@@ -815,7 +816,11 @@ double PairNN::evalNet(const double* inpv, double *outv, Net &net){
     }
     if (net.acti[0] == 1) {
       net.nodes[0][i] = sigm(net.nodes[0][i] + net.bias[0][i], net.dnodes[0][i]);
-    } else {
+    } 
+    else if (nets.acti[0] == 2) {
+      net.nodes[0][i] = tanh(net.nodes[0][i] + net.bias[0][i], net.dnodes[0][i]);
+    }
+    else {
       net.nodes[0][i] += net.bias[0][i];
       net.dnodes[0][i] = 1;
     }
@@ -831,7 +836,11 @@ double PairNN::evalNet(const double* inpv, double *outv, Net &net){
         }
         if (net.acti[l] == 1) {
           net.nodes[l][i] = sigm(net.nodes[l][i] + net.bias[l][i], net.dnodes[l][i]);
-        } else {
+        } 
+        else if (net.acti[l] == 2) {
+          net.nodes[l][i] = tanh(net.nodes[l][i] + net.bias[l][i], net.dnodes[l][i]);
+        }
+        else {
           net.nodes[l][i] += net.bias[l][i];
           net.dnodes[l][i] = 1;
         }
@@ -844,7 +853,11 @@ double PairNN::evalNet(const double* inpv, double *outv, Net &net){
   for (int i=0; i<net.nnode[nl-1]; i++) {
     if (net.acti[nl-2] == 1) {
       net.bnodes[nl-2][i] = net.dnodes[nl-2][i];
-    } else {
+    } 
+    else if (net.acti[nl-2] == 2) {
+      net.bnodes[nl-2][i] = net.dnodes[nl-2][i];
+    }
+    else {
       net.bnodes[nl-2][i] = 1;
     }
   }
@@ -857,6 +870,9 @@ double PairNN::evalNet(const double* inpv, double *outv, Net &net){
           net.bnodes[l-1][i] += net.weights[l][j*net.nnode[l]+i] * net.bnodes[l][j];
         }
         if (net.acti[l-1] == 1) {
+          net.bnodes[l-1][i] *= net.dnodes[l-1][i];
+        }
+        else if (net.acti[l-1] == 2) {
           net.bnodes[l-1][i] *= net.dnodes[l-1][i];
         }
       }
