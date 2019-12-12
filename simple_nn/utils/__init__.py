@@ -12,6 +12,8 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
 from .mpiclass import DummyMPI, MPI4PY
 from scipy.integrate import nquad
+import ase
+from ase.geometry import get_distances
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
@@ -418,6 +420,7 @@ class openmx:
         self.cell = np.zeros((3,3))
         self.dE_da = np.zeros((3,3))
         self.stress = np.zeros(6)
+        print('start')
 
         with open(filename,'r') as fil:
             line = fil.readline()
@@ -428,7 +431,7 @@ class openmx:
             self.atom_num = int(line.split()[1])
             self.atomic_energy = np.zeros(self.atom_num)
             self.scale = np.zeros((self.atom_num,3))
-            self.cart = np.zeros((self.atom_num,3))
+            self.positions = np.zeros((self.atom_num,3))
             self.forces = np.zeros((self.atom_num,3))        
 
             # Cell lattice vector
@@ -469,29 +472,22 @@ class openmx:
 #            self.stress *= 1602.1766208
             
             # xyz-coordinates & forces
-            while not 'xyz-coordinates (Ang.)' in line:
+            while not 'xyz-coordinates (Ang)' in line:
                 line = fil.readline()
             for i in range(5):
                 fil.readline()
             for i in range(self.atom_num):
                 line = fil.readline().split()
-                self.cart[i] = [float(j) for j in line[2:5]]
+                self.positions[i] = [float(j) for j in line[2:5]]
                 self.forces[i] = [float(j)*51.4221 for j in line[5:]]
-            
-            # fractional coordinate
-            while not 'Fractional coordinates of the final structure' in line:
-                line = fil.readline()
-            for i in range(3):
-                fil.readline()
-            for i in range(self.atom_num):
-                self.scale[i] = [float(j) for j in fil.readline().split()[2:]]
+
+        self.omx = ase.Atoms(self.symbols, positions=self.positions, cell=self.cell, pbc=True)
 
     def get_positions(self, wrap=True):
-        # TODO: wrap coding
-        return self.cart
+        return self.omx.get_positions(wrap=wrap)
     
     def get_scaled_positions(self):
-        return self.scale
+        return self.omx.get_scaled_positions()
     
     def cell(self):
         return self.cell
@@ -505,8 +501,11 @@ class openmx:
     def get_forces(self):
         return self.forces
 
-    def get_stress(self):
-        return self.stress
+#    def get_stress(self):
+#        return self.stress
 
     def get_atomic_energy(self):
         return self.atomic_energy
+
+    def get_all_distances(self, mic=True):
+        return self.omx.get_all_distances(mic=mic)

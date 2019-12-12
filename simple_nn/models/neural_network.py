@@ -330,8 +330,25 @@ class Neural_network(object):
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         if self.inputs['atomic_E']:
-            self.e_loss = tf.square(self.next_elem['atomic_E'] - self.atomic_E)
-            self.e_loss = tf.sparse_segment_mean(self.e_loss, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
+            if self.parent.inputs['group']['use_group']:
+                if self.parent.inputs['group']['method'] == 'random':
+                    self.group_E = tf.segment_sum(self.atomic_E, self.next_elem['group_id'])
+                    self.group_E_ref = tf.segment_sum(self.next_elem['atomic_E'], self.next_elem['group_id'])
+                    self.e_loss = tf.square((self.group_E_ref - self.group_E)/self.parent.inputs['group']['num_atom_in_group'])
+                    self.e_loss = tf.segment_mean(self.e_loss, tf.reshape(repeat(tf.range(self.next_elem['num_seg']),\
+                                                                self.next_elem['group_num']), [-1]))
+                elif self.parent.inputs['group']['method'] == 'nearest':
+                    self.group_E = tf.reduce_sum(tf.reshape(tf.gather(self.atomic_E, self.next_elem['neigh_list']), \
+                                            [-1, self.parent.inputs['group']['num_atom_in_group']]), axis=1)
+                    self.group_E_ref = tf.reduce_sum(tf.reshape(tf.gather(self.next_elem['atomic_E'], \
+                                        self.next_elem['neigh_list']), [-1, self.parent.inputs['group']['num_atom_in_group']]), axis=1)
+                    self.e_loss = tf.square((self.group_E_ref - self.group_E)/self.parent.inputs['group']['num_atom_in_group'])
+                    self.e_loss = tf.segment_mean(self.e_loss, tf.reshape(repeat(tf.range(self.next_elem['num_seg']-1),\
+                                                                tf.tile([self.parent.inputs['group']['num_group_in_str']], \
+                                                                        [self.next_elem['num_seg']-1])), [-1]))
+            else:
+                self.e_loss = tf.square(self.next_elem['atomic_E'] - self.atomic_E)
+                self.e_loss = tf.sparse_segment_mean(self.e_loss, self.next_elem['sparse_indices_'], self.next_elem['seg_id_'],
                                                  num_segments=self.next_elem['num_seg'])[1:]
         elif self.inputs['E_loss'] == 1:
             self.e_loss = tf.square((self.next_elem['E'] - self.E) / self.next_elem['tot_num']) * self.next_elem['tot_num']
@@ -537,22 +554,41 @@ class Neural_network(object):
                                          tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
                                          self.next_elem['partition'], 2
                                      )[1]
+        self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [max_totnum]), # dx_shape[1]
+                                                                              tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
+                                                                    self.next_elem['partition'], 2)[1]
 
         if self.inputs['atomic_E']:
             self.next_elem['atomic_E'] = tf.reshape(self.next_elem['atomic_E'], [-1, 1])        
+            if self.parent.inputs['group']['use_group']:
+                if self.parent.inputs['group']['method'] == 'random':
+                    self.next_elem['group_id'] = tf.reshape(self.next_elem['group_id'], [-1])
+                    self.next_elem['group_num'] = tf.cast(tf.ceil(tf.cast(tf.reshape(self.next_elem['tot_num'], [-1]),\
+                                                        tf.float32)/self.parent.inputs['group']['num_atom_in_group']), tf.int32)
+                    self.next_elem['barrier'] = tf.cumsum(self.next_elem['group_num'], exclusive=True)
+                    self.next_elem['barrier'] = tf.reshape(repeat(self.next_elem['barrier'], \
+                                                        tf.cast(tf.reshape(self.next_elem['tot_num'], [-1]), tf.int32)), [-1])
+                    self.next_elem['group_id'] += tf.cast(self.next_elem['barrier'], tf.int32)
+                elif self.parent.inputs['group']['method'] == 'nearest':
+                    self.next_elem['neigh_list'] = tf.reshape(self.next_elem['neigh_list'], [-1])
+                    self.next_elem['neigh_list'] = tf.gather(self.next_elem['neigh_list'], \
+                                                            tf.range(tf.shape(self.next_elem['neigh_list'])[0]/2)*2)
+                    self.next_elem['barrier'] = tf.cast(tf.cumsum(tf.reshape(self.next_elem['tot_num'], [-1]), exclusive=True), tf.int32)
+                    group_atom_per_str = self.parent.inputs['group']['num_group_in_str']*self.parent.inputs['group']['num_atom_in_group']
+                    self.next_elem['barrier'] = tf.reshape(repeat(self.next_elem['barrier'],\
+                                                        tf.cast(tf.tile(tf.constant([group_atom_per_str]),\
+                                                                        [self.next_elem['num_seg']-1]), tf.int32)), [-1])
+                    self.next_elem['neigh_list'] += tf.cast(self.next_elem['barrier'], tf.int32) 
 
-        if self.inputs['use_force'] or self.inputs['use_stress']:
+#        if self.inputs['use_force'] or self.inputs['use_stress']:
 #            F_shape = tf.shape(self.next_elem['F'])
 
-            self.next_elem['seg_id_'] = tf.dynamic_partition(tf.reshape(tf.map_fn(lambda x: tf.tile([x+1], [max_totnum]), # dx_shape[1]
-                                                                                  tf.range(tf.shape(self.next_elem['tot_num'])[0])), [-1]),
-                                                                        self.next_elem['partition'], 2)[1]
-            if self.inputs['use_force']:
-                self.next_elem['F'] = \
-                    tf.dynamic_partition(
-                        tf.reshape(self.next_elem['F'], [-1, 3]),
-                        self.next_elem['partition'], 2
-                    )[1]
+        if self.inputs['use_force']:
+            self.next_elem['F'] = \
+                tf.dynamic_partition(
+                    tf.reshape(self.next_elem['F'], [-1, 3]),
+                    self.next_elem['partition'], 2
+                )[1]
             # which place?
         
         if atomic_weights:
