@@ -180,6 +180,7 @@ class Neural_network(object):
         #acti_func = 'elu'
         #acti_func = 'sigmoid'
         #acti_func = 'tanh'
+        #acti_func = 'relu'
 
         self.nodes = dict()
         for item in self.parent.inputs['atom_types']:

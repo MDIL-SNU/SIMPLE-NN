@@ -14,6 +14,16 @@ double tanh(double x, double &deriv) {
     return expl;
 }
 
+double relu(double x, double &deriv) {
+    if (x > 0) {
+        deriv = 1.;
+        return x;
+    } else {
+        deriv = 0.;
+        return 0;
+    }
+}
+
 double cutf(double frac) {
     // frac = dist / cutoff_dist
     if (frac >= 1.0) {

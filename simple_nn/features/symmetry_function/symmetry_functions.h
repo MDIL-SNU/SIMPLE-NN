@@ -19,6 +19,7 @@ static inline double pow_int(const double &x, const double n) {
 
 double sigm(double, double &);
 double tanh(double, double &);
+double relu(double, double &);
 double cutf(double);
 double dcutf(double, double);
 double G2(double, double *, double *, double &);
