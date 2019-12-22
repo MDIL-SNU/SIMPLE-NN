@@ -104,10 +104,7 @@ class Symmetry_function(object):
             feature['atomic_E'] = _bytes_feature(res['atomic_E'].tobytes())
 
         if self.parent.inputs['group']['use_group']:
-            if self.parent.inputs['group']['method'] == 'random':
-                feature['group_id'] = _bytes_feature(res['group_id'].tobytes())
-            elif self.parent.inputs['group']['method'] == 'nearest':
-                feature['neigh_list'] = _bytes_feature(res['neigh_list'].tobytes())
+            feature['group_id'] = _bytes_feature(res['group_id'].tobytes())
 
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
@@ -174,10 +171,7 @@ class Symmetry_function(object):
             features['atomic_E'] = tf.FixedLenFeature([], dtype=tf.string)
 
         if self.parent.inputs['group']['use_group']:
-            if self.parent.inputs['group']['method'] == 'random':
-                features['group_id'] = tf.FixedLenFeature([], dtype=tf.string)
-            elif self.parent.inputs['group']['method'] == 'nearest':
-                features['neigh_list'] = tf.FixedLenFeature([], dtype=tf.string)
+            features['group_id'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
@@ -231,13 +225,10 @@ class Symmetry_function(object):
             res['S'] = tf.decode_raw(read_data['S'], tf.float64)
         
         if self.inputs['refdata_format'] == 'openmx':
-            res['atomic_E'] = tf.reshape(tf.decode_raw(read_data['atomic_E'], tf.float64), [-1, 1])
+            res['atomic_E'] = tf.decode_raw(read_data['atomic_E'], tf.float64)
 
         if self.parent.inputs['group']['use_group']:
-            if self.parent.inputs['group']['method'] == 'random':
-                res['group_id'] = tf.decode_raw(read_data['group_id'], tf.int32)
-            elif self.parent.inputs['group']['method'] == 'nearest':
-                res['neigh_list'] = tf.decode_raw(read_data['neigh_list'], tf.int32)
+            res['group_id'] = tf.decode_raw(read_data['group_id'], tf.int32)
 
         return res
 
@@ -267,13 +258,10 @@ class Symmetry_function(object):
             batch_dict['S'] = [None]
 
         if self.inputs['refdata_format'] == 'openmx':
-            batch_dict['atomic_E'] = [None, 1]
+            batch_dict['atomic_E'] = [None]
     
         if self.parent.inputs['group']['use_group']:
-            if self.parent.inputs['group']['method'] == 'random':
-                batch_dict['group_id'] = [None]
-            elif self.parent.inputs['group']['method'] == 'nearest':
-                batch_dict['neigh_list'] = [None]
+            batch_dict['group_id'] = [None]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
@@ -616,38 +604,13 @@ class Symmetry_function(object):
                 res['atom_idx'] = atom_i
 
                 if self.parent.inputs['group']['use_group']:
-                    if self.parent.inputs['group']['method'] == 'random':
-                        num_clu = self.parent.inputs['group']['num_atom_in_group']
-                        res['group_id'] = np.concatenate((range(res['tot_num']//num_clu)*num_clu,\
-                                            [res['tot_num']//num_clu]*(res['tot_num']%num_clu))).astype(np.int32)
-                        np.random.shuffle(res['group_id'])
-                        group_idx = np.argsort(res['group_id'])
-
-                        res['group_id'] = res['group_id'][group_idx]
-                        cart = cart[group_idx]
-                        scale = scale[group_idx]
-                        symbols = symbols[group_idx]
-                        res['F'] = res['F'][group_idx]
-                        res['atomic_E'] = res['atomic_E'][group_idx]
-
-                        for j,jtem in enumerate(self.parent.inputs['atom_types']):
-                            tmp = symbols==jtem
-                            atom_i[tmp] = j+1
-                            type_num[jtem] = np.sum(tmp).astype(np.int64)
-                            # if atom indexs are sorted by atom type,
-                            # indexs are sorted in this part.
-                            # if not, it could generate bug in training process for force training
-                            type_idx[jtem] = np.arange(atom_num)[tmp]
-                        atom_i_p = ffi.cast("int *", atom_i.ctypes.data)
-            
-                    elif self.parent.inputs['group']['method'] == 'nearest':
-                        distances = atoms.get_all_distances(mic=True)
-                        num_atom = self.parent.inputs['group']['num_atom_in_group']
-                        res['neigh_list'] = list()
-                        for num_group in range(self.parent.inputs['group']['num_group_in_str']):
-                            distance = distances[np.random.randint(res['tot_num'], size=1)[0]]
-                            res['neigh_list'].append(np.argsort(distance)[:num_atom].tolist())
-                        res['neigh_list'] = np.array(res['neigh_list']).flatten()
+                    distances = atoms.get_all_distances(mic=True)
+                    num_atom = self.parent.inputs['group']['num_atom_in_group']
+                    num_group = np.ceil(res['tot_num'].astype(np.float64)/num_atom).astype(np.int32)
+                    res['group_id'] = np.zeros(num_atom*num_group, dtype=np.int32)
+                    for g,group in enumerate(np.random.choice(res['tot_num'], num_group, replace=False)):
+                        distance = distances[group]
+                        res['group_id'][g*num_atom:(g+1)*num_atom] = np.argsort(distance)[:num_atom]
 
                 cart_p  = _gen_2Darray_for_ffi(cart, ffi)
                 scale_p = _gen_2Darray_for_ffi(scale, ffi)

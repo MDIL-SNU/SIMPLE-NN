@@ -420,7 +420,6 @@ class openmx:
         self.cell = np.zeros((3,3))
         self.dE_da = np.zeros((3,3))
         self.stress = np.zeros(6)
-        print('start')
 
         with open(filename,'r') as fil:
             line = fil.readline()
@@ -472,7 +471,7 @@ class openmx:
 #            self.stress *= 1602.1766208
             
             # xyz-coordinates & forces
-            while not 'xyz-coordinates (Ang)' in line:
+            while not 'xyz-coordinates' in line:
                 line = fil.readline()
             for i in range(5):
                 fil.readline()
