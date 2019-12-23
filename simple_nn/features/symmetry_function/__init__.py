@@ -105,6 +105,7 @@ class Symmetry_function(object):
 
         if self.parent.inputs['group']['use_group']:
             feature['group_id'] = _bytes_feature(res['group_id'].tobytes())
+            feature['partition_group'] = _bytes_feature(res['partition_group'].tobytes())
 
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
@@ -172,6 +173,7 @@ class Symmetry_function(object):
 
         if self.parent.inputs['group']['use_group']:
             features['group_id'] = tf.FixedLenFeature([], dtype=tf.string)
+            features['partition_group'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
@@ -229,6 +231,7 @@ class Symmetry_function(object):
 
         if self.parent.inputs['group']['use_group']:
             res['group_id'] = tf.decode_raw(read_data['group_id'], tf.int32)
+            res['partition_group'] = tf.decode_raw(read_data['partition_group'], tf.int32)
 
         return res
 
@@ -262,6 +265,7 @@ class Symmetry_function(object):
     
         if self.parent.inputs['group']['use_group']:
             batch_dict['group_id'] = [None]
+            batch_dict['partition_group'] = [None]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
@@ -607,6 +611,7 @@ class Symmetry_function(object):
                     distances = atoms.get_all_distances(mic=True)
                     num_atom = self.parent.inputs['group']['num_atom_in_group']
                     num_group = np.ceil(res['tot_num'].astype(np.float64)/num_atom).astype(np.int32)
+                    res['partition_group'] = np.ones([num_group*num_atom]).astype(np.int32)
                     res['group_id'] = np.zeros(num_atom*num_group, dtype=np.int32)
                     for g,group in enumerate(np.random.choice(res['tot_num'], num_group, replace=False)):
                         distance = distances[group]

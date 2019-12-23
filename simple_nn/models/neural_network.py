@@ -556,16 +556,16 @@ class Neural_network(object):
             self.next_elem['atomic_E'] = tf.reshape(self.next_elem['atomic_E'], [-1])
             self.next_elem['atomic_E'] = tf.reshape(tf.dynamic_partition(self.next_elem['atomic_E'], \
                                                                         self.next_elem['partition'], 2)[1], [-1, 1])        
+            self.next_elem['partition_group'] = tf.reshape(self.next_elem['partition_group'], [-1])
             if self.parent.inputs['group']['use_group']:
+                num_atom = self.parent.inputs['group']['num_atom_in_group']
                 self.next_elem['group_id'] = tf.reshape(self.next_elem['group_id'], [-1])
-                self.next_elem['group_id'] = tf.dynamic_partition(self.next_elem['group_id'], self.next_elem['partition'], 2)[1]
-                self.next_elem['group_num'] = tf.ceil(tf.reshape(self.next_elem['tot_num'], [-1])\
-                                                    /self.parent.inputs['group']['num_atom_in_group'])
+                self.next_elem['group_id'] = tf.dynamic_partition(self.next_elem['group_id'], self.next_elem['partition_group'], 2)[1]
+                self.next_elem['group_num'] = tf.ceil(tf.reshape(self.next_elem['tot_num'], [-1])/num_atom)
                 self.next_elem['group_num'] = tf.cast(self.next_elem['group_num'], tf.int32)
-                self.next_elem['barrier'] = tf.cumsum(self.next_elem['group_num']*\
-                                                        self.parent.inputs['group']['num_atom_in_group'], exclusive=True)
+                self.next_elem['barrier'] = tf.cumsum(self.next_elem['group_num']*num_atom, exclusive=True)
                 self.next_elem['barrier'] = repeat(tf.reshape(self.next_elem['barrier'], [-1]),\
-                                                    tf.cast(tf.reshape(self.next_elem['tot_num'], [-1]), tf.int32))
+                                                    tf.cast(self.next_elem['group_num']*num_atom, tf.int32))
                 self.next_elem['group_id'] += self.next_elem['barrier'] 
 
         if self.inputs['use_force']:
