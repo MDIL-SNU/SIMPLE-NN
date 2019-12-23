@@ -77,11 +77,16 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
     cross[2][2] = cell[0][0]*cell[1][1] - cell[0][1]*cell[1][0];
 
     vol = cross[0][0]*cell[0][0] + cross[0][1]*cell[0][1] + cross[0][2]*cell[0][2];
-    for (int i=0; i<3; ++i) {
-        for (int j=0; j<3; ++j) {
-            inv[i][j] = cross[j][i]/vol;
-        }
-    }
+    inv[0][0] = cross[0][0]/vol;
+    inv[0][1] = cross[1][0]/vol;
+    inv[0][2] = cross[2][0]/vol;
+    inv[1][0] = cross[0][1]/vol;
+    inv[1][1] = cross[1][1]/vol;
+    inv[1][2] = cross[2][1]/vol;
+    inv[2][0] = cross[0][2]/vol;
+    inv[2][1] = cross[1][2]/vol;
+    inv[2][2] = cross[2][2]/vol;
+
     for (int i=0; i<3; ++i) {
         tmp = 0;
         for (int j=0; j<3; ++j) {
@@ -179,12 +184,13 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
             // coeffcient of each directional vector (order : ij, ik)
             rRij = nei_list_d[j*4 + 3];
 
-            for (int a=0; a < 3; ++a) {
-                vecij[a] =  nei_list_d[j*4 + a] / rRij;
-                for (int b=0; b < 3; ++b) {
-                    lcoeff[a] += nei_list_d[j*4 + b]*inv[b][a];
-                }
-            }
+            vecij[0] = nei_list_d[j*4]/rRij;
+            vecij[1] = nei_list_d[j*4 + 1]/rRij;
+            vecij[2] = nei_list_d[j*4 + 2]/rRij;
+
+            lcoeff[0] = nei_list_d[j*4]*inv[0][0] + nei_list_d[j*4 + 1]*inv[1][0] + nei_list_d[j*4 + 2]*inv[2][0];
+            lcoeff[1] = nei_list_d[j*4]*inv[0][1] + nei_list_d[j*4 + 1]*inv[1][1] + nei_list_d[j*4 + 2]*inv[2][1];
+            lcoeff[2] = nei_list_d[j*4]*inv[0][2] + nei_list_d[j*4 + 1]*inv[1][2] + nei_list_d[j*4 + 2]*inv[2][2];
 
             for (int s=0; s < nsyms; ++s) {
                 if ((params_i[s][0] == 2) && (params_i[s][1] == nei_list_i[j*2])) { // FIXME:
@@ -193,16 +199,36 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
 
                     symf[ii][s] += G2(rRij, precal, params_d[s], dradtmp); // FIXME: index
 
-                    for (int a=0; a < 3; ++a) {
-                        tmpd[a] = dradtmp*vecij[a];
-                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + a] += tmpd[a];
-                        dsymf[ii][s*natoms*3 + i*3 + a]                   -= tmpd[a];
+                    tmpd[0] = dradtmp*vecij[0];
+                    tmpd[1] = dradtmp*vecij[1];
+                    tmpd[2] = dradtmp*vecij[2];
 
-                        for (int b=0; b < 3; ++b) {
-                            dsymfa[ii][s*3*6 + b*6 + a]     += tmpd[a]*lcoeff[b]*cell[b][a]/vol;
-                            dsymfa[ii][s*3*6 + b*6 + a + 3] += tmpd[a]*lcoeff[b]*cell[b][(a + 1)%3]/vol;
-                        }
-                    }
+                    dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0];            
+                    dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1];            
+                    dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2];            
+
+                    dsymf[ii][s*natoms*3 + i*3]     -= tmpd[0];
+                    dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1];
+                    dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2];
+
+                    dsymfa[ii][s*3*6]      += tmpd[0]*lcoeff[0]*cell[0][0]/vol;
+                    dsymfa[ii][s*3*6 + 1]  += tmpd[1]*lcoeff[0]*cell[0][1]/vol;
+                    dsymfa[ii][s*3*6 + 2]  += tmpd[2]*lcoeff[0]*cell[0][2]/vol;
+                    dsymfa[ii][s*3*6 + 3]  += tmpd[0]*lcoeff[0]*cell[0][1]/vol;
+                    dsymfa[ii][s*3*6 + 4]  += tmpd[1]*lcoeff[0]*cell[0][2]/vol;
+                    dsymfa[ii][s*3*6 + 5]  += tmpd[2]*lcoeff[0]*cell[0][0]/vol;
+                    dsymfa[ii][s*3*6 + 6]  += tmpd[0]*lcoeff[1]*cell[1][0]/vol;
+                    dsymfa[ii][s*3*6 + 7]  += tmpd[1]*lcoeff[1]*cell[1][1]/vol;
+                    dsymfa[ii][s*3*6 + 8]  += tmpd[2]*lcoeff[1]*cell[1][2]/vol;
+                    dsymfa[ii][s*3*6 + 9]  += tmpd[0]*lcoeff[1]*cell[1][1]/vol;
+                    dsymfa[ii][s*3*6 + 10] += tmpd[1]*lcoeff[1]*cell[1][2]/vol;
+                    dsymfa[ii][s*3*6 + 11] += tmpd[2]*lcoeff[1]*cell[1][0]/vol;
+                    dsymfa[ii][s*3*6 + 12] += tmpd[0]*lcoeff[2]*cell[2][0]/vol;
+                    dsymfa[ii][s*3*6 + 13] += tmpd[1]*lcoeff[2]*cell[2][1]/vol;
+                    dsymfa[ii][s*3*6 + 14] += tmpd[2]*lcoeff[2]*cell[2][2]/vol;
+                    dsymfa[ii][s*3*6 + 15] += tmpd[0]*lcoeff[2]*cell[2][1]/vol;
+                    dsymfa[ii][s*3*6 + 16] += tmpd[1]*lcoeff[2]*cell[2][2]/vol;
+                    dsymfa[ii][s*3*6 + 17] += tmpd[2]*lcoeff[2]*cell[2][0]/vol;
                 }
                 else continue;
             }
@@ -217,16 +243,22 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                 if (rRjk < 0.0001) continue;
 
                 rRik = nei_list_d[k*4 + 3];
-                for (int a=0; a < 3; ++a) {
-                    vecik[a] = nei_list_d[k*4 + a] / rRik;
-                    vecjk[a] = deljk[a] / rRjk;
-                    lcoeff[a + 3] = 0;
-                    lcoeff[a + 6] = 0;
-                    for (int b=0; b < 3; ++b) {
-                        lcoeff[a + 3] += nei_list_d[k*4 + b] * inv[b][a];
-                        lcoeff[a + 6] += deljk[b] * inv[b][a];
-                    }
-                }
+
+                vecik[0] = nei_list_d[k*4] / rRik;
+                vecik[1] = nei_list_d[k*4 + 1] / rRik;
+                vecik[2] = nei_list_d[k*4 + 2] / rRik;
+
+                vecjk[0] = deljk[0] / rRjk;
+                vecjk[1] = deljk[1] / rRjk;
+                vecjk[2] = deljk[2] / rRjk;
+
+                lcoeff[3] = nei_list_d[k*4]*inv[0][0] + nei_list_d[k*4 + 1]*inv[1][0] + nei_list_d[k*4 + 2]*inv[2][0];
+                lcoeff[4] = nei_list_d[k*4]*inv[0][1] + nei_list_d[k*4 + 1]*inv[1][1] + nei_list_d[k*4 + 2]*inv[2][1];
+                lcoeff[5] = nei_list_d[k*4]*inv[0][2] + nei_list_d[k*4 + 1]*inv[1][2] + nei_list_d[k*4 + 2]*inv[2][2];
+
+                lcoeff[6] = deljk[0]*inv[0][0] + deljk[1]*inv[1][0] + deljk[2]*inv[2][0];
+                lcoeff[7] = deljk[0]*inv[0][1] + deljk[1]*inv[1][1] + deljk[2]*inv[2][1];
+                lcoeff[8] = deljk[0]*inv[0][2] + deljk[1]*inv[1][2] + deljk[2]*inv[2][2];
 
                 precal[6]  = rRij*rRij+rRik*rRik+rRjk*rRjk;
                 precal[7]  = (rRij*rRij + rRik*rRik - rRjk*rRjk)/2/rRij/rRik;
@@ -259,17 +291,36 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                         tmpd[7] = dangtmp[2]*vecjk[1];
                         tmpd[8] = dangtmp[2]*vecjk[2];
 
-                        for (int a=0; a < 3; ++a) {
-                            dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + a] += tmpd[a] - tmpd[a + 6];
-                            dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + a] += tmpd[a + 3] + tmpd[a + 6];
-                            dsymf[ii][s*natoms*3 + i*3 + a]                   -= tmpd[a] + tmpd[a + 3];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0] - tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1] - tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2] - tmpd[8];
 
-                            for (int b=0; b < 3; ++b) {
-                                dsymfa[ii][s*3*6 + b*6 + a]     += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3] + tmpd[a + 6]*lcoeff[b + 6])*cell[b][a]/vol;
-                                dsymfa[ii][s*3*6 + b*6 + a + 3] += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3] + tmpd[a + 6]*lcoeff[b + 6])*cell[b][(a + 1)%3]/vol;
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]     += tmpd[3] + tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1] += tmpd[4] + tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2] += tmpd[5] + tmpd[6];
 
-                            }
-                        }
+                        dsymf[ii][s*natoms*3 + i*3]     -= tmpd[0] + tmpd[3];
+                        dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
+                        dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
+
+                        dsymfa[ii][s*3*6]      += (tmpd[0]*lcoeff[0] + tmpd[3]lcoeff[3] + tmpd[6]*lcoeff[6])*cell[0][0]/vol;
+                        dsymfa[ii][s*3*6 + 1]  += (tmpd[1]*lcoeff[0] + tmpd[4]lcoeff[3] + tmpd[7]*lcoeff[6])*cell[0][1]/vol;
+                        dsymfa[ii][s*3*6 + 2]  += (tmpd[2]*lcoeff[0] + tmpd[5]lcoeff[3] + tmpd[8]*lcoeff[6])*cell[0][2]/vol;
+                        dsymfa[ii][s*3*6 + 3]  += (tmpd[0]*lcoeff[0] + tmpd[3]lcoeff[3] + tmpd[6]*lcoeff[6])*cell[0][0]/vol;
+                        dsymfa[ii][s*3*6 + 4]  += (tmpd[1]*lcoeff[0] + tmpd[4]lcoeff[3] + tmpd[7]*lcoeff[6])*cell[0][1]/vol;
+                        dsymfa[ii][s*3*6 + 5]  += (tmpd[2]*lcoeff[0] + tmpd[5]lcoeff[3] + tmpd[8]*lcoeff[6])*cell[0][2]/vol;
+                        dsymfa[ii][s*3*6 + 6]  += (tmpd[0]*lcoeff[1] + tmpd[3]lcoeff[4] + tmpd[6]*lcoeff[7])*cell[1][0]/vol;
+                        dsymfa[ii][s*3*6 + 7]  += (tmpd[1]*lcoeff[1] + tmpd[4]lcoeff[4] + tmpd[7]*lcoeff[7])*cell[1][1]/vol;
+                        dsymfa[ii][s*3*6 + 8]  += (tmpd[2]*lcoeff[1] + tmpd[5]lcoeff[4] + tmpd[8]*lcoeff[7])*cell[1][2]/vol;
+                        dsymfa[ii][s*3*6 + 9]  += (tmpd[0]*lcoeff[1] + tmpd[3]lcoeff[4] + tmpd[6]*lcoeff[7])*cell[1][0]/vol;
+                        dsymfa[ii][s*3*6 + 10] += (tmpd[1]*lcoeff[1] + tmpd[4]lcoeff[4] + tmpd[7]*lcoeff[7])*cell[1][1]/vol;
+                        dsymfa[ii][s*3*6 + 11] += (tmpd[2]*lcoeff[1] + tmpd[5]lcoeff[4] + tmpd[8]*lcoeff[7])*cell[1][2]/vol;
+                        dsymfa[ii][s*3*6 + 12] += (tmpd[0]*lcoeff[2] + tmpd[3]lcoeff[5] + tmpd[6]*lcoeff[8])*cell[2][0]/vol;
+                        dsymfa[ii][s*3*6 + 13] += (tmpd[1]*lcoeff[2] + tmpd[4]lcoeff[5] + tmpd[7]*lcoeff[8])*cell[2][1]/vol;
+                        dsymfa[ii][s*3*6 + 14] += (tmpd[2]*lcoeff[2] + tmpd[5]lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][2]/vol;
+                        dsymfa[ii][s*3*6 + 15] += (tmpd[0]*lcoeff[2] + tmpd[3]lcoeff[5] + tmpd[6]*lcoeff[8])*cell[2][0]/vol;
+                        dsymfa[ii][s*3*6 + 16] += (tmpd[1]*lcoeff[2] + tmpd[4]lcoeff[5] + tmpd[7]*lcoeff[8])*cell[2][1]/vol;
+                        dsymfa[ii][s*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][2]/vol;
                     }
                     else if ((params_i[s][0] == 5) &&
                            (((params_i[s][1] == nei_list_i[j*2]) && (params_i[s][2] == nei_list_i[k*2])) ||
@@ -292,16 +343,36 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                         tmpd[7] = dangtmp[2]*vecjk[1];
                         tmpd[8] = dangtmp[2]*vecjk[2];
 
-                        for (int a=0; a < 3; ++a) {
-                            dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + a] += tmpd[a] - tmpd[a + 6];
-                            dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + a] += tmpd[a + 3] + tmpd[a + 6];
-                            dsymf[ii][s*natoms*3 + i*3 + a]                   -= tmpd[a] + tmpd[a + 3];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3]     += tmpd[0] - tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 1] += tmpd[1] - tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[j*2 + 1]*3 + 2] += tmpd[2] - tmpd[8];
 
-                            for (int b=0; b < 3; ++b){
-                                dsymfa[ii][s*3*6 + b*6 + a]     += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3])*cell[b][a]/vol;
-                                dsymfa[ii][s*3*6 + b*6 + a + 3] += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3])*cell[b][(a + 1)%3]/vol;
-                            }
-                        }
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3]     += tmpd[3] + tmpd[6];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 1] += tmpd[4] + tmpd[7];
+                        dsymf[ii][s*natoms*3 + nei_list_i[k*2 + 1]*3 + 2] += tmpd[5] + tmpd[6];
+
+                        dsymf[ii][s*natoms*3 + i*3]     -= tmpd[0] + tmpd[3];
+                        dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
+                        dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
+
+                        dsymfa[ii][s*3*6]      += (tmpd[0]*lcoeff[0] + tmpd[3]lcoeff[3])*cell[0][0]/vol;
+                        dsymfa[ii][s*3*6 + 1]  += (tmpd[1]*lcoeff[0] + tmpd[4]lcoeff[3])*cell[0][1]/vol;
+                        dsymfa[ii][s*3*6 + 2]  += (tmpd[2]*lcoeff[0] + tmpd[5]lcoeff[3])*cell[0][2]/vol;
+                        dsymfa[ii][s*3*6 + 3]  += (tmpd[0]*lcoeff[0] + tmpd[3]lcoeff[3])*cell[0][0]/vol;
+                        dsymfa[ii][s*3*6 + 4]  += (tmpd[1]*lcoeff[0] + tmpd[4]lcoeff[3])*cell[0][1]/vol;
+                        dsymfa[ii][s*3*6 + 5]  += (tmpd[2]*lcoeff[0] + tmpd[5]lcoeff[3])*cell[0][2]/vol;
+                        dsymfa[ii][s*3*6 + 6]  += (tmpd[0]*lcoeff[1] + tmpd[3]lcoeff[4])*cell[1][0]/vol;
+                        dsymfa[ii][s*3*6 + 7]  += (tmpd[1]*lcoeff[1] + tmpd[4]lcoeff[4])*cell[1][1]/vol;
+                        dsymfa[ii][s*3*6 + 8]  += (tmpd[2]*lcoeff[1] + tmpd[5]lcoeff[4])*cell[1][2]/vol;
+                        dsymfa[ii][s*3*6 + 9]  += (tmpd[0]*lcoeff[1] + tmpd[3]lcoeff[4])*cell[1][0]/vol;
+                        dsymfa[ii][s*3*6 + 10] += (tmpd[1]*lcoeff[1] + tmpd[4]lcoeff[4])*cell[1][1]/vol;
+                        dsymfa[ii][s*3*6 + 11] += (tmpd[2]*lcoeff[1] + tmpd[5]lcoeff[4])*cell[1][2]/vol;
+                        dsymfa[ii][s*3*6 + 12] += (tmpd[0]*lcoeff[2] + tmpd[3]lcoeff[5])*cell[2][0]/vol;
+                        dsymfa[ii][s*3*6 + 13] += (tmpd[1]*lcoeff[2] + tmpd[4]lcoeff[5])*cell[2][1]/vol;
+                        dsymfa[ii][s*3*6 + 14] += (tmpd[2]*lcoeff[2] + tmpd[5]lcoeff[5])*cell[2][2]/vol;
+                        dsymfa[ii][s*3*6 + 15] += (tmpd[0]*lcoeff[2] + tmpd[3]lcoeff[5])*cell[2][0]/vol;
+                        dsymfa[ii][s*3*6 + 16] += (tmpd[1]*lcoeff[2] + tmpd[4]lcoeff[5])*cell[2][1]/vol;
+                        dsymfa[ii][s*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]lcoeff[5])*cell[2][2]/vol;
                     }
                     else continue;
                 }

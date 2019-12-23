@@ -92,15 +92,6 @@ void PairNN::compute(int eflag, int vflag)
 
   double **x = atom->x;
   double **f = atom->f;
-  double boxxlo = domain->boxlo[0];
-  double boxxhi = domain->boxhi[0];
-  double boxylo = domain->boxlo[1];
-  double boxyhi = domain->boxhi[1];
-  double boxzlo = domain->boxlo[2];
-  double boxzhi = domain->boxhi[2];
-  double xy = domain->xy;
-  double xz = domain->xz;
-  double yz = domain->yz;
   tagint *tag = atom->tag;
   struct Symc *sym;
   int tot_at = atom->natoms;
@@ -115,6 +106,16 @@ void PairNN::compute(int eflag, int vflag)
   // loop over neighbors of my atoms
 
   if (vflag_atom) {
+    double boxxlo = domain->boxlo[0];
+    double boxxhi = domain->boxhi[0];
+    double boxylo = domain->boxlo[1];
+    double boxyhi = domain->boxhi[1];
+    double boxzlo = domain->boxlo[2];
+    double boxzhi = domain->boxhi[2];
+    double xy = domain->xy;
+    double xz = domain->xz;
+    double yz = domain->yz;
+
     cell[0][0] = boxxhi - boxxlo;
     cell[0][1] = 0;
     cell[0][2] = 0;
@@ -136,11 +137,15 @@ void PairNN::compute(int eflag, int vflag)
     cross[2][2] = cell[0][0]*cell[1][1] - cell[0][1]*cell[1][0];
 
     vol = cross[0][0]*cell[0][0] + cross[0][1]*cell[0][1] + cross[0][2]*cell[0][2];
-    for (int i=0; i<3; ++i) {
-      for (int j=0; j<3; ++j) {
-        inv[i][j] = cross[j][i]/vol;
-      }
-    }
+    inv[0][0] = cross[0][0]/vol;
+    inv[0][1] = cross[1][0]/vol;
+    inv[0][2] = cross[2][0]/vol;
+    inv[1][0] = cross[0][1]/vol;
+    inv[1][1] = cross[1][1]/vol;
+    inv[1][2] = cross[2][1]/vol;
+    inv[2][0] = cross[0][2]/vol;
+    inv[2][1] = cross[1][2]/vol;
+    inv[2][2] = cross[2][2]/vol;
   }
 
   for (ii = 0; ii < inum; ii++) {
@@ -175,16 +180,10 @@ void PairNN::compute(int eflag, int vflag)
     double *tmpf = new double[nsym*(jnum+1)*3]();
     double *tmps = new double[nsym*3*6]();
     double *powtwo = new double[nsym]();
+    double *lcoeff = new double[9]();
 
-    // add scale criteria ----
-    double *scale1 = new double[nsym];
 
     for (tt=0; tt<nsym; tt++) {
-      //if (nets[ielem].scale[1][tt] > 0.1)
-      scale1[tt] = nets[ielem].scale[1][tt];
-      //else
-      //  scale1[tt] = 1;
-
       if (nets[ielem].slists[tt].stype == 4 || nets[ielem].slists[tt].stype == 5) {
         if (nets[ielem].slists[tt].coefs[2] < 1.0)
             error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
@@ -206,15 +205,15 @@ void PairNN::compute(int eflag, int vflag)
       jtype = type[j];
       jelem = map[jtype];
 
-      if (Rij < 0.0001 || Rij > cutsq[itype][jtype]) { continue; }
-      
-      double *lcoeff = new double[9]();
       rRij = sqrt(Rij);
-      for (int a=0; a < 3; ++a) {
-        vecij[a] = delij[a]/rRij;
-        for (int b=0; b < 3; ++b) {
-          lcoeff[a] += delij[b]*inv[b][a];
-        }
+      vecij[0] = delij[0]/rRij;
+      vecij[1] = delij[1]/rRij;
+      vecij[2] = delij[2]/rRij;
+      
+      if (vflag_atom) {
+        lcoeff[0] = delij[0]*inv[0][0] + delij[1]*inv[1][0] + delij[2]*inv[2][0];
+        lcoeff[1] = delij[0]*inv[0][1] + delij[1]*inv[1][1] + delij[2]*inv[2][1];
+        lcoeff[2] = delij[0]*inv[0][2] + delij[1]*inv[1][2] + delij[2]*inv[2][2];
       }
 
       // calc radial symfunc
@@ -226,17 +225,37 @@ void PairNN::compute(int eflag, int vflag)
 
           symvec[tt] += G2(rRij, precal, sym->coefs, dradtmp);
           
-          for (int a=0; a < 3; ++a) {
-            tmpd[a] = dradtmp*vecij[a];
-            tmpf[tt*(jnum+1)*3 + jj*3 + a]   += tmpd[a];
-            tmpf[tt*(jnum+1)*3 + jnum*3 + a] -= tmpd[a];
-
-            if (vflag_atom) {
-              for (int b=0; b < 3; ++b) {
-                tmps[tt*3*6 + b*6 + a]     += tmpd[a]*lcoeff[b]*cell[b][a];
-                tmps[tt*3*6 + b*6 + a + 3] += tmpd[a]*lcoeff[b]*cell[b][(a+1)%3];
-              }
-            }
+          tmpd[0] = dradtmp*vecij[0];
+          tmpd[1] = dradtmp*vecij[1];
+          tmpd[2] = dradtmp*vecij[2];
+          
+          tmpf[tt*(jnum+1)*3 + jj*3]     += tmpd[0];
+          tmpf[tt*(jnum+1)*3 + jj*3 + 1] += tmpd[1];
+          tmpf[tt*(jnum+1)*3 + jj*3 + 2] += tmpd[2];
+          
+          tmpf[tt*(jnum+1)*3 + jnum*3]     -= tmpd[0];
+          tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1];
+          tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2];
+          
+          if (vflag_atom) {
+            tmps[tt*3*6]      += tmpd[0]*lcoeff[0]*cell[0][0];
+            tmps[tt*3*6 + 1]  += tmpd[1]*lcoeff[0]*cell[0][1];
+            tmps[tt*3*6 + 2]  += tmpd[2]*lcoeff[0]*cell[0][2];
+            tmps[tt*3*6 + 3]  += tmpd[0]*lcoeff[0]*cell[0][1];
+            tmps[tt*3*6 + 4]  += tmpd[1]*lcoeff[0]*cell[0][2];
+            tmps[tt*3*6 + 5]  += tmpd[2]*lcoeff[0]*cell[0][0];
+            tmps[tt*3*6 + 6]  += tmpd[0]*lcoeff[1]*cell[1][0];
+            tmps[tt*3*6 + 7]  += tmpd[1]*lcoeff[1]*cell[1][1];
+            tmps[tt*3*6 + 8]  += tmpd[2]*lcoeff[1]*cell[1][2];
+            tmps[tt*3*6 + 9]  += tmpd[0]*lcoeff[1]*cell[1][1];
+            tmps[tt*3*6 + 10] += tmpd[1]*lcoeff[1]*cell[1][2];
+            tmps[tt*3*6 + 11] += tmpd[2]*lcoeff[1]*cell[1][0];
+            tmps[tt*3*6 + 12] += tmpd[0]*lcoeff[2]*cell[2][0];
+            tmps[tt*3*6 + 13] += tmpd[1]*lcoeff[2]*cell[2][1];
+            tmps[tt*3*6 + 14] += tmpd[2]*lcoeff[2]*cell[2][2];
+            tmps[tt*3*6 + 15] += tmpd[0]*lcoeff[2]*cell[2][1];
+            tmps[tt*3*6 + 16] += tmpd[1]*lcoeff[2]*cell[2][2];
+            tmps[tt*3*6 + 17] += tmpd[2]*lcoeff[2]*cell[2][0];
           }
         }
         else continue;
@@ -260,17 +279,22 @@ void PairNN::compute(int eflag, int vflag)
         Rjk = deljk[0]*deljk[0] + deljk[1]*deljk[1] + deljk[2]*deljk[2];
         rRjk = sqrt(Rjk);
 
-        if (Rjk < 0.0001 || Rik < 0.0001 || Rik > cutsq[itype][ktype]) continue;
-
-        for (int a=0; a < 3; ++a){
-          vecik[a] = delik[a]/rRik;
-          vecjk[a] = deljk[a]/rRjk;
-          lcoeff[a + 3] = 0;
-          lcoeff[a + 6] = 0;
-          for (int b=0; b < 3; ++b){
-            lcoeff[a + 3] += delik[b]*inv[b][a];
-            lcoeff[a + 6] += deljk[b]*inv[b][a];
-          }
+        vecik[0] = delik[0]/rRik;
+        vecik[1] = delik[1]/rRik;
+        vecik[2] = delik[2]/rRik;
+     
+        vecjk[0] = deljk[0]/rRjk;
+        vecjk[1] = deljk[1]/rRjk;
+        vecjk[2] = deljk[2]/rRjk;
+       
+        if (vflag_atom) {
+          lcoeff[3] = delik[0]*inv[0][0] + delik[1]*inv[1][0] + delik[2]*inv[2][0];
+          lcoeff[4] = delik[0]*inv[0][1] + delik[1]*inv[1][1] + delik[2]*inv[2][1];
+          lcoeff[5] = delik[0]*inv[0][2] + delik[1]*inv[1][2] + delik[2]*inv[2][2];
+         
+          lcoeff[6] = deljk[0]*inv[0][0] + deljk[1]*inv[1][0] + deljk[2]*inv[2][0];
+          lcoeff[7] = deljk[0]*inv[0][1] + deljk[1]*inv[1][1] + deljk[2]*inv[2][1];
+          lcoeff[8] = deljk[0]*inv[0][2] + deljk[1]*inv[1][2] + deljk[2]*inv[2][2];
         }
 
         // Assume that cutoff radius for all symmetry functions are same
@@ -308,17 +332,37 @@ void PairNN::compute(int eflag, int vflag)
             tmpd[7] = dangtmp[2]*vecjk[1];
             tmpd[8] = dangtmp[2]*vecjk[2];
 
-            for (int a=0; a < 3; ++a) {
-              tmpf[tt*(jnum+1)*3 + jj*3 + a]   += tmpd[a] - tmpd[a + 6];
-              tmpf[tt*(jnum+1)*3 + kk*3 + a]   += tmpd[a + 3] + tmpd[a + 6];
-              tmpf[tt*(jnum+1)*3 + jnum*3 + a] -= tmpd[a] + tmpd[a + 3];
+            tmpf[tt*(jnum+1)*3 + jj*3]      += tmpd[0] - tmpd[6];
+            tmpf[tt*(jnum+1)*3 + jj*3 + 1]  += tmpd[1] - tmpd[7];
+            tmpf[tt*(jnum+1)*3 + jj*3 + 2]  += tmpd[2] - tmpd[8];
 
-              if (vflag_atom) {
-                for (int b=0; b < 3; ++b) {
-                  tmps[tt*3*6 + b*6 + a]     += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3] + tmpd[a + 6]*lcoeff[b + 6])*cell[b][a];
-                  tmps[tt*3*6 + b*6 + a + 3] += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3] + tmpd[a + 6]*lcoeff[b + 6])*cell[b][(a+1)%3];
-                }
-              }
+            tmpf[tt*(jnum+1)*3 + kk*3]      += tmpd[3] + tmpd[6];
+            tmpf[tt*(jnum+1)*3 + kk*3 + 1]  += tmpd[4] + tmpd[7];
+            tmpf[tt*(jnum+1)*3 + kk*3 + 2]  += tmpd[5] + tmpd[8];
+
+            tmpf[tt*(jnum+1)*3 + jnum*3]     -= tmpd[0] + tmpd[3];
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1] + tmpd[4];
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
+
+            if (vflag_atom) {
+              tmps[tt*3*6]      += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3] + tmpd[6]*lcoeff[6])*cell[0][0];
+              tmps[tt*3*6 + 1]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3] + tmpd[7]*lcoeff[6])*cell[0][1];
+              tmps[tt*3*6 + 2]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3] + tmpd[8]*lcoeff[6])*cell[0][2];
+              tmps[tt*3*6 + 3]  += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3] + tmpd[6]*lcoeff[6])*cell[0][1];
+              tmps[tt*3*6 + 4]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3] + tmpd[7]*lcoeff[6])*cell[0][2];
+              tmps[tt*3*6 + 5]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3] + tmpd[8]*lcoeff[6])*cell[0][0];
+              tmps[tt*3*6 + 6]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4] + tmpd[6]*lcoeff[7])*cell[1][0];
+              tmps[tt*3*6 + 7]  += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4] + tmpd[7]*lcoeff[7])*cell[1][1];
+              tmps[tt*3*6 + 8]  += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4] + tmpd[8]*lcoeff[7])*cell[1][2];
+              tmps[tt*3*6 + 9]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4] + tmpd[6]*lcoeff[7])*cell[1][1];
+              tmps[tt*3*6 + 10] += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4] + tmpd[7]*lcoeff[7])*cell[1][2];
+              tmps[tt*3*6 + 11] += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4] + tmpd[8]*lcoeff[7])*cell[1][0];
+              tmps[tt*3*6 + 12] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5] + tmpd[6]*lcoeff[8])*cell[2][0];
+              tmps[tt*3*6 + 13] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5] + tmpd[7]*lcoeff[8])*cell[2][1];
+              tmps[tt*3*6 + 14] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][2];
+              tmps[tt*3*6 + 15] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5] + tmpd[6]*lcoeff[8])*cell[2][1];
+              tmps[tt*3*6 + 16] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5] + tmpd[7]*lcoeff[8])*cell[2][2];
+              tmps[tt*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][0];
             }
           }
           else if ((sym->stype) == 5 && \
@@ -341,17 +385,37 @@ void PairNN::compute(int eflag, int vflag)
             tmpd[7] = dangtmp[2]*vecjk[1];
             tmpd[8] = dangtmp[2]*vecjk[2];
 
-            for (int a=0; a < 3; ++a) {
-              tmpf[tt*(jnum+1)*3 + jj*3 + a]   += tmpd[a] - tmpd[a + 6];
-              tmpf[tt*(jnum+1)*3 + kk*3 + a]   += tmpd[a + 3] + tmpd[a + 6];
-              tmpf[tt*(jnum+1)*3 + jnum*3 + a] -= tmpd[a] + tmpd[a + 3];
+            tmpf[tt*(jnum+1)*3 + jj*3]      += tmpd[0] - tmpd[6];
+            tmpf[tt*(jnum+1)*3 + jj*3 + 1]  += tmpd[1] - tmpd[7];
+            tmpf[tt*(jnum+1)*3 + jj*3 + 2]  += tmpd[2] - tmpd[8];
 
-              if (vflag_atom) {
-                for (int b=0; b < 3; ++b) {
-                  tmps[tt*3*6 + b*6 + a]     += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3])*cell[b][a];
-                  tmps[tt*3*6 + b*6 + a + 3] += (tmpd[a]*lcoeff[b] + tmpd[a + 3]*lcoeff[b + 3])*cell[b][(a+1)%3];
-                }
-              }
+            tmpf[tt*(jnum+1)*3 + kk*3]      += tmpd[3] + tmpd[6];
+            tmpf[tt*(jnum+1)*3 + kk*3 + 1]  += tmpd[4] + tmpd[7];
+            tmpf[tt*(jnum+1)*3 + kk*3 + 2]  += tmpd[5] + tmpd[8];
+
+            tmpf[tt*(jnum+1)*3 + jnum*3]     -= tmpd[0] + tmpd[3];
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1] + tmpd[4];
+            tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
+
+            if (vflag_atom) {
+              tmps[tt*3*6]      += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3])*cell[0][0];
+              tmps[tt*3*6 + 1]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3])*cell[0][1];
+              tmps[tt*3*6 + 2]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3])*cell[0][2];
+              tmps[tt*3*6 + 3]  += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3])*cell[0][1];
+              tmps[tt*3*6 + 4]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3])*cell[0][2];
+              tmps[tt*3*6 + 5]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3])*cell[0][0];
+              tmps[tt*3*6 + 6]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4])*cell[1][0];
+              tmps[tt*3*6 + 7]  += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4])*cell[1][1];
+              tmps[tt*3*6 + 8]  += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4])*cell[1][2];
+              tmps[tt*3*6 + 9]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4])*cell[1][1];
+              tmps[tt*3*6 + 10] += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4])*cell[1][2];
+              tmps[tt*3*6 + 11] += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4])*cell[1][0];
+              tmps[tt*3*6 + 12] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5])*cell[2][0];
+              tmps[tt*3*6 + 13] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5])*cell[2][1];
+              tmps[tt*3*6 + 14] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5])*cell[2][2];
+              tmps[tt*3*6 + 15] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5])*cell[2][1];
+              tmps[tt*3*6 + 16] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5])*cell[2][2];
+              tmps[tt*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5])*cell[2][0];
             }
           }
           else continue;
@@ -359,8 +423,9 @@ void PairNN::compute(int eflag, int vflag)
       }
     }
     
-    // calc E and dE/dG (need scale)
+    double *scale1 = new double[nsym];
     for (tt=0; tt<nsym; tt++) {
+      scale1[tt] = nets[ielem].scale[1][tt];
       symvec[tt] = (symvec[tt] - nets[ielem].scale[0][tt])/scale1[tt];
     }
     
@@ -383,15 +448,25 @@ void PairNN::compute(int eflag, int vflag)
       f[i][2] -= tmpf[tt*(jnum+1)*3 + jnum*3 + 2]*tmpc;
 
       if (vflag_atom) {
-        for (int l=0; l < 3; ++l) {
-          // Caution: xx yy zz xy xz yz
-          vatom[i][0] -= tmps[tt*3*6 + l*6 + 0]*tmpc;
-          vatom[i][1] -= tmps[tt*3*6 + l*6 + 1]*tmpc;
-          vatom[i][2] -= tmps[tt*3*6 + l*6 + 2]*tmpc;
-          vatom[i][3] -= tmps[tt*3*6 + l*6 + 3]*tmpc;
-          vatom[i][4] -= tmps[tt*3*6 + l*6 + 5]*tmpc;
-          vatom[i][5] -= tmps[tt*3*6 + l*6 + 4]*tmpc;
-        }
+        // Order : xx yy zz zy xz yz
+        vatom[i][0] -= tmps[tt*3*6]*tmpc;
+        vatom[i][1] -= tmps[tt*3*6 + 1]*tmpc;
+        vatom[i][2] -= tmps[tt*3*6 + 2]*tmpc;
+        vatom[i][3] -= tmps[tt*3*6 + 3]*tmpc;
+        vatom[i][5] -= tmps[tt*3*6 + 4]*tmpc;
+        vatom[i][4] -= tmps[tt*3*6 + 5]*tmpc;
+        vatom[i][0] -= tmps[tt*3*6 + 6]*tmpc;
+        vatom[i][1] -= tmps[tt*3*6 + 7]*tmpc;
+        vatom[i][2] -= tmps[tt*3*6 + 8]*tmpc;
+        vatom[i][3] -= tmps[tt*3*6 + 9]*tmpc;
+        vatom[i][5] -= tmps[tt*3*6 + 10]*tmpc;
+        vatom[i][4] -= tmps[tt*3*6 + 11]*tmpc;
+        vatom[i][0] -= tmps[tt*3*6 + 12]*tmpc;
+        vatom[i][1] -= tmps[tt*3*6 + 13]*tmpc;
+        vatom[i][2] -= tmps[tt*3*6 + 14]*tmpc;
+        vatom[i][3] -= tmps[tt*3*6 + 15]*tmpc;
+        vatom[i][5] -= tmps[tt*3*6 + 16]*tmpc;
+        vatom[i][4] -= tmps[tt*3*6 + 17]*tmpc;
       }
     }
     
