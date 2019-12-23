@@ -72,8 +72,6 @@ class Simple_nn(object):
             'atom_types': [],
             'group': {
                 'use_group': False,
-                'method': 'nearest',
-                'num_group_in_str': 1,
                 'num_atom_in_group': 1
                 }
             }
