@@ -161,37 +161,11 @@ void PairNN::compute(int eflag, int vflag)
     int numshort = 0;
     nsym = nets[ielem].nnode[0];
 
-    // Check for not implemented symfunc type.
-    for (tt=0; tt<nsym; tt++) {
-        bool implemented = false;
-        sym = &nets[ielem].slists[tt];
-        for (int i=0; i < sizeof(IMPLEMENTED_TYPE) / sizeof(IMPLEMENTED_TYPE[0]); i++) {
-            if ((sym->stype) == IMPLEMENTED_TYPE[i]) {
-                implemented = true;
-                break;
-            }
-        }
-        if (!implemented) error->all(FLERR, "Not implemented symmetry function type!");
-    }
-
-    
     double *symvec = new double[nsym]();
     double *dsymvec = new double[nsym]();
     double *tmpf = new double[nsym*(jnum+1)*3]();
     double *tmps = new double[nsym*3*6]();
-    double *powtwo = new double[nsym]();
     double *lcoeff = new double[9]();
-
-
-    for (tt=0; tt<nsym; tt++) {
-      if (nets[ielem].slists[tt].stype == 4 || nets[ielem].slists[tt].stype == 5) {
-        if (nets[ielem].slists[tt].coefs[2] < 1.0)
-            error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
-        powtwo[tt] = pow(2, 1-nets[ielem].slists[tt].coefs[2]);
-      }
-    }
-
-    //------------------------
 
     for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
@@ -220,8 +194,8 @@ void PairNN::compute(int eflag, int vflag)
       for (tt=0; tt<nsym; tt++) {
         sym = &nets[ielem].slists[tt];
         if ((sym->stype == 2) && (sym->atype[0] == jelem)) {
-          precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
-          precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
+          precal[0] = cutf(rRij/sym->coefs[0]);
+          precal[1] = dcutf(rRij, sym->coefs[0]);
 
           symvec[tt] += G2(rRij, precal, sym->coefs, dradtmp);
           
@@ -313,14 +287,14 @@ void PairNN::compute(int eflag, int vflag)
               ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
                (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
             if (Rjk > cutsq[itype][jtype]) continue;
-            precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
-            precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
-            precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
-            precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
-            precal[4] = cutf(rRjk/nets[ielem].slists[tt].coefs[0]);
-            precal[5] = dcutf(rRjk, nets[ielem].slists[tt].coefs[0]);
+            precal[0] = cutf(rRij/sym->coefs[0]);
+            precal[1] = dcutf(rRij, sym->coefs[0]);
+            precal[2] = cutf(rRik/sym->coefs[0]);
+            precal[3] = dcutf(rRik, sym->coefs[0]);
+            precal[4] = cutf(rRjk/sym->coefs[0]);
+            precal[5] = dcutf(rRjk, sym->coefs[0]);
             
-            symvec[tt] += G4(rRij, rRik, rRjk, powtwo[tt], precal, sym->coefs, dangtmp);
+            symvec[tt] += G4(rRij, rRik, rRjk, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp);
 
             tmpd[0] = dangtmp[0]*vecij[0];
             tmpd[1] = dangtmp[0]*vecij[1];
@@ -368,12 +342,12 @@ void PairNN::compute(int eflag, int vflag)
           else if ((sym->stype) == 5 && \
               ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
                (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
-            precal[0] = cutf(rRij/nets[ielem].slists[tt].coefs[0]);
-            precal[1] = dcutf(rRij, nets[ielem].slists[tt].coefs[0]);
-            precal[2] = cutf(rRik/nets[ielem].slists[tt].coefs[0]);
-            precal[3] = dcutf(rRik, nets[ielem].slists[tt].coefs[0]);
+            precal[0] = cutf(rRij/sym->coefs[0]);
+            precal[1] = dcutf(rRij, sym->coefs[0]);
+            precal[2] = cutf(rRik/sym->coefs[0]);
+            precal[3] = dcutf(rRik, sym->coefs[0]);
 
-            symvec[tt] += G5(rRij, rRik, powtwo[tt], precal, sym->coefs, dangtmp);
+            symvec[tt] += G5(rRij, rRik, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp);
 
             tmpd[0] = dangtmp[0]*vecij[0];
             tmpd[1] = dangtmp[0]*vecij[1];
@@ -474,7 +448,6 @@ void PairNN::compute(int eflag, int vflag)
     delete [] dsymvec;
     delete [] tmpf;
     delete [] tmps;
-    delete [] powtwo;
     delete [] scale1;
   }
   
@@ -667,6 +640,7 @@ void PairNN::read_file(char *fname) {
       nsym = atoi(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists = new Symc[nsym];
       nets[nnet].scale = new double*[2];
+      nets[nnet].powtwo = new double[nsym]();
       for (i=0; i<2; ++i) {
         nets[nnet].scale[i] = new double[nsym];
       }
@@ -697,7 +671,23 @@ void PairNN::read_file(char *fname) {
           }
         }
       }
-      
+
+      // Check for not implemented symfunc type.
+      bool implemented = false;
+      for (i=0; i < sizeof(IMPLEMENTED_TYPE) / sizeof(IMPLEMENTED_TYPE[0]); i++) {
+          if ((nets[nnet].slists[isym].stype) == IMPLEMENTED_TYPE[i]) {
+              implemented = true;
+              break;
+          }
+      }
+      if (!implemented) error->all(FLERR, "Not implemented symmetry function type!");
+
+      if (nets[nnet].slists[isym].stype == 4 || nets[nnet].slists[isym].stype == 5) {
+        if (nets[nnet].slists[isym].coefs[2] < 1.0)
+            error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
+        nets[nnet].powtwo[isym] = pow(2, 1-nets[nnet].slists[isym].coefs[2]);
+      }
+    
       isym++;
       if (isym == nsym) {
         stats = 4;
@@ -874,6 +864,7 @@ void PairNN::free_net(Net &net) {
   delete [] net.nnode;
 
   delete [] net.slists;
+  delete [] net.powtwo;
 }
 
 
