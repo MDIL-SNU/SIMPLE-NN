@@ -640,7 +640,7 @@ void PairNN::read_file(char *fname) {
       nsym = atoi(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists = new Symc[nsym];
       nets[nnet].scale = new double*[2];
-      nets[nnet].powtwo = new double[nsym]();
+      nets[nnet].powtwo = new double[nsym];
       for (i=0; i<2; ++i) {
         nets[nnet].scale[i] = new double[nsym];
       }
