@@ -73,9 +73,10 @@ PairNN::~PairNN()
 
 void PairNN::compute(int eflag, int vflag)
 {
-  int i,ip,j,jp,k,kp,n,np,ii,jj,kk,tt,nn,inum,jnum;
+  int i,j,k,n,ii,jj,kk,tt,nn,inum,jnum;
   int itype,jtype,ktype,ielem,jelem,kelem;
-  double xtmp,ytmp,ztmp,evdwl,fpair,dradtmp,tmpc,tmpE;
+  int jbeg,jend,kbeg,kend;
+  double xtmp,ytmp,ztmp,dradtmp,tmpc,tmpE;
   double dangtmp[3];
   double tmpd[9];
   double precal[12];
@@ -86,18 +87,14 @@ void PairNN::compute(int eflag, int vflag)
   double vol,Rij,Rik,Rjk,rRij,rRik,rRjk,cutij,cutik,cutjk;
   int *ilist,*jlist,*numneigh,**firstneigh;
 
-  evdwl = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
   else evflag = vflag_fdotr = 0;
 
   double **x = atom->x;
   double **f = atom->f;
-  tagint *tag = atom->tag;
   struct Symc *sym;
-  int tot_at = atom->natoms;
   int nsym;
   int *type = atom->type;
-  int nlocal = atom->nlocal;
 
   inum = list->inum;
   ilist = list->ilist;
@@ -150,7 +147,6 @@ void PairNN::compute(int eflag, int vflag)
 
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
-    ip = tag[i] - 1;
     xtmp = x[i][0];
     ytmp = x[i][1];
     ztmp = x[i][2];
@@ -170,7 +166,6 @@ void PairNN::compute(int eflag, int vflag)
     for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
       //j &= NEIGHMASK; // What is this?
-      jp = tag[j] - 1;
 
       delij[0] = x[j][0] - xtmp;
       delij[1] = x[j][1] - ytmp;
@@ -191,54 +186,52 @@ void PairNN::compute(int eflag, int vflag)
       }
 
       // calc radial symfunc
-      for (tt=0; tt<nsym; tt++) {
+      jbeg = nets[ielem].ridx[jelem];
+      jend = jbeg + nets[ielem].rsym[jelem];
+      for (tt=jbeg; tt<jend; tt++) {
         sym = &nets[ielem].slists[tt];
-        if ((sym->stype == 2) && (sym->atype[0] == jelem)) {
-          precal[0] = cutf(rRij/sym->coefs[0]);
-          precal[1] = dcutf(rRij, sym->coefs[0]);
+        precal[0] = cutf(rRij/sym->coefs[0]);
+        precal[1] = dcutf(rRij, sym->coefs[0]);
 
-          symvec[tt] += G2(rRij, precal, sym->coefs, dradtmp);
-          
-          tmpd[0] = dradtmp*vecij[0];
-          tmpd[1] = dradtmp*vecij[1];
-          tmpd[2] = dradtmp*vecij[2];
-          
-          tmpf[tt*(jnum+1)*3 + jj*3]     += tmpd[0];
-          tmpf[tt*(jnum+1)*3 + jj*3 + 1] += tmpd[1];
-          tmpf[tt*(jnum+1)*3 + jj*3 + 2] += tmpd[2];
-          
-          tmpf[tt*(jnum+1)*3 + jnum*3]     -= tmpd[0];
-          tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1];
-          tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2];
-          
-          if (vflag_atom) {
-            tmps[tt*3*6]      += tmpd[0]*lcoeff[0]*cell[0][0];
-            tmps[tt*3*6 + 1]  += tmpd[1]*lcoeff[0]*cell[0][1];
-            tmps[tt*3*6 + 2]  += tmpd[2]*lcoeff[0]*cell[0][2];
-            tmps[tt*3*6 + 3]  += tmpd[0]*lcoeff[0]*cell[0][1];
-            tmps[tt*3*6 + 4]  += tmpd[1]*lcoeff[0]*cell[0][2];
-            tmps[tt*3*6 + 5]  += tmpd[2]*lcoeff[0]*cell[0][0];
-            tmps[tt*3*6 + 6]  += tmpd[0]*lcoeff[1]*cell[1][0];
-            tmps[tt*3*6 + 7]  += tmpd[1]*lcoeff[1]*cell[1][1];
-            tmps[tt*3*6 + 8]  += tmpd[2]*lcoeff[1]*cell[1][2];
-            tmps[tt*3*6 + 9]  += tmpd[0]*lcoeff[1]*cell[1][1];
-            tmps[tt*3*6 + 10] += tmpd[1]*lcoeff[1]*cell[1][2];
-            tmps[tt*3*6 + 11] += tmpd[2]*lcoeff[1]*cell[1][0];
-            tmps[tt*3*6 + 12] += tmpd[0]*lcoeff[2]*cell[2][0];
-            tmps[tt*3*6 + 13] += tmpd[1]*lcoeff[2]*cell[2][1];
-            tmps[tt*3*6 + 14] += tmpd[2]*lcoeff[2]*cell[2][2];
-            tmps[tt*3*6 + 15] += tmpd[0]*lcoeff[2]*cell[2][1];
-            tmps[tt*3*6 + 16] += tmpd[1]*lcoeff[2]*cell[2][2];
-            tmps[tt*3*6 + 17] += tmpd[2]*lcoeff[2]*cell[2][0];
-          }
+        symvec[tt] += G2(rRij, precal, sym->coefs, dradtmp);
+        
+        tmpd[0] = dradtmp*vecij[0];
+        tmpd[1] = dradtmp*vecij[1];
+        tmpd[2] = dradtmp*vecij[2];
+        
+        tmpf[tt*(jnum+1)*3 + jj*3]     += tmpd[0];
+        tmpf[tt*(jnum+1)*3 + jj*3 + 1] += tmpd[1];
+        tmpf[tt*(jnum+1)*3 + jj*3 + 2] += tmpd[2];
+        
+        tmpf[tt*(jnum+1)*3 + jnum*3]     -= tmpd[0];
+        tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1];
+        tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2];
+        
+        if (vflag_atom) {
+          tmps[tt*3*6]      += tmpd[0]*lcoeff[0]*cell[0][0];
+          tmps[tt*3*6 + 1]  += tmpd[1]*lcoeff[0]*cell[0][1];
+          tmps[tt*3*6 + 2]  += tmpd[2]*lcoeff[0]*cell[0][2];
+          tmps[tt*3*6 + 3]  += tmpd[0]*lcoeff[0]*cell[0][1];
+          tmps[tt*3*6 + 4]  += tmpd[1]*lcoeff[0]*cell[0][2];
+          tmps[tt*3*6 + 5]  += tmpd[2]*lcoeff[0]*cell[0][0];
+          tmps[tt*3*6 + 6]  += tmpd[0]*lcoeff[1]*cell[1][0];
+          tmps[tt*3*6 + 7]  += tmpd[1]*lcoeff[1]*cell[1][1];
+          tmps[tt*3*6 + 8]  += tmpd[2]*lcoeff[1]*cell[1][2];
+          tmps[tt*3*6 + 9]  += tmpd[0]*lcoeff[1]*cell[1][1];
+          tmps[tt*3*6 + 10] += tmpd[1]*lcoeff[1]*cell[1][2];
+          tmps[tt*3*6 + 11] += tmpd[2]*lcoeff[1]*cell[1][0];
+          tmps[tt*3*6 + 12] += tmpd[0]*lcoeff[2]*cell[2][0];
+          tmps[tt*3*6 + 13] += tmpd[1]*lcoeff[2]*cell[2][1];
+          tmps[tt*3*6 + 14] += tmpd[2]*lcoeff[2]*cell[2][2];
+          tmps[tt*3*6 + 15] += tmpd[0]*lcoeff[2]*cell[2][1];
+          tmps[tt*3*6 + 16] += tmpd[1]*lcoeff[2]*cell[2][2];
+          tmps[tt*3*6 + 17] += tmpd[2]*lcoeff[2]*cell[2][0];
         }
-        else continue;
       }
       
       for (kk = jj+1; kk < jnum; kk++) {
         k = jlist[kk];
         //k &= NEIGHMASK;
-        kp = tag[k] - 1;
         delik[0] = x[k][0] - xtmp;
         delik[1] = x[k][1] - ytmp;
         delik[2] = x[k][2] - ztmp;
@@ -281,11 +274,11 @@ void PairNN::compute(int eflag, int vflag)
         precal[11] = rRij*rRij+rRik*rRik;
 
         // calc angular symfunc
-        for (tt=0; tt<nsym; tt++) {
+        kbeg = nets[ielem].aidx[jelem*nelements + kelem];
+        kend = kbeg + nets[ielem].asym[jelem*nelements + kelem];
+        for (tt=kbeg; tt<kend; tt++) {
           sym = &nets[ielem].slists[tt];
-          if ((sym->stype) == 4 && \
-              ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
-               (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
+          if ((sym->stype) == 4) {
             if (Rjk > cutsq[itype][jtype]) continue;
             precal[0] = cutf(rRij/sym->coefs[0]);
             precal[1] = dcutf(rRij, sym->coefs[0]);
@@ -339,9 +332,7 @@ void PairNN::compute(int eflag, int vflag)
               tmps[tt*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][0];
             }
           }
-          else if ((sym->stype) == 5 && \
-              ((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
-               (sym->atype[0] == kelem && sym->atype[1] == jelem))) {
+          else if ((sym->stype) == 5 ) {
             precal[0] = cutf(rRij/sym->coefs[0]);
             precal[1] = dcutf(rRij, sym->coefs[0]);
             precal[2] = cutf(rRik/sym->coefs[0]);
@@ -392,7 +383,6 @@ void PairNN::compute(int eflag, int vflag)
               tmps[tt*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5])*cell[2][0];
             }
           }
-          else continue;
         }
       }
     }
@@ -552,7 +542,7 @@ void PairNN::coeff(int narg, char **arg)
 }
 
 void PairNN::read_file(char *fname) {
-  int i,j;
+  int i,j,k;
   FILE *fp;
   if (comm->me == 0) {
     //read file
@@ -639,8 +629,12 @@ void PairNN::read_file(char *fname) {
         error->one(FLERR,"potential file error: missing info(# of symfunc)");
       nsym = atoi(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists = new Symc[nsym];
-      nets[nnet].scale = new double*[2];
       nets[nnet].powtwo = new double[nsym];
+      nets[nnet].rsym = new int[nelements]();
+      nets[nnet].asym = new int[nelements*nelements]();
+      nets[nnet].ridx = new int[nelements];
+      nets[nnet].aidx = new int[nelements*nelements];
+      nets[nnet].scale = new double*[2];
       for (i=0; i<2; ++i) {
         nets[nnet].scale[i] = new double[nsym];
       }
@@ -653,25 +647,36 @@ void PairNN::read_file(char *fname) {
       nets[nnet].slists[isym].coefs[2] = atof(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists[isym].coefs[3] = atof(strtok(NULL," \t\n\r\f"));
 
-      tstr = strtok(NULL," \t\n\r\f");
-      nets[nnet].slists[isym].atype[0] = nelements;
-      for (i=0; i<nelements; i++) {
-        if (strcmp(tstr,elements[i]) == 0) {
-          nets[nnet].slists[isym].atype[0] = i;
-          break;
-        }
-      }
       if (nets[nnet].slists[isym].stype > 2) {
-        tstr = strtok(NULL," \t\n\r\f");
-        nets[nnet].slists[isym].atype[1] = nelements;
-        for (i=0; i<nelements; i++) {
-          if (strcmp(tstr,elements[i]) == 0) {
-            nets[nnet].slists[isym].atype[1] = i;
+        char *tstrj = strtok(NULL," \t\n\r\f");
+        char *tstrk = strtok(NULL," \t\n\r\f");
+        for (j=0; j<nelements; j++) {
+          if (strcmp(tstrj,elements[j]) == 0) {
+            nets[nnet].slists[isym].atype[0] = j;
+            for (k=0; k<nelements; k++) {
+              if (strcmp(tstrk,elements[k]) == 0) {
+                nets[nnet].slists[isym].atype[1] = k;
+                nets[nnet].asym[j*nelements + k]++;
+                if (j != k) {
+                  nets[nnet].asym[k*nelements + j]++;
+                }
+                break;
+              }
+            }
+            break;
+          }
+        }
+      } else {
+        char *tstrj = strtok(NULL," \t\n\r\f");
+        for (j=0; j<nelements; j++) {
+          if (strcmp(tstrj,elements[j]) == 0) {
+            nets[nnet].slists[isym].atype[0] = j;
+            nets[nnet].rsym[j]++;
             break;
           }
         }
       }
-
+    
       // Check for not implemented symfunc type.
       bool implemented = false;
       for (i=0; i < sizeof(IMPLEMENTED_TYPE) / sizeof(IMPLEMENTED_TYPE[0]); i++) {
@@ -692,6 +697,20 @@ void PairNN::read_file(char *fname) {
       if (isym == nsym) {
         stats = 4;
         iscale = 0;
+        int tmpidx = 0;
+        for (j=0; j<nelements; j++) {
+          nets[nnet].ridx[j] = tmpidx;
+          tmpidx += nets[nnet].rsym[j];
+        }
+        for (j=0; j<nelements; j++) {
+          for (k=j; k<nelements; k++) {
+            nets[nnet].aidx[j*nelements + k] = tmpidx;
+            if (j != k) {
+              nets[nnet].aidx[k*nelements + j] = tmpidx;
+            }
+            tmpidx += nets[nnet].asym[j*nelements + k];
+          }
+        }
       }
     } else if (stats == 4) { // scale
       tstr = strtok(line," \t\n\r\f");
