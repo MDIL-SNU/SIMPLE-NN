@@ -65,6 +65,11 @@ class PairNN : public Pair {
     double **bnodes; // nodes for backpropagation
     double **scale; // scale
     Symc *slists; // symmetry function related parameters
+    double *powtwo; // power of two
+    int *rsym; // # of radial symmetry function
+    int *asym; // # of angular symmetry function
+    int *ridx; // start index of radial symmetry function
+    int *aidx; // start index of angular symmetry function
   };
 
   Net *nets; // network parameters
