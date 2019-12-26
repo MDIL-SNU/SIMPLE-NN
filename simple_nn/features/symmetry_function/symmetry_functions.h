@@ -3,7 +3,7 @@
  Code for calculate symmetry function.
  This code is used for both Python and LAMMPS code
  */
-const int IMPLEMENTED_TYPE[] = {2, 4, 5, 6}; // Change this when you implement new symfunc type!
+const int IMPLEMENTED_TYPE[] = {2, 4, 5}; // Change this when you implement new symfunc type!
 
 static inline double pow_int(const double &x, const double n) {
     double res,tmp;
@@ -115,36 +115,6 @@ static inline double G5(const double Rij, const double Rik, const double powtwo,
                par[2]*par[3]*precal[2]*precal[9]); // ik
     deriv[2] = expl*powcos*precal[0]*precal[2] * \
                -par[2]*par[3]*precal[10]; // jk
-
-    return powcos*cosv * expl * precal[0] * precal[2];
-}
-
-// Modified angular symmetry function from ANI-1.
-// J. S. Smith et al., Chem. Sci., 2017, 8, 3192.
-static inline double G6(const double Rij, const double Rik, const double powtwo, \
-          const double sin_ts, const double cos_ts, const double *precal, const double *par, \
-          double *deriv, bool powint) {
-    // par[0] = R_c
-    // par[1] = eta
-    // par[2] = zeta
-    // par[3] = R_s
-    // par[4] = theta_s
-    // dcos(theta)/db = precal[8]
-    // dcos(theta)/dc = precal[9]
-    // dcos(theta)/da = -precal[10]
-    // dsin(theta)/db = precal[13] * precal[14]
-    // dsin(theta)/dc = precal[13] * precal[15]
-    // dsin(theta)/da = precal[13] * precal[16]
-    double expo = (0.5 * (Rij + Rik) - par[3]);
-    double expl = exp(-par[1]*expo*expo) * powtwo;
-    double cosv = 1 + cos_ts * precal[7] + sin_ts * precal[12];
-    double powcos = powint ? pow_int(fabs(cosv), par[2]-1) : pow(fabs(cosv), fabs(par[2]-1));
-
-    deriv[0] = expl*powcos*precal[2] * (precal[0] * par[2] * (cos_ts*precal[8] + sin_ts*precal[13]*precal[14]) + \
-               cosv * (precal[1] - par[1] * expo * precal[0])); // ij
-    deriv[1] = expl*powcos*precal[0] * (precal[2] * par[2] * (cos_ts*precal[9] + sin_ts*precal[13]*precal[15]) + \
-               cosv * (precal[3] - par[1] * expo * precal[2])); // ik
-    deriv[2] = expl*powcos*precal[0]*precal[2]*par[2]*(-cos_ts*precal[10] + sin_ts*precal[13]*precal[16]);    // jk
 
     return powcos*cosv * expl * precal[0] * precal[2];
 }

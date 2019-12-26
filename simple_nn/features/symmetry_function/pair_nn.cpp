@@ -77,7 +77,7 @@ void PairNN::compute(int eflag, int vflag)
   double xtmp,ytmp,ztmp,evdwl,fpair,dradtmp,tmpc,tmpE;
   double dangtmp[3];
   double tmpd[9];
-  double precal[17];
+  double precal[12];
   // precal: cfij, dcfij, cfik, dcfik, cfjk, dcfjk, dist_square_sum,
   //         cosval, dcosval/dij, dcosval/dik, dcosval/djk
   double delij[3],delik[3],deljk[3],vecij[3],vecik[3],vecjk[3];
@@ -240,20 +240,6 @@ void PairNN::compute(int eflag, int vflag)
         if (nsf[5] > 0) {
           precal[11] = Rij+Rik;
         }
-        if (nsf[6] > 0) {
-          precal[12] = sqrt(fabs(1-precal[7]*precal[7]));
-          // dsin(theta)/db = precal[13] * precal[14]
-          // dsin(theta)/dc = precal[13] * precal[15]
-          // dsin(theta)/da = precal[13] * precal[16]
-          // precal[13] need special treatment at theta=0,pi.
-          precal[13] = 2*Rij*Rik*sqrt(fabs((-rRjk+rRij+rRik)*(rRjk+rRij-rRik)*(rRjk-rRij+rRik)*(rRjk+rRij+rRik)));
-          if (precal[13] > 1e-6) {
-            precal[13] = 1 / precal[13];
-          }
-          precal[14] = rRik * ((Rjk - Rik) * (Rjk - Rik) - Rij * Rij);
-          precal[15] = rRij * ((Rjk - Rij) * (Rjk - Rij) - Rik * Rik);
-          precal[16] = 2*rRjk*rRij*rRik*(-Rjk+Rij+Rik);
-        }
 
         // calc angular symfunc
         for (tt=0; tt<nsym; tt++) {
@@ -296,35 +282,6 @@ void PairNN::compute(int eflag, int vflag)
             cutf2(rRik, nets[ielem].slists[tt].coefs[0], precal[2], precal[3], 1);
 
             symvec[tt] += G5(rRij, rRik, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp, nets[ielem].powint[tt]);
-
-            tmpd[0] = dangtmp[0]*vecij[0];
-            tmpd[1] = dangtmp[0]*vecij[1];
-            tmpd[2] = dangtmp[0]*vecij[2];
-            tmpd[3] = dangtmp[1]*vecik[0];
-            tmpd[4] = dangtmp[1]*vecik[1];
-            tmpd[5] = dangtmp[1]*vecik[2];
-            tmpd[6] = dangtmp[2]*vecjk[0];
-            tmpd[7] = dangtmp[2]*vecjk[1];
-            tmpd[8] = dangtmp[2]*vecjk[2];
-
-            tmpf[tt*(jnum+1)*3 + jj*3 + 0] += tmpd[0] - tmpd[6];
-            tmpf[tt*(jnum+1)*3 + jj*3 + 1] += tmpd[1] - tmpd[7];
-            tmpf[tt*(jnum+1)*3 + jj*3 + 2] += tmpd[2] - tmpd[8];
-
-            tmpf[tt*(jnum+1)*3 + kk*3 + 0] += tmpd[3] + tmpd[6];
-            tmpf[tt*(jnum+1)*3 + kk*3 + 1] += tmpd[4] + tmpd[7];
-            tmpf[tt*(jnum+1)*3 + kk*3 + 2] += tmpd[5] + tmpd[8];
-
-            tmpf[tt*(jnum+1)*3 + jnum*3 + 0] -= tmpd[0] + tmpd[3];
-            tmpf[tt*(jnum+1)*3 + jnum*3 + 1] -= tmpd[1] + tmpd[4];
-            tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
-          }
-          else if ((sym->stype) == 6) {
-            cutf2(rRij, nets[ielem].slists[tt].coefs[0], precal[0], precal[1], 0);
-            cutf2(rRik, nets[ielem].slists[tt].coefs[0], precal[2], precal[3], 1);
-
-            symvec[tt] += G6(rRij, rRik, nets[ielem].powtwo[tt], nets[ielem].sin_ts[tt], nets[ielem].cos_ts[tt], \
-                             precal, sym->coefs, dangtmp, nets[ielem].powint[tt]);
 
             tmpd[0] = dangtmp[0]*vecij[0];
             tmpd[1] = dangtmp[0]*vecij[1];
@@ -507,7 +464,7 @@ void PairNN::read_file(char *fname) {
   bool valid = false;
   cutmax = 0;
   max_rc_ang = 0.0;
-  for (int i=0; i<6+1; i++) {
+  for (int i=0; i<5+1; i++) {
     nsf[i] = 0;
   }
 
@@ -587,7 +544,6 @@ void PairNN::read_file(char *fname) {
       nets[nnet].slists[isym].coefs[1] = atof(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists[isym].coefs[2] = atof(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists[isym].coefs[3] = atof(strtok(NULL," \t\n\r\f"));
-      nets[nnet].slists[isym].coefs[4] = atof(strtok(NULL," \t\n\r\f"));
 
       tstr = strtok(NULL," \t\n\r\f");
       nets[nnet].slists[isym].atype[0] = nelements;
@@ -715,23 +671,13 @@ void PairNN::read_file(char *fname) {
       nets[i].powint[tt] = false;
 
       if (nets[i].slists[tt].stype == 4 || \
-          nets[i].slists[tt].stype == 5 || \
-          nets[i].slists[tt].stype == 6) {
+          nets[i].slists[tt].stype == 5) {
         if (nets[i].slists[tt].coefs[2] < 1.0)
             error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
         nets[i].powtwo[tt] = pow(2, 1-nets[i].slists[tt].coefs[2]);
         // powint indicates whether zeta is (almost) integer so that we can treat it as integer and use pow_int.
         // This is used because pow_int is much faster than pow.
         nets[i].powint[tt] = (nets[i].slists[tt].coefs[2] - int(nets[i].slists[tt].coefs[2])) < 1e-6;
-        if (nets[i].slists[tt].stype == 6) {
-          // Convert degrees (as written in params or potential file) to radians.
-          if (nets[i].slists[tt].coefs[4] > 180.0 || nets[i].slists[tt].coefs[4] < 0.0) {
-            error->all(FLERR, "Theta_s in G6 must be between 0 and 180 degrees!");
-          }
-          nets[i].slists[tt].coefs[4] *= M_PI / 180.0;
-          nets[i].cos_ts[tt] = cos(nets[i].slists[tt].coefs[4]);
-          nets[i].sin_ts[tt] = sin(nets[i].slists[tt].coefs[4]);
-        }
       }
     }
   }

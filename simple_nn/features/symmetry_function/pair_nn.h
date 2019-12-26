@@ -47,7 +47,7 @@ class PairNN : public Pair {
 // have to change
   struct Symc {
     int stype; // symmetry function type
-    double coefs[5]; // symmetry function coefficients
+    double coefs[4]; // symmetry function coefficients
     int atype[2]; // related atom type(tmp)
   };
 
@@ -76,7 +76,7 @@ class PairNN : public Pair {
   int *map;        // mapping from atom types to elements
   double cutmax;
   double max_rc_ang;
-  int nsf[6+1];   // number of symmetry functions with type N.
+  int nsf[5+1];   // number of symmetry functions with type N.
 
   virtual void allocate();
   virtual void read_file(char *);
