@@ -1,6 +1,4 @@
 #include <math.h>
-#include <mathimf.h>
-#include <array>
 /*
  Code for calculate symmetry function.
  This code is used for both Python and LAMMPS code
@@ -27,8 +25,7 @@ static inline double sigm(double x, double &deriv) {
 }
 
 static inline void cutf2(const double dist, const double cutd, double& f, double& df, int slot) {
-    const int NSLOT = 3;
-    static std::array<double, NSLOT> f_{}, df_{}, dist_{}, cutd_{};
+    static double f_[3], df_[3], dist_[3], cutd_[3];
     if (dist_[slot] == dist && cutd_[slot] == cutd) {
         f = f_[slot];
         df = df_[slot];
