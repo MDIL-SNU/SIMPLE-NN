@@ -172,17 +172,6 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
                         def G5(r1, r2, t):
                             return r1**2 * r2**2 * np.sin(t) * 2**(1-zeta) * (1 + lamb * np.cos(t))**zeta * np.exp(-eta * (r1**2 + r2**2)) * 0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1)
                         scale[item][1,p] = 8 * np.pi**2 * scale_rho[ti] * scale_rho[tj] * nquad(G5, [[0, rc], [0, rc], [0, np.pi]])[0]
-                    elif params[item]['i'][p,0] == 6:
-                        ti = atom_types[params[item]['i'][p,1] - 1]
-                        tj = atom_types[params[item]['i'][p,2] - 1]
-                        eta = params[item]['d'][p,1]
-                        rc = params[item]['d'][p,0]
-                        zeta = params[item]['d'][p,2]
-                        rs = params[item]['d'][p,3]
-                        ts = params[item]['d'][p,4]
-                        def G5(r1, r2, t):
-                            return r1**2 * r2**2 * np.sin(t) * 2**(1-zeta) * (1 + np.cos(t-ts))**zeta * np.exp(-eta * (((r1+r2)/2 - rs)**2)) * 0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1)
-                        scale[item][1,p] = 8 * np.pi**2 * scale_rho[ti] * scale_rho[tj] * nquad(G5, [[0, rc], [0, rc], [0, np.pi]])[0]
                     else:
                         assert False
 

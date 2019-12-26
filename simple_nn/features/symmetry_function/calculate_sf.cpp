@@ -13,7 +13,7 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
     // params_i: integer parameter for symmetry function
     //           [symmetry function type, 1st neighbor atom type, 2nd neighbor atom type]
     // params_d: double parameter for symmetry function
-    //           [cutoff, param1, param2, param3, param4]
+    //           [cutoff, param1, param2, param3]
     // natoms: # of atoms
     // nsyms: # of symmetry functions
     // symf: symmetry function vector ([# of atoms, # of symfuncs])

@@ -393,11 +393,11 @@ class Neural_network(object):
                 tmp_types = self.parent.inputs['atom_types'][int(ctem[1])-1]
                 if int(ctem[0]) > 3:
                     tmp_types += ' {}'.format(self.parent.inputs['atom_types'][int(ctem[2])-1])
-                if len(ctem) != 8:
-                    raise ValueError("params file must have lines with 8 columns.")
+                if len(ctem) != 7:
+                    raise ValueError("params file must have lines with 7 columns.")
 
-                FIL.write('{} {} {} {} {} {} {}\n'.\
-                    format(int(ctem[0]), ctem[3], ctem[4], ctem[5], ctem[6], ctem[7], tmp_types))
+                FIL.write('{} {} {} {} {} {}\n'.\
+                    format(int(ctem[0]), ctem[3], ctem[4], ctem[5], ctem[6], tmp_types))
 
             FIL.write('scale1 {}\n'.format(' '.join(self.scale[item][0,:].astype(np.str))))
             FIL.write('scale2 {}\n'.format(' '.join(self.scale[item][1,:].astype(np.str))))
