@@ -661,13 +661,9 @@ void PairNN::read_file(char *fname) {
   for (int i=0; i<nelements; i++) {
     int nsym = nets[i].nnode[0];
     nets[i].powtwo = new double[nsym];
-    nets[i].cos_ts = new double[nsym];
-    nets[i].sin_ts = new double[nsym];
     nets[i].powint = new bool[nsym];
     for (int tt=0; tt<nsym; tt++) {
       nets[i].powtwo[tt] = 0.0;
-      nets[i].cos_ts[tt] = 0.0;
-      nets[i].sin_ts[tt] = 0.0;
       nets[i].powint[tt] = false;
 
       if (nets[i].slists[tt].stype == 4 || \
@@ -767,8 +763,6 @@ void PairNN::free_net(Net &net) {
 
   delete [] net.slists;
   delete [] net.powtwo;
-  delete [] net.cos_ts;
-  delete [] net.sin_ts;
   delete [] net.powint;
 }
 

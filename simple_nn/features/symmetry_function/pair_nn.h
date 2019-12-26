@@ -65,8 +65,6 @@ class PairNN : public Pair {
     double **scale; // scale
     Symc *slists; // symmetry function related parameters
     double *powtwo;
-    double *cos_ts;
-    double *sin_ts;
     bool *powint;
   };
 
