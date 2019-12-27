@@ -8,7 +8,7 @@ from six.moves import cPickle as pickle
 from ase import io
 from ase import units
 from ._libsymf import lib, ffi
-from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, openmx,\
+from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
 from ...utils import graph as grp
 from ...utils.mpiclass import DummyMPI, MPI4PY
@@ -89,23 +89,17 @@ class Symmetry_function(object):
             'partition':_bytes_feature(res['partition'].tobytes()),
             'struct_type':_bytes_feature(six.b(res['struct_type'])),
             'struct_weight': _bytes_feature(np.array([res['struct_weight']]).tobytes()),
-            'atom_idx' : _bytes_feature(res['atom_idx'].tobytes())
         }
     
         if use_force:
             feature['F'] = _bytes_feature(res['F'].tobytes())
+            if self.inputs['add_atom_idx']:
+                feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
             if atomic_weights:
                 feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         
         if use_stress:
             feature['S'] = _bytes_feature(res['S'].tobytes())
-
-        if self.inputs['refdata_format'] == 'openmx':
-            feature['atomic_E'] = _bytes_feature(res['atomic_E'].tobytes())
-
-        if self.parent.inputs['group']['use_group']:
-            feature['group_id'] = _bytes_feature(res['group_id'].tobytes())
-            feature['partition_group'] = _bytes_feature(res['partition_group'].tobytes())
 
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
@@ -142,8 +136,7 @@ class Symmetry_function(object):
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
             'partition': tf.FixedLenFeature([], dtype=tf.string),
             'struct_type': tf.FixedLenSequenceFeature([], dtype=tf.string, allow_missing=True),
-            'struct_weight': tf.FixedLenFeature([], dtype=tf.string, default_value=np.array([1.0]).tobytes()),
-            'atom_idx' : tf.FixedLenFeature([], dtype=tf.string)
+            'struct_weight': tf.FixedLenFeature([], dtype=tf.string, default_value=np.array([1.0]).tobytes())
         }
  
         for item in self.parent.inputs['atom_types']:
@@ -162,18 +155,13 @@ class Symmetry_function(object):
 
         if use_force:
             features['F'] = tf.FixedLenFeature([], dtype=tf.string)
+            if self.inputs['add_atom_idx']:
+                features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
             if atomic_weights:
                 features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
 
         if use_stress:
             features['S'] = tf.FixedLenFeature([], dtype=tf.string)
-
-        if self.inputs['refdata_format'] == 'openmx':
-            features['atomic_E'] = tf.FixedLenFeature([], dtype=tf.string)
-
-        if self.parent.inputs['group']['use_group']:
-            features['group_id'] = tf.FixedLenFeature([], dtype=tf.string)
-            features['partition_group'] = tf.FixedLenFeature([], dtype=tf.string)
 
         read_data = tf.parse_single_example(serialized=serialized, features=features)
         #read_data = tf.parse_example(serialized=serialized, features=features)
@@ -189,7 +177,6 @@ class Symmetry_function(object):
         res['struct_type'] = tf.cond(tf.equal(tf.shape(res['struct_type'])[0], 0),
                                      lambda: tf.constant(['None']),
                                      lambda: res['struct_type'])
-        res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
 
         for item in self.parent.inputs['atom_types']:
             res['N_'+item] = tf.decode_raw(read_data['N_'+item], tf.int64)
@@ -220,19 +207,14 @@ class Symmetry_function(object):
 
         if use_force: 
             res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
+            if self.inputs['add_atom_idx']:
+                res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
             if atomic_weights:
                 res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
         if use_stress:
             res['S'] = tf.decode_raw(read_data['S'], tf.float64)
         
-        if self.inputs['refdata_format'] == 'openmx':
-            res['atomic_E'] = tf.decode_raw(read_data['atomic_E'], tf.float64)
-
-        if self.parent.inputs['group']['use_group']:
-            res['group_id'] = tf.decode_raw(read_data['group_id'], tf.int32)
-            res['partition_group'] = tf.decode_raw(read_data['partition_group'], tf.int32)
-
         return res
 
 
@@ -250,22 +232,16 @@ class Symmetry_function(object):
         batch_dict['partition'] = [None]
         batch_dict['struct_type'] = [None]
         batch_dict['struct_weight'] = [None]
-        batch_dict['atom_idx'] = [None, 1]
 
         if use_force:
             batch_dict['F'] = [None, 3]
+            if self.inputs['add_atom_idx']:
+                batch_dict['atom_idx'] = [None, 1]
             if atomic_weights:
                 batch_dict['atomic_weights'] = [None]
 
         if use_stress:
             batch_dict['S'] = [None]
-
-        if self.inputs['refdata_format'] == 'openmx':
-            batch_dict['atomic_E'] = [None]
-    
-        if self.parent.inputs['group']['use_group']:
-            batch_dict['group_id'] = [None]
-            batch_dict['partition_group'] = [None]
 
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
@@ -561,9 +537,6 @@ class Symmetry_function(object):
                         os.remove(tmp_name)
                 else:    
                     snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'], force_consistent=True)
-            # only snapshot available
-            elif self.inputs['refdata_format'] == 'openmx':
-                snapshots = [openmx(item[0])]
             else:
                 snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'])
 
@@ -597,25 +570,11 @@ class Symmetry_function(object):
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
                 res['F'] = atoms.get_forces()
-                if self.inputs['refdata_format'] == 'openmx':
-                    res['atomic_E'] = atoms.get_atomic_energy()
-                   # res['S'] = atoms.get_stress()
-                else:
-                    res['S'] = -atoms.get_stress()/units.GPa*10
-                    res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
+                res['S'] = -atoms.get_stress()/units.GPa*10
+                res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
                 res['atom_idx'] = atom_i
-
-                if self.parent.inputs['group']['use_group']:
-                    distances = atoms.get_all_distances(mic=True)
-                    num_atom = self.parent.inputs['group']['num_atom_in_group']
-                    num_group = np.ceil(res['tot_num'].astype(np.float64)/num_atom).astype(np.int32)
-                    res['partition_group'] = np.ones([num_group*num_atom]).astype(np.int32)
-                    res['group_id'] = np.zeros(num_atom*num_group, dtype=np.int32)
-                    for g,group in enumerate(np.random.choice(res['tot_num'], num_group, replace=False)):
-                        distance = distances[group]
-                        res['group_id'][g*num_atom:(g+1)*num_atom] = np.argsort(distance)[:num_atom]
 
                 cart_p  = _gen_2Darray_for_ffi(cart, ffi)
                 scale_p = _gen_2Darray_for_ffi(scale, ffi)

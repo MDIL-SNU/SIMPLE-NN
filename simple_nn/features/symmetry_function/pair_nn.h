@@ -47,14 +47,13 @@ class PairNN : public Pair {
 // have to change
   struct Symc {
     int stype; // symmetry function type
-    //double coefs[4];
     double coefs[4]; // symmetry function coefficients
     int atype[2]; // related atom type(tmp)
   };
 
   struct Net {
     // do not include input layer and dE/dG
-    char *elem; // elements 
+    char *elem; // elements
     int *nnode; // number of nodes
     int nlayer; // number of layers
     int *acti; // activation function types
@@ -70,6 +69,7 @@ class PairNN : public Pair {
     int *asym; // # of angular symmetry function
     int *ridx; // start index of radial symmetry function
     int *aidx; // start index of angular symmetry function
+    bool *powint;
   };
 
   Net *nets; // network parameters
@@ -77,9 +77,11 @@ class PairNN : public Pair {
   int nelements;   // # of unique elements
   int *map;        // mapping from atom types to elements
   double cutmax;
+  double max_rc_ang;
+  int nsf[5+1];   // number of symmetry functions with type N.
 
   virtual void allocate();
-  virtual void read_file(char *);  
+  virtual void read_file(char *);
   void free_net(Net &);
   double evalNet(const double *, double *, Net &);
 };

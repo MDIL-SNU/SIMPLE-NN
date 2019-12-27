@@ -174,6 +174,8 @@ void PairNN::compute(int eflag, int vflag)
       jtype = type[j];
       jelem = map[jtype];
 
+      if (Rij < 0.0001 || Rij > cutsq[itype][jtype]) { continue; }
+
       rRij = sqrt(Rij);
       vecij[0] = delij[0]/rRij;
       vecij[1] = delij[1]/rRij;
@@ -190,8 +192,8 @@ void PairNN::compute(int eflag, int vflag)
       jend = jbeg + nets[ielem].rsym[jelem];
       for (tt=jbeg; tt<jend; tt++) {
         sym = &nets[ielem].slists[tt];
-        precal[0] = cutf(rRij/sym->coefs[0]);
-        precal[1] = dcutf(rRij, sym->coefs[0]);
+        if (rRij > sym->coefs[0]) continue;
+        cutf2(rRij, sym->coefs[0], precal[0], precal[1], 0);
 
         symvec[tt] += G2(rRij, precal, sym->coefs, dradtmp);
         
@@ -228,7 +230,8 @@ void PairNN::compute(int eflag, int vflag)
           tmps[tt*3*6 + 17] += tmpd[2]*lcoeff[2]*cell[2][0];
         }
       }
-      
+
+      if (rRij > max_rc_ang) continue;
       for (kk = jj+1; kk < jnum; kk++) {
         k = jlist[kk];
         //k &= NEIGHMASK;
@@ -236,7 +239,9 @@ void PairNN::compute(int eflag, int vflag)
         delik[1] = x[k][1] - ytmp;
         delik[2] = x[k][2] - ztmp;
         Rik = delik[0]*delik[0] + delik[1]*delik[1] + delik[2]*delik[2];
+        if (Rik < 0.0001) continue;
         rRik = sqrt(Rik);
+        if (rRik > max_rc_ang) continue;
         ktype = type[k];
         kelem = map[ktype];
         
@@ -244,6 +249,7 @@ void PairNN::compute(int eflag, int vflag)
         deljk[1] = x[k][1] - x[j][1];
         deljk[2] = x[k][2] - x[j][2];
         Rjk = deljk[0]*deljk[0] + deljk[1]*deljk[1] + deljk[2]*deljk[2];
+        if (Rjk < 0.0001) continue;
         rRjk = sqrt(Rjk);
 
         vecik[0] = delik[0]/rRik;
@@ -264,30 +270,36 @@ void PairNN::compute(int eflag, int vflag)
           lcoeff[8] = deljk[0]*inv[0][2] + deljk[1]*inv[1][2] + deljk[2]*inv[2][2];
         }
 
-        // Assume that cutoff radius for all symmetry functions are same
-        
-        precal[6] = rRij*rRij+rRik*rRik+rRjk*rRjk;
-        precal[7] = (rRij*rRij + rRik*rRik - rRjk*rRjk)/2/rRij/rRik;
-        precal[8] = 0.5*(1/rRik + 1/rRij/rRij*(rRjk*rRjk/rRik - rRik));
-        precal[9] = 0.5*(1/rRij + 1/rRik/rRik*(rRjk*rRjk/rRij - rRij));
+        // Note that Rij = rRij * rRij.
+        precal[7] = (Rij + Rik - Rjk)/2/rRij/rRik;
+        // dcos(theta)/db = precal[8]
+        // dcos(theta)/dc = precal[9]
+        // dcos(theta)/da = -precal[10]
+        precal[8] = 0.5*(1/rRik + 1/Rij*(Rjk/rRik - rRik));
+        precal[9] = 0.5*(1/rRij + 1/Rik*(Rjk/rRij - rRij));
         precal[10] = -rRjk/rRij/rRik;
-        precal[11] = rRij*rRij+rRik*rRik;
+        // Calculate precal[6] only when there is at least one G4.
+        // (precal[6] is only used by G4.)
+        if (nsf[4] > 0) {
+          precal[6] = Rij+Rik+Rjk;
+        }
+        if (nsf[5] > 0) {
+          precal[11] = Rij+Rik;
+        }
 
         // calc angular symfunc
         kbeg = nets[ielem].aidx[jelem*nelements + kelem];
         kend = kbeg + nets[ielem].asym[jelem*nelements + kelem];
         for (tt=kbeg; tt<kend; tt++) {
           sym = &nets[ielem].slists[tt];
+          if (rRik > sym->coefs[0]) continue;
           if ((sym->stype) == 4) {
-            if (Rjk > cutsq[itype][jtype]) continue;
-            precal[0] = cutf(rRij/sym->coefs[0]);
-            precal[1] = dcutf(rRij, sym->coefs[0]);
-            precal[2] = cutf(rRik/sym->coefs[0]);
-            precal[3] = dcutf(rRik, sym->coefs[0]);
-            precal[4] = cutf(rRjk/sym->coefs[0]);
-            precal[5] = dcutf(rRjk, sym->coefs[0]);
-            
-            symvec[tt] += G4(rRij, rRik, rRjk, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp);
+            if (rRjk > sym->coefs[0]) continue;
+            cutf2(rRij, nets[ielem].slists[tt].coefs[0], precal[0], precal[1], 0);
+            cutf2(rRik, nets[ielem].slists[tt].coefs[0], precal[2], precal[3], 1);
+            cutf2(rRjk, nets[ielem].slists[tt].coefs[0], precal[4], precal[5], 2);
+
+            symvec[tt] += G4(rRij, rRik, rRjk, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp, nets[ielem].powint[tt]);
 
             tmpd[0] = dangtmp[0]*vecij[0];
             tmpd[1] = dangtmp[0]*vecij[1];
@@ -332,13 +344,11 @@ void PairNN::compute(int eflag, int vflag)
               tmps[tt*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][0];
             }
           }
-          else if ((sym->stype) == 5 ) {
-            precal[0] = cutf(rRij/sym->coefs[0]);
-            precal[1] = dcutf(rRij, sym->coefs[0]);
-            precal[2] = cutf(rRik/sym->coefs[0]);
-            precal[3] = dcutf(rRik, sym->coefs[0]);
+          else if ((sym->stype) == 5) {
+            cutf2(rRij, nets[ielem].slists[tt].coefs[0], precal[0], precal[1], 0);
+            cutf2(rRik, nets[ielem].slists[tt].coefs[0], precal[2], precal[3], 1);
 
-            symvec[tt] += G5(rRij, rRik, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp);
+            symvec[tt] += G5(rRij, rRik, nets[ielem].powtwo[tt], precal, sym->coefs, dangtmp, nets[ielem].powint[tt]);
 
             tmpd[0] = dangtmp[0]*vecij[0];
             tmpd[1] = dangtmp[0]*vecij[1];
@@ -392,17 +402,17 @@ void PairNN::compute(int eflag, int vflag)
       scale1[tt] = nets[ielem].scale[1][tt];
       symvec[tt] = (symvec[tt] - nets[ielem].scale[0][tt])/scale1[tt];
     }
-    
+
     tmpE = evalNet(symvec, dsymvec, nets[ielem]); // change E variable
     if (eflag_global) { eng_vdwl += tmpE; }
     if (eflag_atom) { eatom[i] += tmpE; }
-    
+
     // update force
     for (tt=0; tt<nsym; tt++) {
       tmpc = dsymvec[tt]/scale1[tt];
       for (nn = 0; nn < jnum; nn++) {
         n = jlist[nn];
-        
+
         f[n][0] -= tmpf[tt*(jnum+1)*3 + nn*3 + 0]*tmpc;
         f[n][1] -= tmpf[tt*(jnum+1)*3 + nn*3 + 1]*tmpc;
         f[n][2] -= tmpf[tt*(jnum+1)*3 + nn*3 + 2]*tmpc;
@@ -433,14 +443,14 @@ void PairNN::compute(int eflag, int vflag)
         vatom[i][4] -= tmps[tt*3*6 + 17]*tmpc;
       }
     }
-    
+
     delete [] symvec;
     delete [] dsymvec;
     delete [] tmpf;
     delete [] tmps;
     delete [] scale1;
   }
-  
+
   if (vflag_fdotr) virial_fdotr_compute();
 }
 
@@ -564,7 +574,11 @@ void PairNN::read_file(char *fname) {
   int valid_count = 0;
   bool valid = false;
   cutmax = 0;
-   
+  max_rc_ang = 0.0;
+  for (int i=0; i<5+1; i++) {
+    nsf[i] = 0;
+  }
+
   while (1) {
     if (comm->me == 0) {
       ptr = fgets(line,MAXLINE,fp);
@@ -647,7 +661,10 @@ void PairNN::read_file(char *fname) {
       nets[nnet].slists[isym].coefs[2] = atof(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists[isym].coefs[3] = atof(strtok(NULL," \t\n\r\f"));
 
-      if (nets[nnet].slists[isym].stype > 2) {
+      if (nets[nnet].slists[isym].stype >= 4) {
+        // Find maximum cutoff distance among angular functions.
+        max_rc_ang = max(max_rc_ang, nets[nnet].slists[isym].coefs[0]);
+        nsf[nets[nnet].slists[isym].stype]++;
         char *tstrj = strtok(NULL," \t\n\r\f");
         char *tstrk = strtok(NULL," \t\n\r\f");
         for (j=0; j<nelements; j++) {
@@ -733,7 +750,7 @@ void PairNN::read_file(char *fname) {
       nets[nnet].nnode = new int[nlayer];
       nets[nnet].nnode[0] = nsym;
       ilayer = 1;
-      
+
       while ((tstr = strtok(NULL," \t\n\r\f"))) {
         nets[nnet].nnode[ilayer] = atoi(tstr);
         ilayer++;
@@ -771,7 +788,7 @@ void PairNN::read_file(char *fname) {
       inode = 0;
       stats = 7;
       t_wb = 0;
-      
+
     } else if (stats == 7) { // weights setting
       if (t_wb == 0) { // weights
         tstr = strtok(line," \t\n\r\f");
@@ -792,12 +809,33 @@ void PairNN::read_file(char *fname) {
       if (ilayer == nlayer) {
         if (nnet == nelements) free_net(nets[nnet]);
         stats = 1;
-      } 
+      }
     }
   }
   if (valid_count == 0) error->one(FLERR,"potential file error: invalid elements");
 
   delete [] p_elem;
+
+  // pre-calculate some constants for symmetry functions.
+  for (int i=0; i<nelements; i++) {
+    int nsym = nets[i].nnode[0];
+    nets[i].powtwo = new double[nsym];
+    nets[i].powint = new bool[nsym];
+    for (int tt=0; tt<nsym; tt++) {
+      nets[i].powtwo[tt] = 0.0;
+      nets[i].powint[tt] = false;
+
+      if (nets[i].slists[tt].stype == 4 || \
+          nets[i].slists[tt].stype == 5) {
+        if (nets[i].slists[tt].coefs[2] < 1.0)
+            error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
+        nets[i].powtwo[tt] = pow(2, 1-nets[i].slists[tt].coefs[2]);
+        // powint indicates whether zeta is (almost) integer so that we can treat it as integer and use pow_int.
+        // This is used because pow_int is much faster than pow.
+        nets[i].powint[tt] = (nets[i].slists[tt].coefs[2] - int(nets[i].slists[tt].coefs[2])) < 1e-6;
+      }
+    }
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -884,6 +922,7 @@ void PairNN::free_net(Net &net) {
 
   delete [] net.slists;
   delete [] net.powtwo;
+  delete [] net.powint;
 }
 
 
@@ -915,7 +954,7 @@ double PairNN::evalNet(const double* inpv, double *outv, Net &net){
       net.dnodes[0][i] = 1;
     }
   }
-  
+
   // hidden~output
   if (nl > 2) {
     for (int l=1; l<nl-1; l++) {
@@ -940,7 +979,7 @@ double PairNN::evalNet(const double* inpv, double *outv, Net &net){
       }
     }
   }
- 
+
   // backwardprop
   // output layer dnode initialized to 1.
   for (int i=0; i<net.nnode[nl-1]; i++) {
@@ -951,7 +990,7 @@ double PairNN::evalNet(const double* inpv, double *outv, Net &net){
         net.bnodes[nl-2][i] = net.dnodes[nl-2][i];
     }
   }
- 
+
   if (nl > 2) {
     for (int l=nl-2; l>0; l--) {
       for (int i=0; i<net.nnode[l]; i++) {
@@ -965,7 +1004,7 @@ double PairNN::evalNet(const double* inpv, double *outv, Net &net){
       }
     }
   }
- 
+
   for (int i=0; i<net.nnode[0]; i++) {
     outv[i] = 0;
     for (int j=0; j<net.nnode[1]; j++) {

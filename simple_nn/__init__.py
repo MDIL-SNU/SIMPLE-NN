@@ -70,10 +70,6 @@ class Simple_nn(object):
             'preprocess': False,
             'train_model': True,
             'atom_types': [],
-            'group': {
-                'use_group': False,
-                'num_atom_in_group': 1
-                }
             }
 
         self.inputs = self.default_inputs
@@ -100,16 +96,6 @@ class Simple_nn(object):
         if self.inputs['neural_network']['method'] == 'L-BFGS' and \
                 not self.inputs['neural_network']['full_batch']:
             self.logfile.write("Warning: Optimization method is L-BFGS but full batch mode is off. This might results bad convergence or divergence.\n")
-
-        if self.inputs['symmetry_function']['refdata_format'] != 'openmx' and \
-                self.inputs['neural_network']['atomic_E']:
-            self.logfile.write("Warning: Only OpenMX can define atomic energy\n")
-            raise Warning
-
-        if self.inputs['group']['use_group'] == True and \
-                self.inputs['symmetry_function']['refdata_format'] != 'openmx':
-            self.logfile.write("Warning: Only OpenMX can run group training\n")
-            raise Warning
 
     def _close_log(self):
         self.logfile.flush()
