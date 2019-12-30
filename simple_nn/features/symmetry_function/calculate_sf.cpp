@@ -376,24 +376,24 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
                         dsymf[ii][s*natoms*3 + i*3 + 1] -= tmpd[1] + tmpd[4];
                         dsymf[ii][s*natoms*3 + i*3 + 2] -= tmpd[2] + tmpd[5];
 
-                        dsymfa[ii][s*3*6]      += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3])*cell[0][0]/vol;
-                        dsymfa[ii][s*3*6 + 1]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3])*cell[0][1]/vol;
-                        dsymfa[ii][s*3*6 + 2]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3])*cell[0][2]/vol;
-                        dsymfa[ii][s*3*6 + 3]  += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3])*cell[0][1]/vol;
-                        dsymfa[ii][s*3*6 + 4]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3])*cell[0][2]/vol;
-                        dsymfa[ii][s*3*6 + 5]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3])*cell[0][0]/vol;
-                        dsymfa[ii][s*3*6 + 6]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4])*cell[1][0]/vol;
-                        dsymfa[ii][s*3*6 + 7]  += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4])*cell[1][1]/vol;
-                        dsymfa[ii][s*3*6 + 8]  += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4])*cell[1][2]/vol;
-                        dsymfa[ii][s*3*6 + 9]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4])*cell[1][1]/vol;
-                        dsymfa[ii][s*3*6 + 10] += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4])*cell[1][2]/vol;
-                        dsymfa[ii][s*3*6 + 11] += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4])*cell[1][0]/vol;
-                        dsymfa[ii][s*3*6 + 12] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5])*cell[2][0]/vol;
-                        dsymfa[ii][s*3*6 + 13] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5])*cell[2][1]/vol;
-                        dsymfa[ii][s*3*6 + 14] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5])*cell[2][2]/vol;
-                        dsymfa[ii][s*3*6 + 15] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5])*cell[2][1]/vol;
-                        dsymfa[ii][s*3*6 + 16] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5])*cell[2][2]/vol;
-                        dsymfa[ii][s*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5])*cell[2][0]/vol;
+                        dsymfa[ii][s*3*6]      += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3] + tmpd[6]*lcoeff[6])*cell[0][0]/vol;
+                        dsymfa[ii][s*3*6 + 1]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3] + tmpd[7]*lcoeff[6])*cell[0][1]/vol;
+                        dsymfa[ii][s*3*6 + 2]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3] + tmpd[8]*lcoeff[6])*cell[0][2]/vol;
+                        dsymfa[ii][s*3*6 + 3]  += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3] + tmpd[6]*lcoeff[6])*cell[0][1]/vol;
+                        dsymfa[ii][s*3*6 + 4]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3] + tmpd[7]*lcoeff[6])*cell[0][2]/vol;
+                        dsymfa[ii][s*3*6 + 5]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3] + tmpd[8]*lcoeff[6])*cell[0][0]/vol;
+                        dsymfa[ii][s*3*6 + 6]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4] + tmpd[6]*lcoeff[7])*cell[1][0]/vol;
+                        dsymfa[ii][s*3*6 + 7]  += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4] + tmpd[7]*lcoeff[7])*cell[1][1]/vol;
+                        dsymfa[ii][s*3*6 + 8]  += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4] + tmpd[8]*lcoeff[7])*cell[1][2]/vol;
+                        dsymfa[ii][s*3*6 + 9]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4] + tmpd[6]*lcoeff[7])*cell[1][1]/vol;
+                        dsymfa[ii][s*3*6 + 10] += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4] + tmpd[7]*lcoeff[7])*cell[1][2]/vol;
+                        dsymfa[ii][s*3*6 + 11] += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4] + tmpd[8]*lcoeff[7])*cell[1][0]/vol;
+                        dsymfa[ii][s*3*6 + 12] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5] + tmpd[6]*lcoeff[8])*cell[2][0]/vol;
+                        dsymfa[ii][s*3*6 + 13] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5] + tmpd[7]*lcoeff[8])*cell[2][1]/vol;
+                        dsymfa[ii][s*3*6 + 14] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][2]/vol;
+                        dsymfa[ii][s*3*6 + 15] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5] + tmpd[6]*lcoeff[8])*cell[2][1]/vol;
+                        dsymfa[ii][s*3*6 + 16] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5] + tmpd[7]*lcoeff[8])*cell[2][2]/vol;
+                        dsymfa[ii][s*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][0]/vol;
                     }
                     else continue;
                 }

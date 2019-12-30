@@ -274,7 +274,7 @@ void PairNN::compute(int eflag, int vflag)
         precal[7] = (Rij + Rik - Rjk)/2/rRij/rRik;
         // dcos(theta)/db = precal[8]
         // dcos(theta)/dc = precal[9]
-        // dcos(theta)/da = -precal[10]
+        // dcos(theta)/da = precal[10]
         precal[8] = 0.5*(1/rRik + 1/Rij*(Rjk/rRik - rRik));
         precal[9] = 0.5*(1/rRij + 1/Rik*(Rjk/rRij - rRij));
         precal[10] = -rRjk/rRij/rRik;
@@ -373,24 +373,24 @@ void PairNN::compute(int eflag, int vflag)
             tmpf[tt*(jnum+1)*3 + jnum*3 + 2] -= tmpd[2] + tmpd[5];
 
             if (vflag_atom) {
-              tmps[tt*3*6]      += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3])*cell[0][0];
-              tmps[tt*3*6 + 1]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3])*cell[0][1];
-              tmps[tt*3*6 + 2]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3])*cell[0][2];
-              tmps[tt*3*6 + 3]  += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3])*cell[0][1];
-              tmps[tt*3*6 + 4]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3])*cell[0][2];
-              tmps[tt*3*6 + 5]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3])*cell[0][0];
-              tmps[tt*3*6 + 6]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4])*cell[1][0];
-              tmps[tt*3*6 + 7]  += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4])*cell[1][1];
-              tmps[tt*3*6 + 8]  += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4])*cell[1][2];
-              tmps[tt*3*6 + 9]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4])*cell[1][1];
-              tmps[tt*3*6 + 10] += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4])*cell[1][2];
-              tmps[tt*3*6 + 11] += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4])*cell[1][0];
-              tmps[tt*3*6 + 12] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5])*cell[2][0];
-              tmps[tt*3*6 + 13] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5])*cell[2][1];
-              tmps[tt*3*6 + 14] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5])*cell[2][2];
-              tmps[tt*3*6 + 15] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5])*cell[2][1];
-              tmps[tt*3*6 + 16] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5])*cell[2][2];
-              tmps[tt*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5])*cell[2][0];
+              tmps[tt*3*6]      += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3] + tmpd[6]*lcoeff[6])*cell[0][0];
+              tmps[tt*3*6 + 1]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3] + tmpd[7]*lcoeff[6])*cell[0][1];
+              tmps[tt*3*6 + 2]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3] + tmpd[8]*lcoeff[6])*cell[0][2];
+              tmps[tt*3*6 + 3]  += (tmpd[0]*lcoeff[0] + tmpd[3]*lcoeff[3] + tmpd[6]*lcoeff[6])*cell[0][1];
+              tmps[tt*3*6 + 4]  += (tmpd[1]*lcoeff[0] + tmpd[4]*lcoeff[3] + tmpd[7]*lcoeff[6])*cell[0][2];
+              tmps[tt*3*6 + 5]  += (tmpd[2]*lcoeff[0] + tmpd[5]*lcoeff[3] + tmpd[8]*lcoeff[6])*cell[0][0];
+              tmps[tt*3*6 + 6]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4] + tmpd[6]*lcoeff[7])*cell[1][0];
+              tmps[tt*3*6 + 7]  += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4] + tmpd[7]*lcoeff[7])*cell[1][1];
+              tmps[tt*3*6 + 8]  += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4] + tmpd[8]*lcoeff[7])*cell[1][2];
+              tmps[tt*3*6 + 9]  += (tmpd[0]*lcoeff[1] + tmpd[3]*lcoeff[4] + tmpd[6]*lcoeff[7])*cell[1][1];
+              tmps[tt*3*6 + 10] += (tmpd[1]*lcoeff[1] + tmpd[4]*lcoeff[4] + tmpd[7]*lcoeff[7])*cell[1][2];
+              tmps[tt*3*6 + 11] += (tmpd[2]*lcoeff[1] + tmpd[5]*lcoeff[4] + tmpd[8]*lcoeff[7])*cell[1][0];
+              tmps[tt*3*6 + 12] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5] + tmpd[6]*lcoeff[8])*cell[2][0];
+              tmps[tt*3*6 + 13] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5] + tmpd[7]*lcoeff[8])*cell[2][1];
+              tmps[tt*3*6 + 14] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][2];
+              tmps[tt*3*6 + 15] += (tmpd[0]*lcoeff[2] + tmpd[3]*lcoeff[5] + tmpd[6]*lcoeff[8])*cell[2][1];
+              tmps[tt*3*6 + 16] += (tmpd[1]*lcoeff[2] + tmpd[4]*lcoeff[5] + tmpd[7]*lcoeff[8])*cell[2][2];
+              tmps[tt*3*6 + 17] += (tmpd[2]*lcoeff[2] + tmpd[5]*lcoeff[5] + tmpd[8]*lcoeff[8])*cell[2][0];
             }
           }
         }
