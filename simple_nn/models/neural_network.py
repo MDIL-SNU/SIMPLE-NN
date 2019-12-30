@@ -294,12 +294,11 @@ class Neural_network(object):
                              tf.expand_dims(\
                                  tf.expand_dims(self.dys[item], axis=2),
                                      axis=3)
-                self.S -= tf.reduce_sum(\
-                                tf.cond(zero_cond,
-                                    lambda: tf.cast(0., tf.float64),
-                                    lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
-                                                                num_segments=self.next_elem['num_seg'])[1:]),
-                                axis=[1,2])
+                tmp_stress = tf.cond(zero_cond,
+                                     lambda: tf.cast(0., tf.float64),
+                                     lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
+                                                                num_segments=self.next_elem['num_seg'])[1:])
+                self.S -= tf.reduce_sum(tmp_stress, axis=[1,2])/units.GPa*10
 
     def _get_loss(self, use_gdf=False, atomic_weights=None):
         if self.inputs['E_loss'] == 1:
@@ -346,7 +345,6 @@ class Neural_network(object):
                 self.total_loss += self.f_loss * self.force_coeff
 
         if self.inputs['use_stress']:
-            self.S /= units.GPa/10
             self.ax_s_loss = tf.square(self.next_elem['S'] - self.S)
             self.s_loss = tf.reduce_mean(self.ax_s_loss, axis=1, keepdims=True)
             self.sw_s_loss = self.s_loss * self.next_elem['struct_weight']
