@@ -69,7 +69,7 @@ class Symmetry_function(object):
     def set_inputs(self):
         self.inputs = self.parent.inputs['symmetry_function']
 
-    def _write_tfrecords(self, res, writer, use_force=False, use_stress=False, atomic_weights=False):
+    def _write_tfrecords(self, res, writer, atomic_weights=False):
         # TODO: after stabilize overall tfrecord related part,
         # this part will replace the part of original 'res' dict
          
@@ -88,33 +88,35 @@ class Symmetry_function(object):
             'tot_num':_bytes_feature(res['tot_num'].astype(np.float64).tobytes()),
             'partition':_bytes_feature(res['partition'].tobytes()),
             'struct_type':_bytes_feature(six.b(res['struct_type'])),
-            'struct_weight': _bytes_feature(np.array([res['struct_weight']]).tobytes()),
+            'struct_weight':_bytes_feature(np.array([res['struct_weight']]).tobytes())
         }
     
-        if use_force:
+        try:
             feature['F'] = _bytes_feature(res['F'].tobytes())
             if self.inputs['add_atom_idx']:
                 feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
             if atomic_weights:
                 feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
-        
-        if use_stress:
+        except:
+            pass
+
+        try:
             feature['S'] = _bytes_feature(res['S'].tobytes())
+        except:
+            pass
 
         for item in self.parent.inputs['atom_types']:
             feature['x_'+item] = _bytes_feature(res['x'][item].tobytes())
             feature['N_'+item] = _bytes_feature(res['N'][item].tobytes())
             feature['params_'+item] = _bytes_feature(res['params'][item].tobytes())
 
-            if use_force:
-                dx_indices, dx_values, dx_dense_shape = _gen_1dsparse(res['dx'][item].reshape([-1]))
-            
-                feature['dx_indices_'+item] = _bytes_feature(dx_indices.tobytes())
-                feature['dx_values_'+item] = _bytes_feature(dx_values.tobytes())
-                feature['dx_dense_shape_'+item] = _bytes_feature(dx_dense_shape.tobytes())
+            dx_indices, dx_values, dx_dense_shape = _gen_1dsparse(res['dx'][item].reshape([-1]))
+        
+            feature['dx_indices_'+item] = _bytes_feature(dx_indices.tobytes())
+            feature['dx_values_'+item] = _bytes_feature(dx_values.tobytes())
+            feature['dx_dense_shape_'+item] = _bytes_feature(dx_dense_shape.tobytes())
 
-            if use_stress:
-                feature['da_'+item] = _bytes_feature(res['da'][item].tobytes())
+            feature['da_'+item] = _bytes_feature(res['da'][item].tobytes())
 
             feature['partition_'+item] = _bytes_feature(res['partition_'+item].tobytes())
 
@@ -395,6 +397,9 @@ class Symmetry_function(object):
         
         # train
         if comm.rank == 0:
+            if not os.path.isdir('./data'):
+                os.mkdir('./data')
+
             tmp_pickle_train_list = _make_data_list(tmp_pickle_train)
             #np.random.shuffle(tmp_pickle_train_list)
             num_tmp_pickle_train = len(tmp_pickle_train_list)
@@ -427,7 +432,7 @@ class Symmetry_function(object):
                     #tmp_aw = np.concatenate(tmp_aw)
                     tmp_res['atomic_weights'] = tmp_aw
                 
-                self._write_tfrecords(tmp_res, writer, use_force=use_force, use_stress=use_stress, atomic_weights=aw_tag)
+                self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
  
                 if not self.inputs['remain_pickle']:
                     os.remove(ptem)
@@ -475,7 +480,7 @@ class Symmetry_function(object):
                         #tmp_aw = np.concatenate(tmp_aw)
                         tmp_res['atomic_weights'] = tmp_aw
  
-                    self._write_tfrecords(tmp_res, writer, use_force=use_force, use_stress=use_stress, atomic_weights=aw_tag)
+                    self._write_tfrecords(tmp_res, writer, atomic_weights=aw_tag)
  
                     if not self.inputs['remain_pickle']:
                         os.remove(ptem)
@@ -569,9 +574,24 @@ class Symmetry_function(object):
                 res['tot_num'] = np.sum(list(type_num.values()))
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
                 res['E'] = atoms.get_total_energy()
-                res['F'] = atoms.get_forces()
-                res['S'] = -atoms.get_stress()/units.GPa*10
-                res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
+                try:
+                    res['F'] = atoms.get_forces()
+                except:
+                    if self.parent.inputs['neural_network']['use_force']:
+                        err = "There is not force information! Set 'use_force' = false"
+                        if comm.rank == 0:
+                            self.parent.logfile.write("\nError: {:}\n".format(err))
+                        raise NotImplementedError(err)
+                try:
+                    res['S'] = -atoms.get_stress()/units.GPa*10
+                    # ASE returns the stress tensor by voigt order xx yy zz yz zx xy
+                    res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
+                except:
+                    if self.parent.inputs['neural_network']['use_stress']:
+                        err = "There is not stress information! Set 'use_stress' = false"
+                        if comm.rank == 0:
+                            self.parent.logfile.write("\nError: {:}\n".format(err))
+                        raise NotImplementedError(err)
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
                 res['atom_idx'] = atom_i
