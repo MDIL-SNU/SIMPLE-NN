@@ -12,21 +12,22 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-sys.path.insert(0, os.path.abspath('..'))
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('..'))
 
 
 # -- Project information -----------------------------------------------------
 
+exec(open('../simple_nn/_version.py').read())
 project = 'SIMPLE-NN'
 copyright = '2019, Nanco-L'
-author = 'Kyuhyun Lee, Dongsun Yoo, Wonseok Jeong and Seungwu Han'
+author = 'Kyuhyun Lee, Dongsun Yoo, Wonseok Jeong, and Seungwu Han'
 
 # The short X.Y version
-version = '0.8.0'
+version = __version__
 # The full version, including alpha/beta/rc tags
-release = '0.8.0'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,10 +42,14 @@ release = '0.8.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.imgmath',
-    #'sphinx.ext.viewcode',
+    'sphinx.ext.coverage',
+    'sphinx.ext.doctest',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel',
+    'rst2pdf.pdfbuilder'
 ]
+pdf_documents=[('index', u'SIMPLE-NN_manual', u'SIMPLE-NN Documentation', u'author')]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -90,7 +95,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -137,7 +142,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'simple-nn.tex', 'SIMPLE-NN Documentation',
-     'Kyuhyun Lee \\ Dongsun Yoo \\ Wonseok Jeong \\ Seungwu Han', 'manual'),
+     author.replace(", and ", r" \\ ").replace(", ", r" \\ "), 'manual'),
 ]
 
 
@@ -158,9 +163,27 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'SIMPLE-NN', 'SIMPLE-NN Documentation',
-     author, 'SIMPLE-NN', 'One line description of project.',
+     author, 'SIMPLE-NN', 'SIMPLE-NN (SNU Interatomic Machine-learning PotentiaL packagE – version Neural Network)',
      'Miscellaneous'),
 ]
+
+
+# -- Options for Epub output -------------------------------------------------
+
+# Bibliographic Dublin Core info.
+epub_title = project
+
+# The unique identifier of the text. This can be a ISBN number
+# or the project homepage.
+#
+# epub_identifier = ''
+
+# A unique identification for the text.
+#
+# epub_uid = ''
+
+# A list of files that should not be packed into the epub file.
+epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
@@ -170,7 +193,5 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
 
-# -- Options for todo extension ----------------------------------------------
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
+# -- Options for autosectionlabel extension ----------------------------------
+autosectionlabel_prefix_document = True

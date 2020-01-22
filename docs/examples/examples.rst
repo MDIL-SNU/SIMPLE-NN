@@ -1,5 +1,3 @@
-.. include:: /share.rst
-
 ========
 Examples
 ========
@@ -8,13 +6,13 @@ Introduction
 ============
 
 This section demonstrate SIMPLE-NN with examples. 
-Example files are in :gray:`SIMPLE-NN/examples/`.
+Example files are in :code:`SIMPLE-NN/examples/`.
 In this example, snapshots from 500K MD trajectory of 
 amorphous SiO\ :sub:`2`\  (60 atoms) are used as training set.  
 
 .. Note::
 
-    Since we set the relative path for reference file in :gray:`str_list`, 
+    Since we set the relative path for reference file in :code:`str_list`, 
     You need to move to the directory indicated in each section below to run the examples.
 
 .. _Generate NNP:
@@ -28,7 +26,7 @@ as described in :doc:`/tutorials/tutorial` section.
 The example files except params_Si and params_O are introduced below.
 Detail of params_Si and params_O can be found in :doc:`/features/features` section.
 Input files introduced in this section can be found in 
-:gray:`SIMPLE-NN/examples/SiO2/generate_NNP`.
+:code:`SIMPLE-NN/examples/SiO2/generate_NNP`.
 
 ::
 
@@ -49,7 +47,7 @@ Input files introduced in this section can be found in
       method: Adam
       nodes: 30-30
       batch_size: 10
-      total_epoch: 50000
+      total_iteration: 50000
       learning_rate: 0.001
 
 ::
@@ -57,18 +55,18 @@ Input files introduced in this section can be found in
     # str_list
     ../ab_initio_output/OUTCAR_comp ::10
 
-With this input file, SIMPLE-NN calculate feature vectors and its derivatives (:gray:`generate_features`), 
-generate training/validation dataset (:gray:`preprocess`) and optimize the network (:gray:`train_model`).
-Sample VASP OUTCAR file (the file is compressed to reduce the file size) is in :gray:`SIMPLE-NN/examples/SiO2/ab_initio_output`.
+With this input file, SIMPLE-NN calculate feature vectors and its derivatives (:code:`generate_features`), 
+generate training/validation dataset (:code:`preprocess`) and optimize the network (:code:`train_model`).
+Sample VASP OUTCAR file (the file is compressed to reduce the file size) is in :code:`SIMPLE-NN/examples/SiO2/ab_initio_output`.
 In MD trajectory, snapshots are sampled in the interval of 10 MD steps.
 In this example, 70 symmetry functions consist of 8 radial symmetry functions per 2-body combination 
 and 18 angular symmetry functions per 3-body combination.
 Thus, this model uses 70-30-30-1 network for both Si and O. 
 The network is optimized by Adam optimizer with the 0.001 of learning rate and batch size is 10. 
 
-Output files can be found in :gray:`SIMPLE-NN/examples/SiO2/generate_NNP/outputs`.
-In the folder, generated dataset is stored in :gray:`data` folder
-and execution log and energy/force RMSE are stored in :gray:`LOG`. 
+Output files can be found in :code:`SIMPLE-NN/examples/SiO2/generate_NNP/outputs`.
+In the folder, generated dataset is stored in :code:`data` folder
+and execution log and energy/force RMSE are stored in :code:`LOG`. 
 
 Potential test
 ==============
@@ -80,7 +78,7 @@ Generate test dataset
 Generating a test dataset is same as generating a training/validation dataset.
 In this example, we use same VASP OUTCAR to generate test dataset.
 Input files introduced in this section can be found in 
-:gray:`SIMPLE-NN/examples/SiO2/generate_test_data`.
+:code:`SIMPLE-NN/examples/SiO2/generate_test_data`.
 
 ::
 
@@ -98,10 +96,10 @@ Input files introduced in this section can be found in
         O: params_O
       valid_rate: 0.
 
-In this case, :gray:`train_model` is set to :gray:`false` 
+In this case, :code:`train_model` is set to :code:`false` 
 because training process is not required to generate test dataset.
 In addition, valid_rate also set to 0.
-:gray:`str_list` is same as `Generate NNP`_ section.
+:code:`str_list` is same as `Generate NNP`_ section.
 
 .. Note::
 
@@ -115,11 +113,11 @@ Error check
 -----------
 
 To check the error for test dataset, use the setting below.
-And for running test mode, you need to copy the :gray:`train_list` 
+And for running test mode, you need to copy the :code:`train_list` 
 file generated in :ref:`gen_test_data` section
-to this folder and change filename to :gray:`test_list`.
+to this folder and change filename to :code:`test_list`.
 Input files introduced in this section can be found in 
-:gray:`SIMPLE-NN/examples/SiO2/error_check`.
+:code:`SIMPLE-NN/examples/SiO2/error_check`.
 
 ::
 
@@ -145,13 +143,13 @@ Input files introduced in this section can be found in
       continue: true
 
 .. Note::
-  You need to change the filename from :gray:`SAVER_epochXXXX.*` to :gray:`SAVER.*` to use the option :gray:`continue: true`
-  and modify the checkpoints file (remove '_epochXXXX' in the text). 
-  If you use the option :gray:`continue: weights`, 
-  change the filename from :gray:`potential_saved_epochXXXX` to :gray:`potential_saved`.
+  You need to change the filename from :code:`SAVER_iterationXXXX.*` to :code:`SAVER.*` to use the option :code:`continue: true`
+  and modify the checkpoints file (remove '_iterationXXXX' in the text). 
+  If you use the option :code:`continue: weights`, 
+  change the filename from :code:`potential_saved_epochXXXX` to :code:`potential_saved`.
 
 After running SIMPLE-NN with the setting above, 
-new output file named :gray:`test_result` is generated. 
+new output file named :code:`test_result` is generated. 
 The file is pickle format and you can open this file with python code of below::
 
     from six.moves import cPickle as pickle
@@ -163,22 +161,42 @@ The file is pickle format and you can open this file with python code of below::
 In the file, DFT energies/forces, NNP energies/forces are included.
 
 Molecular dynamics
-------------------
+==================
 Please check in :doc:`/tutorials/tutorial` section for detailed LAMMPS script writing.
 
 
+Principal component analysis
+============================
+
+SIMPLE-NN provides principal component analysis (PCA) as a method for preprocessing input descriptor vector.
+Input descriptor vector, including Behler-type symmetry functions, often has high correlation between components.
+In that case, decorrelating input descriptor vector using PCA before feeding it to a machine-learning model can give much faster convergence.
+
+In order to use PCA, add following lines in :code:`input.yaml` when you do preprocess and when you do training and testing.
+For detailed descriptions of input parameters, see :ref:`here <models/hdnn/hdnn:PCA-related parameters>`.
+
+.. code:: yaml
+
+   neural_network:
+      pca: true
+      pca_whiten: true
+      pca_min_whiten_level: 1.0e-8
+
+A pickle file named :code:`pca` will be generated during the preprocessing. You need to copy :code:`pca` file to where you run SIMPLE-NN with trained model, just like :code:`scale_factor` file.
+
+
 Parameter tuning
-================ 
+================
 
 GDF
 ---
 GDF [#f1]_ is used to reduce the force errors of the sparsely sampled atoms. 
 To use GDF, you need to calculate the :math:`\rho(\mathbf{G})` 
-by adding the following lines to the :gray:`symmetry_function` section in :gray:`input.yaml`.
+by adding the following lines to the :code:`symmetry_function` section in :code:`input.yaml`.
 SIMPLE-NN supports automatic parameter generation scheme for :math:`\sigma` and :math:`c`.
-Use the setting :gray:`sigma: Auto` to get a robust :math:`\sigma` and :math:`c` (values are stored in LOG file).
+Use the setting :code:`sigma: Auto` to get a robust :math:`\sigma` and :math:`c` (values are stored in LOG file).
 Input files introduced in this section can be found in 
-:gray:`SIMPLE-NN/examples/SiO2/parameter_tuning_GDF`.
+:code:`SIMPLE-NN/examples/SiO2/parameter_tuning_GDF`.
 
 ::
 
@@ -195,7 +213,7 @@ Input files introduced in this section can be found in
 
 :math:`\rho(\mathbf{G})` indicates the density of each training point.
 After calculating :math:`\rho(\mathbf{G})`, histograms of :math:`\rho(\mathbf{G})^{-1}` 
-are also saved as in the file of :gray:`GDFinv_hist_XX.pdf`.
+are also saved as in the file of :code:`GDFinv_hist_XX.pdf`.
 
 .. Note::
   If there is a peak in high :math:`\rho(\mathbf{G})^{-1}` region in the histogram, 
@@ -214,9 +232,9 @@ can be visualized with the following script.
 
     grp.plot_error_vs_gdfinv(['Si','O'], 'test_result')
 
-where :gray:`test_result` is generated after :ref:`test_mode` as the output file. 
+where :code:`test_result` is generated after :ref:`test_mode` as the output file. 
 The graph of interval-averaged force errors with respect to the 
-:math:`\rho(\mathbf{G})^{-1}` is generated as :gray:`ferror_vs_GDFinv_XX.pdf`
+:math:`\rho(\mathbf{G})^{-1}` is generated as :code:`ferror_vs_GDFinv_XX.pdf`
 
 .. .. image:: /images/ref_forceerror
 
@@ -224,7 +242,7 @@ If default GDF is not sufficient to reduce the force error of sparsely sampled t
 One can use scale function to increase the effect of GDF. In scale function, 
 :math:`b` controls the decaying rate for low :math:`\rho(\mathbf{G})^{-1}` and 
 :math:`c` separates highly concentrated and sparsely sampled training points.
-To use the scale function, add following lines to the :gray:`symmetry_function` section in :gray:`input.yaml`.
+To use the scale function, add following lines to the :code:`symmetry_function` section in :code:`input.yaml`.
 
 ::
 
@@ -242,8 +260,8 @@ To use the scale function, add following lines to the :gray:`symmetry_function` 
 For our experience, :math:`b=1.0` and automatically selected :math:`c` shows reasonable results. 
 To check the effect of scale function, use the following script for visualizing the 
 force error distribution according to :math:`\rho(\mathbf{G})^{-1}`. 
-In the script below, :gray:`test_result_noscale` is the test result file from the training without scale function and 
-:gray:`test_result_wscale` is the test result file from the training with scale function.
+In the script below, :code:`test_result_noscale` is the test result file from the training without scale function and 
+:code:`test_result_wscale` is the test result file from the training with scale function.
 
 ::
 

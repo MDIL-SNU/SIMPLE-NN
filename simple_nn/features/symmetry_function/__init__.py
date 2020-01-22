@@ -95,8 +95,6 @@ class Symmetry_function(object):
             feature['F'] = _bytes_feature(res['F'].tobytes())
             if self.inputs['add_atom_idx']:
                 feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
-            if atomic_weights:
-                feature['atomic_weights'] = _bytes_feature(res['atomic_weights'].tobytes())
         except:
             pass
 
@@ -159,8 +157,6 @@ class Symmetry_function(object):
             features['F'] = tf.FixedLenFeature([], dtype=tf.string)
             if self.inputs['add_atom_idx']:
                 features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
-            if atomic_weights:
-                features['atomic_weights'] = tf.FixedLenFeature([], dtype=tf.string)
 
         if use_stress:
             features['S'] = tf.FixedLenFeature([], dtype=tf.string)
@@ -211,8 +207,6 @@ class Symmetry_function(object):
             res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
             if self.inputs['add_atom_idx']:
                 res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
-            if atomic_weights:
-                res['atomic_weights'] = tf.decode_raw(read_data['atomic_weights'], tf.float64)
  
         if use_stress:
             res['S'] = tf.decode_raw(read_data['S'], tf.float64)
@@ -239,8 +233,6 @@ class Symmetry_function(object):
             batch_dict['F'] = [None, 3]
             if self.inputs['add_atom_idx']:
                 batch_dict['atom_idx'] = [None, 1]
-            if atomic_weights:
-                batch_dict['atomic_weights'] = [None]
 
         if use_stress:
             batch_dict['S'] = [None]

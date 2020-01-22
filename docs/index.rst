@@ -3,23 +3,21 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to simple_nn's documentation!
+Welcome to SIMPLE-NN's documentation!
 =====================================
 
 .. toctree::
    :maxdepth: 4
-   :caption: Contents:
+   :caption: Contents
 
    install
    tutorials/tutorial
    examples/examples
-   simple_nn/Simple_nn
    features/features
    models/models
 
-Indices and tables
-==================
+.. toctree::
+   :maxdepth: 3
+   :caption: Modules
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   simple_nn

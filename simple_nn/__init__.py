@@ -7,6 +7,9 @@ import atexit
 from .utils import modified_sigmoid, _generate_gdf_file
 from ._version import __version__, __git_sha__
 from .utils.mpiclass import DummyMPI, MPI4PY
+import tensorflow as tf
+import numpy as np
+
 
 # TODO: logging
 
@@ -70,6 +73,7 @@ class Simple_nn(object):
             'preprocess': False,
             'train_model': True,
             'atom_types': [],
+            'random_seed': None,
             }
 
         self.inputs = self.default_inputs
@@ -96,6 +100,12 @@ class Simple_nn(object):
         if self.inputs['neural_network']['method'] == 'L-BFGS' and \
                 not self.inputs['neural_network']['full_batch']:
             self.logfile.write("Warning: Optimization method is L-BFGS but full batch mode is off. This might results bad convergence or divergence.\n")
+
+        if self.inputs['random_seed'] is not None:
+            seed = self.inputs['random_seed']
+            tf.set_random_seed(seed)
+            np.random.seed(seed)
+            self.logfile.write("*** Random seed: {0:} ***\n".format(seed))
 
     def _close_log(self):
         self.logfile.flush()

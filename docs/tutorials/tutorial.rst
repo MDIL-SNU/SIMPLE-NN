@@ -1,5 +1,3 @@
-.. include:: /share.rst
-
 =========
 Tutorials
 =========
@@ -28,15 +26,17 @@ You can check if the output file contains the appropriate information by using t
     atoms.get_potential_energy()
     # atomic force
     atoms.get_forces()
+    # structure_stress
+    atoms.get_forces() (need unit conversion!)
 
 
 Preparing inputs files
 ======================
 
-SIMPLE-NN use YAML style input file: :gray:`input.yaml`.
-:gray:`input.yaml` consists of three part: basic parameters, 
+SIMPLE-NN use YAML style input file: :code:`input.yaml`.
+:code:`input.yaml` consists of three part: basic parameters, 
 feature-related parameters, and model-related parameters.
-The basic format of :gray:`input.yaml` is like below::
+The basic format of :code:`input.yaml` is like below::
 
     # Basic parameters
     generate_features: true
@@ -57,13 +57,13 @@ The basic format of :gray:`input.yaml` is like below::
       method: Adam
       nodes: 30-30
       batch_size: 10
-      total_epoch: 50000
+      total_iteration: 50000
       learning_rate: 0.001
 
 Depending on the feature and model classes, additional input files may be required.
-For example, for :gray:`symmetry_function` class, 
-additional files named :gray:`str_list` and :gray:`params_XX` 
-(name of :gray:`params_XX` can be changed) are required. 
+For example, for :code:`symmetry_function` class, 
+additional files named :code:`str_list` and :code:`params_XX` 
+(name of :code:`params_XX` can be changed) are required. 
 Details of parameters and additional files are listed in 
 :doc:`/simple_nn/Simple_nn` (basic parameters), 
 :doc:`/features/features` (feature-related parameters) and 
@@ -72,8 +72,8 @@ Details of parameters and additional files are listed in
 Running the code
 ================
 
-To run SIMPLE-NN, you simply have to run the predefined script :gray:`run.py` after preparing all input files.
-The basic format of :gray:`run.py` is described below::
+To run SIMPLE-NN, you simply have to run the predefined script :code:`run.py` after preparing all input files.
+The basic format of :code:`run.py` is described below::
 
     # run.py
     #
@@ -90,40 +90,40 @@ The basic format of :gray:`run.py` is described below::
     model.run()
 
 Examples of actual use for the entire process of generating neural network potential 
-can be found in :doc:`/examples/examples` section or :gray:`SIMPLE-NN/examples/`
+can be found in :doc:`/examples/examples` section or :code:`SIMPLE-NN/examples/`
 
 Outputs
 =======
 
-The default output file of SIMPLE-NN is :gray:`LOG`, which contains the execution log of SIMPLE-NN.
-In addition to :gray:`LOG`, an additional output file is created for each process of SIMPLE-NN. 
-After :gray:`Symmetry_function.generate` method, you can find the output files listed below:
+The default output file of SIMPLE-NN is :code:`LOG`, which contains the execution log of SIMPLE-NN.
+In addition to :code:`LOG`, an additional output file is created for each process of SIMPLE-NN. 
+After :code:`Symmetry_function.generate` method, you can find the output files listed below:
 
-    - :gray:`data/data##.pickle`\: (## indicates number) 
+    - :code:`data/data##.pickle`\: (## indicates number) 
       Data file which contains descriptor vectors, a derivative of descriptor 
       vectors, and other parameters per structure.
 
 
-After :gray:`Symmetry_function.preprocess` method, you can find the output files listed below:
+After :code:`Symmetry_function.preprocess` method, you can find the output files listed below:
 
-    - :gray:`data/{training,valid}_data_####_to_####.tfrecord`\: 
+    - :code:`data/{training,valid}_data_####_to_####.tfrecord`\: 
       Packed Training/validation dataset which contains the information in 
-      :gray:`data/data##.pickle` and additional parameters like atomic weights
+      :code:`data/data##.pickle` and additional parameters like atomic weights
       which are used during training process.
-    - :gray:`pickle_{training,valid}_list`\: List of pickle files that are included in 
-      :gray:`data/{training,valid}_data_####_to_####.tfrecord` file.
+    - :code:`pickle_{training,valid}_list`\: List of pickle files that are included in 
+      :code:`data/{training,valid}_data_####_to_####.tfrecord` file.
 
-    - :gray:`{train,valid}_list`\: List of tfrecord files (used in network optimization process)
-    - :gray:`scale_factor`\: Scale factor for symmetry function.
-    - :gray:`atomic_weights`\: Data file that contains atomic weights.
+    - :code:`{train,valid}_list`\: List of tfrecord files (used in network optimization process)
+    - :code:`scale_factor`\: Scale factor for symmetry function.
+    - :code:`atomic_weights`\: Data file that contains atomic weights.
 
 
-After :gray:`Neural_network.train` method, you can find the output files listed below:
+After :code:`Neural_network.train` method, you can find the output files listed below:
 
-    - :gray:`SAVER_epochXXXX.*`, :gray:`checkpoint`\: Tensorflow save file which contains 
-      the network information at the XXXXth epoch.
-    - :gray:`potential_saved_epochXXXX`\: LAMMPS potential file which contains 
-      the network information at the XXXXth epoch.
+    - :code:`SAVER_iterationXXXX.*`, :code:`checkpoint`\: Tensorflow save file which contains 
+      the network information at the XXXXth iteration.
+    - :code:`potential_saved_iterationXXXX`\: LAMMPS potential file which contains 
+      the network information at the XXXXth iteration.
 
 
 .. MDwithLAMMPS_

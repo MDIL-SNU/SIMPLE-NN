@@ -1,4 +1,3 @@
-.. include:: /share.rst
 .. _install:
 
 =======
@@ -9,7 +8,7 @@ Install SIMPLE-NN
 =================
 SIMPLE-NN is tested and supported on the following versions of Python:
 
-- Python :gray:`2.7`, :gray:`3.4-3.6`
+- Python :code:`2.7`, :code:`3.4-3.6`
 
 Requirements
 ------------
@@ -22,7 +21,7 @@ Detailed information for installing Tensorflow and mpi4py can be found from the 
 
 **Install Tensorflow**: https://www.tensorflow.org/install/
 
-Tensorflow :gray:`r1.6`-:gray:`r1.13` is supported.
+Tensorflow :code:`r1.6`-:code:`r1.13` is supported.
 
 **Install mpi4py**: https://mpi4py.readthedocs.io/en/stable/install.html
 

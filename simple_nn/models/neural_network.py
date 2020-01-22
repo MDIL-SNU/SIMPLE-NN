@@ -57,7 +57,7 @@ class Neural_network(object):
                                       'method': 'Adam',
                                       'batch_size': 64,
                                       'full_batch': False,
-                                      'total_epoch': 10000,
+                                      'total_iteration': 10000,
                                       'learning_rate': 0.0001,
                                       'stress_coeff': 0.000001,
                                       'force_coeff': 0.1, 
@@ -411,7 +411,7 @@ class Neural_network(object):
         # TODO: get the parameter info from initial batch generting processs
         atom_type_str = ' '.join(self.parent.inputs['atom_types'])
 
-        filename = './potential_saved_epoch{}'.format(sess.run(self.global_step)+1)
+        filename = './potential_saved_iteration{}'.format(sess.run(self.global_step)+1)
         FIL = open(filename, 'w')
         FIL.write('ELEM_LIST ' + atom_type_str + '\n\n')
 
@@ -488,7 +488,7 @@ class Neural_network(object):
             self.parent.logfile.write(cutline + "\n")
         self.parent.logfile.write("Save the weights and write the LAMMPS potential..\n")
         self.parent.logfile.write(cutline + "\n")
-        saver.save(sess, './SAVER_epoch{}'.format(sess.run(self.global_step)+1))
+        saver.save(sess, './SAVER_iteration{}'.format(sess.run(self.global_step)+1))
         self._generate_lammps_potential(sess)
 
 
@@ -779,17 +779,17 @@ class Neural_network(object):
                 time1 = timeit.default_timer()
                 save_time = 0
 
-                if self.inputs['total_epoch'] < 0:
-                    total_epoch = -self.inputs['total_epoch']
+                if self.inputs['total_iteration'] < 0:
+                    total_iteration = -self.inputs['total_iteration']
                     break_tag = True
                     break_count = 1
                     break_max = self.inputs['break_max']
                 else:
-                    total_epoch = self.inputs['total_epoch']
+                    total_iteration = self.inputs['total_iteration']
                     break_tag = False
 
                 time_begin = timeit.default_timer()
-                for epoch in tqdm(range(total_epoch)):
+                for iteration in tqdm(range(total_iteration)):
                     if self.inputs['full_batch']:
                         if self.inputs['method'] == 'Adam':
                             [flat_grad] = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=False)
@@ -797,7 +797,7 @@ class Neural_network(object):
                         elif self.inputs['method'] == 'L-BFGS':
                             # calculate the direction
                             #zero_vals = _get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
-                            if epoch == 0:
+                            if iteration == 0:
                                 zero_vals = self._get_full_batch_values(sess, train_iter, train_fdict, need_loss=True)
                                 z = zero_vals[0]
                             else:
@@ -822,7 +822,7 @@ class Neural_network(object):
                     #sess.run(self.optim, feed_dict=train_fdict, options=options, run_metadata=run_metadata)
 
                     # Logging
-                    if (epoch+1) % self.inputs['show_interval'] == 0:
+                    if (iteration+1) % self.inputs['show_interval'] == 0:
                         # Profiling
                         #fetched_timeline = timeline.Timeline(run_metadata.step_stats)
                         #chrome_trace = fetched_timeline.generate_chrome_trace_format()
@@ -834,7 +834,7 @@ class Neural_network(object):
                         # TODO: need to fix the calculation part for training loss
                         save_stack += self.inputs['show_interval']
 
-                        result = "epoch {:7d} ".format(sess.run(self.global_step)+1)
+                        result = "iteration {:7d} ".format(sess.run(self.global_step)+1)
 
                         t_eloss, t_floss, t_sloss, t_aw_floss, t_str_eloss, t_str_floss, t_str_sloss, _, _, _, t_str_set = \
                             self._get_loss_for_print(sess, train_fdict, full_batch=self.inputs['full_batch'], 
@@ -942,7 +942,7 @@ class Neural_network(object):
                         save_criteria = np.prod(cur_criteria < prev_criteria)
 
                     # Temp saving
-                    #if (epoch+1) % self.inputs['save_interval'] == 0:
+                    #if (iteration+1) % self.inputs['save_interval'] == 0:
                         if save_stack > self.inputs['save_interval'] and save_criteria:
                             #(prev_eloss > eloss or not self.inputs['echeck']) and \
                             #(prev_floss > floss or not self.inputs['fcheck'] or floss == 0.):
