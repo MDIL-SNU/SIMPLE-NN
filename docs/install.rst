@@ -1,4 +1,3 @@
-.. include:: /share.rst
 .. _install:
 
 =======
@@ -9,7 +8,7 @@ Install SIMPLE-NN
 =================
 SIMPLE-NN is tested and supported on the following versions of Python:
 
-- Python :gray:`2.7`, :gray:`3.4-3.6`
+- Python :code:`2.7`, :code:`3.4-3.6`
 
 Requirements
 ------------
@@ -22,7 +21,7 @@ Detailed information for installing Tensorflow and mpi4py can be found from the 
 
 **Install Tensorflow**: https://www.tensorflow.org/install/
 
-Tensorflow :gray:`r1.6`-:gray:`r1.13` is supported.
+Tensorflow :code:`r1.6`-:code:`r1.13` is supported.
 
 **Install mpi4py**: https://mpi4py.readthedocs.io/en/stable/install.html
 
@@ -34,7 +33,7 @@ You can download a current SIMPLE-NN source package from link below.
 Once you have a zip file, unzip it. This will create SIMPLE-NN directory.
 After unzipping the file, run the command below to install SIMPLE-NN.
 
-**Download SIMPLE-NN**: https://github.com/Nanco-L/SIMPLE-NN
+**Download SIMPLE-NN**: https://github.com/MDIL-SNU/SIMPLE-NN
 
 ::
 
@@ -56,5 +55,5 @@ and compile LAMMPS package.
 
 ::
 
-    cp SIMPLE-NN/simple_nn/features/symmetry_function/symmetry_functions.* /path/to/lammps/src/
+    cp SIMPLE-NN/simple_nn/features/symmetry_function/symmetry_functions.h /path/to/lammps/src/
     cp SIMPLE-NN/simple_nn/features/symmetry_function/pair_nn.* /path/to/lammps/src/

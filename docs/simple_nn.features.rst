@@ -5,6 +5,7 @@ Subpackages
 -----------
 
 .. toctree::
+    :maxdepth: 3
 
     simple_nn.features.symmetry_function
 

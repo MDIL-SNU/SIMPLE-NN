@@ -5,14 +5,13 @@ ffibuilder.cdef(
     """int calculate_sf(double **, double **, double **,
                                     int *, int, int*, int,
                                     int**, double **, int,
-                                    double**, double**);"""
+                                    double**, double**, double**);"""
 )
 ffibuilder.set_source(
     "simple_nn.features.symmetry_function._libsymf",
     '#include "calculate_sf.h"',
     sources=[
         "simple_nn/features/symmetry_function/calculate_sf.cpp",
-        "simple_nn/features/symmetry_function/symmetry_functions.cpp",
     ],
     source_extension=".cpp",
     include_dirs=["simple_nn/features/symmetry_function/"],

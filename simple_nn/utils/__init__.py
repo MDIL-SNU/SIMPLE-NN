@@ -12,6 +12,8 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
 from .mpiclass import DummyMPI, MPI4PY
 from scipy.integrate import nquad
+import ase
+from ase.geometry import get_distances
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
@@ -169,9 +171,9 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
                         rc = params[item]['d'][p,0]
                         zeta = params[item]['d'][p,2]
                         lamb = params[item]['d'][p,3]
-                        def G4(r1, r2, t):
+                        def G5(r1, r2, t):
                             return r1**2 * r2**2 * np.sin(t) * 2**(1-zeta) * (1 + lamb * np.cos(t))**zeta * np.exp(-eta * (r1**2 + r2**2)) * 0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1)
-                        scale[item][1,p] = 8 * np.pi**2 * scale_rho[ti] * scale_rho[tj] * nquad(G4, [[0, rc], [0, rc], [0, np.pi]])[0]
+                        scale[item][1,p] = 8 * np.pi**2 * scale_rho[ti] * scale_rho[tj] * nquad(G5, [[0, rc], [0, rc], [0, np.pi]])[0]
                     else:
                         assert False
 
@@ -286,6 +288,7 @@ def compress_outcar(filename):
     - lattice vector(cell)
     - free energy
     - force
+    - stress
     """
     comp_name = './tmp_comp_OUTCAR'
 
@@ -306,6 +309,9 @@ def compress_outcar(filename):
             elif 'POSITION          ' in line:
                 res.write(line)
                 line_tag = 3
+            elif 'FORCE on cell =-STRESS' in line:
+                res.write(line)
+                minus_tag = 15
             elif minus_tag > 0:
                 res.write(line)
                 minus_tag -= 1
@@ -317,7 +323,7 @@ def compress_outcar(filename):
     return comp_name
 
 
-def modified_sigmoid(gdf, b=150.0, c=1.0, module_type=np):
+def modified_sigmoid(gdf, b=150.0, c=1.0, module_type=None):
     """
     modified sigmoid function for GDF calculation.
 
@@ -325,6 +331,9 @@ def modified_sigmoid(gdf, b=150.0, c=1.0, module_type=np):
     :param b: float or double, coefficient for modified sigmoid
     :param c: float or double, coefficient for modified sigmoid
     """
+    if module_type is None:
+        module_type = np
+
     gdf = gdf / (1.0 + module_type.exp(-b * (gdf - c)))
     #gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
     return gdf
@@ -407,5 +416,3 @@ def read_lammps_potential(filename):
                 weights[item].append(np.copy(tmp_bias))
 
     return weights
-
-

@@ -7,10 +7,13 @@ import atexit
 from .utils import modified_sigmoid, _generate_gdf_file
 from ._version import __version__, __git_sha__
 from .utils.mpiclass import DummyMPI, MPI4PY
+import tensorflow as tf
+import numpy as np
+
 
 # TODO: logging
 
-def deep_update(source, overrides, warn_new_key=False, logfile=None, comm=DummyMPI(), depth=0, parent="top"):
+def deep_update(source, overrides, warn_new_key=False, logfile=None, comm=None, depth=0, parent="top"):
     """
     Update a nested dictionary or similar mapping.
     Modify ``source`` in place.
@@ -21,6 +24,9 @@ def deep_update(source, overrides, warn_new_key=False, logfile=None, comm=DummyM
     :param str logfile: filename to which warnings are written (if not given warnings are written to stdout)
     :returns: updated dictionary source
     """
+    if comm is None:
+        comm = DummyMPI()
+
     if logfile is None:
         logfile = sys.stdout
 
@@ -69,7 +75,8 @@ class Simple_nn(object):
             'generate_features': True,
             'preprocess': False,
             'train_model': True,
-            'atom_types': []
+            'atom_types': [],
+            'random_seed': None,
             }
 
         self.inputs = self.default_inputs
@@ -96,6 +103,12 @@ class Simple_nn(object):
         if self.inputs['neural_network']['method'] == 'L-BFGS' and \
                 not self.inputs['neural_network']['full_batch']:
             self.logfile.write("Warning: Optimization method is L-BFGS but full batch mode is off. This might results bad convergence or divergence.\n")
+
+        if self.inputs['random_seed'] is not None:
+            seed = self.inputs['random_seed']
+            tf.set_random_seed(seed)
+            np.random.seed(seed)
+            self.logfile.write("*** Random seed: {0:} ***\n".format(seed))
 
     def _close_log(self):
         self.logfile.flush()
@@ -170,10 +183,14 @@ class Simple_nn(object):
 
         if self.inputs['generate_features']:
             self.descriptor.generate()
-            self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'], get_atomic_weights=get_atomic_weights,
+            self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'],
+                                       use_stress=self.inputs['neural_network']['use_stress'],
+                                       get_atomic_weights=get_atomic_weights,
                                        **self.descriptor.inputs['atomic_weights']['params'])
         elif self.inputs['preprocess']:
-            self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'], get_atomic_weights=get_atomic_weights, 
+            self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'], 
+                                       use_stress=self.inputs['neural_network']['use_stress'],
+                                       get_atomic_weights=get_atomic_weights, 
                                        **self.descriptor.inputs['atomic_weights']['params'])
         
         if self.inputs['train_model']:
