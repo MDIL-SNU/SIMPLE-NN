@@ -27,15 +27,16 @@ with open('simple_nn/_version.py', 'w') as fp:
 # required module
 # TODO: version check
 install_requires = [
-    'numpy',
-    'ase>=3.10.0',
+    'numpy<1.17.0',
+    'scipy<1.3.0',
+    'scikit-learn<0.21.0',
+    'ase>=3.10.0,<3.18.0',
     'pyyaml>=3.10',
     'cffi>=1.0.0',
     'psutil',
     'tqdm',
     'braceexpand',
     'matplotlib<3.0',
-    'scipy',
 ]
 
 # Check the differece
