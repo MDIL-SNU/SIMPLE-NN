@@ -33,7 +33,7 @@ You can download a current SIMPLE-NN source package from link below.
 Once you have a zip file, unzip it. This will create SIMPLE-NN directory.
 After unzipping the file, run the command below to install SIMPLE-NN.
 
-**Download SIMPLE-NN**: https://github.com/Nanco-L/SIMPLE-NN
+**Download SIMPLE-NN**: https://github.com/MDIL-SNU/SIMPLE-NN
 
 ::
 
@@ -55,5 +55,5 @@ and compile LAMMPS package.
 
 ::
 
-    cp SIMPLE-NN/simple_nn/features/symmetry_function/symmetry_functions.* /path/to/lammps/src/
+    cp SIMPLE-NN/simple_nn/features/symmetry_function/symmetry_functions.h /path/to/lammps/src/
     cp SIMPLE-NN/simple_nn/features/symmetry_function/pair_nn.* /path/to/lammps/src/

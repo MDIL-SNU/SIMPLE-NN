@@ -10,6 +10,7 @@ Welcome to SIMPLE-NN's documentation!
    :maxdepth: 4
    :caption: Contents
 
+   Version history
    install
    tutorials/tutorial
    examples/examples

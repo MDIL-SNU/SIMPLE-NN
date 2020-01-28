@@ -27,7 +27,7 @@ You can check if the output file contains the appropriate information by using t
     # atomic force
     atoms.get_forces()
     # structure_stress
-    atoms.get_forces() (need unit conversion!)
+    atoms.get_stress() (need unit conversion!)
 
 
 Preparing inputs files

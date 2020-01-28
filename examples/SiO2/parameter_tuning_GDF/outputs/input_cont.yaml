@@ -29,7 +29,7 @@ neural_network:
   show_interval: 100
   stddev: 0.3
   test: false
-  total_epoch: 50000
+  total_iteration: 50000
   train: true
   use_force: true
 preprocess: true

@@ -146,7 +146,7 @@ Input files introduced in this section can be found in
   You need to change the filename from :code:`SAVER_iterationXXXX.*` to :code:`SAVER.*` to use the option :code:`continue: true`
   and modify the checkpoints file (remove '_iterationXXXX' in the text). 
   If you use the option :code:`continue: weights`, 
-  change the filename from :code:`potential_saved_epochXXXX` to :code:`potential_saved`.
+  change the filename from :code:`potential_saved_iterationXXXX` to :code:`potential_saved`.
 
 After running SIMPLE-NN with the setting above, 
 new output file named :code:`test_result` is generated. 

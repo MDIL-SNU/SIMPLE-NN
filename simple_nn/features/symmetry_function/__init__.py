@@ -264,7 +264,15 @@ class Symmetry_function(object):
 
 
     def preprocess(self, calc_scale=True, use_force=False, use_stress=False, get_atomic_weights=None, **kwargs):
-        
+        """
+        Before the training, pickle data are changed into .tfrecord format.
+        scale_factor, pca, gdf are also calculated here.
+
+        :param boolean calc_scale: flag to calculate the scale_factor
+        :param boolean use_force: flag to put 'force data' into input
+        :param boolean use_stress: flag to put 'stress data' into the input
+        :param boolean get_atomic_weights: flag to return atomic_weight
+        """ 
         comm = self.get_comm()
 
         # pickle list -> train / valid
@@ -484,7 +492,12 @@ class Symmetry_function(object):
  
 
     def generate(self):
-
+        """
+        Generate the data*.pickle from the str_list by params_*
+        data*.pickle contains the symmetry function vector,
+        the derivative of symmetry function vector, energy,
+        force, stress and so on.
+        """
         comm = self.get_comm()
 
         if comm.rank == 0:

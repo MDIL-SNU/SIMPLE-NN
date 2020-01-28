@@ -13,7 +13,7 @@ import numpy as np
 
 # TODO: logging
 
-def deep_update(source, overrides, warn_new_key=False, logfile=None, comm=DummyMPI(), depth=0, parent="top"):
+def deep_update(source, overrides, warn_new_key=False, logfile=None, comm=None, depth=0, parent="top"):
     """
     Update a nested dictionary or similar mapping.
     Modify ``source`` in place.
@@ -24,6 +24,9 @@ def deep_update(source, overrides, warn_new_key=False, logfile=None, comm=DummyM
     :param str logfile: filename to which warnings are written (if not given warnings are written to stdout)
     :returns: updated dictionary source
     """
+    if comm is None:
+        comm = DummyMPI()
+
     if logfile is None:
         logfile = sys.stdout
 

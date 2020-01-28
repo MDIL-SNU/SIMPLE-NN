@@ -323,7 +323,7 @@ def compress_outcar(filename):
     return comp_name
 
 
-def modified_sigmoid(gdf, b=150.0, c=1.0, module_type=np):
+def modified_sigmoid(gdf, b=150.0, c=1.0, module_type=None):
     """
     modified sigmoid function for GDF calculation.
 
@@ -331,6 +331,9 @@ def modified_sigmoid(gdf, b=150.0, c=1.0, module_type=np):
     :param b: float or double, coefficient for modified sigmoid
     :param c: float or double, coefficient for modified sigmoid
     """
+    if module_type is None:
+        module_type = np
+
     gdf = gdf / (1.0 + module_type.exp(-b * (gdf - c)))
     #gdf[:,0] = gdf[:,0] / (1.0 + np.exp(-b * gdf[:,0] + c))
     return gdf
