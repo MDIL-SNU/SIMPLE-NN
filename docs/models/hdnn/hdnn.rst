@@ -131,8 +131,8 @@ Optimization related parameter
     :code:`batch_size` is processed at once, 
     and this process is repeated to perform operations on the entire data set.
 
-* :code:`total_epoch`\: (int, default: 10000)
-  The number of total training epoch.
+* :code:`total_iteration`\: (int, default: 10000)
+  The number of total training iteration.
   If negative, early termination scheme is activated (See :code:`break_max` below).
 
 * :code:`learning_rate`\: (float, default: 0.0001, :ref:`exponential_dacay-label`)
@@ -176,7 +176,7 @@ Logging & saving related parameters
 * :code:`break_max`\: (int, default: 10)
   If save criteria is not satisfied in current save points, :code:`break_count` increases.
   Optimization process is terminated when :code:`break_count` >= :code:`break_max`.
-  This tag is only activated when total_epoch is negative.
+  This tag is only activated when total_iteration is negative.
 
 * :code:`print_structure_rmse`\: (boolean, default: false)
   If :code:`true`, RMSEs for each structure type are also printed in LOG file.
