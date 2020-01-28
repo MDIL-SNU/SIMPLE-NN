@@ -55,7 +55,6 @@ if is_installed('tensorflow-gpu'):
 else:
     install_requires.append('tensorflow<2.0,>=1.6')
 
-# TODO: extern C module add
 # TODO: install requires add
 # FIXME: fill the empty part
 setup(
@@ -64,7 +63,7 @@ setup(
     description='Package for generating atomic potentials using neural network.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/Nanco-L/simple-nn', # temperary url 
+    url='https://github.com/MDIL-SNU/SIMPLE-NN', # temperary url 
     author='Kyuhyun Lee, Dongsun Yoo',
     author_email='khlee1992@naver.com',
     license='GPL-3.0',
@@ -73,7 +72,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Stable',
 
         # other arguments are listed here.
 

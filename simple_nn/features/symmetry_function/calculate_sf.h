@@ -11,4 +11,4 @@
 extern "C" int calculate_sf(double **, double **, double **,
                             int *, int, int*, int,
                             int**, double **, int, 
-                            double**, double**);
+                            double**, double**, double**);

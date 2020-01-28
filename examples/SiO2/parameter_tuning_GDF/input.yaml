@@ -18,6 +18,6 @@ neural_network:
   method: Adam
   nodes: 30-30
   batch_size: 10
-  total_epoch: 50000
+  total_iteration: 50000
   learning_rate: 0.001
   use_force: true
