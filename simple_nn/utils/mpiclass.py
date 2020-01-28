@@ -6,7 +6,7 @@ class DummyMPI(object):
         pass
 
     def gather(self, data, root=0):
-        return data
+        return [data]
 
     def allreduce_max(self, data):
         return data
