@@ -101,7 +101,7 @@ Each parameter indicates (SF means symmetry function) ::
 
 The number inside the indicates the number of parameters.
 
-First column indicates the type of symmetry function. Currently, G2 (2), G4 (4), and G5 (5) are available (defined in the reference[#f1]_).
+First column indicates the type of symmetry function. Currently, G2 (2), G4 (4), and G5 (5) are available.
 
 Second and third column indicates the type index of neighbor atoms which starts from 1.
 (The order of type index need to be the same as the order of the :code:`atom_types` tag indicated in :code:`input.yaml`) 

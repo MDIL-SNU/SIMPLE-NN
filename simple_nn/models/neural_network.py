@@ -42,7 +42,7 @@ class Neural_network(object):
                                           'params': dict(),
                                       },
                                       'use_force': True,
-                                      'use_stress': True,
+                                      'use_stress': False,
                                       'double_precision': True,
                                       'weight_initializer': {
                                           'type': 'truncated normal',
@@ -176,7 +176,6 @@ class Neural_network(object):
         if self.inputs['continue'] == 'weights':
             saved_weights = read_lammps_potential('potential_saved')
 
-        #acti_func = 'selu'
         #acti_func = 'elu'
         #acti_func = 'sigmoid'
         #acti_func = 'tanh'

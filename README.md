@@ -6,7 +6,7 @@ If you use SIMPLE-NN, please cite this article:
 K. Lee, D. Yoo, W. Jeong, S. Han, SIMPLE-NN: An efficient package for training and executing neural-network interatomic potentials, *Computer Physics Communications* (2019), https://doi.org/10.1016/j.cpc.2019.04.014.
 
 Here do we describe minimal instruction to run the example of SIMPLE-NN
-If you want more information such as tuning parameters, please visit our online manual(https://mtcg.snu.ac.kr/doc/index.html)
+If you want more information such as tuning parameters, please visit our online manual(https://simple-nn.readthedocs.io)
 
 ## Installation
 SIMPLE-NN use Tensorflow and mpi4py(optional).

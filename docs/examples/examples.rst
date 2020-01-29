@@ -22,9 +22,9 @@ Generate NNP
 
 To generate NNP using symmetry function and neural network, 
 you need three types of input file (input.yaml, str_list, params_XX) 
-as described in :doc:`/tutorials/tutorial:md-simulation-with-lammps` section.
+as described in :doc:`/tutorials/tutorial` section.
 The example files except params_Si and params_O are introduced below.
-Detail of params_Si and params_O can be found in :doc:`/features/symmetry_function/symmetry_function:inputs` section.
+Detail of params_Si and params_O can be found in :doc:`/features/symmetry_function/symmetry_function` section.
 Input files introduced in this section can be found in 
 :code:`SIMPLE-NN/examples/SiO2/generate_NNP`.
 

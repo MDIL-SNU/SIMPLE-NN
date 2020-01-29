@@ -53,13 +53,14 @@ Network related parameter
   If :code:`true`, both energy and force are used for training.
 
 * :code:`force_coeff`\: (float, default: 0.1)
-  Ratio of force_loss to energy_loss in total_loss
+  Ratio of force loss to energy loss in total loss
 
 * :code:`use_stress`\: (boolean, default: false)
   If :code:`true`, both energy and stress are used for training.
+  (Caution : The unit of stress RMSE written in LOG file is kbar.)
 
 * :code:`stress_coeff`\: (float, default: 0.00001)
-  Ratio of stress_loss to energy_loss in total_loss
+  Ratio of stress loss to energy loss in total loss
 
 * :code:`stddev`\: (float, default: 0.3)
   Standard deviation for weights initialization.
