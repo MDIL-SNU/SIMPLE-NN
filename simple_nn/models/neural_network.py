@@ -294,7 +294,7 @@ class Neural_network(object):
                                  tf.expand_dims(self.dys[item], axis=2),
                                      axis=3)
                 tmp_stress = tf.cond(zero_cond,
-                                     lambda: tf.cast(0., tf.float64),
+                                     lambda: tf.cast(0., tf.float64) * tmp_stress,
                                      lambda: tf.sparse_segment_sum(tmp_stress, self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
                                                                 num_segments=self.next_elem['num_seg'])[1:])
                 self.S -= tf.reduce_sum(tmp_stress, axis=[1,2])/units.GPa*10
