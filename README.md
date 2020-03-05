@@ -1,6 +1,13 @@
 # SIMPLE-NN
 SIMPLE-NN(SNU Interatomic Machine-learning PotentiaL packagE – version Neural Network)
 
+If you use SIMPLE-NN, please cite this article: 
+
+K. Lee, D. Yoo, W. Jeong, S. Han, SIMPLE-NN: An efficient package for training and executing neural-network interatomic potentials, *Computer Physics Communications* (2019), https://doi.org/10.1016/j.cpc.2019.04.014.
+
+Here do we describe minimal instruction to run the example of SIMPLE-NN
+If you want more information such as tuning parameters, please visit our online manual(https://simple-nn.readthedocs.io)
+
 ## Installation
 SIMPLE-NN use Tensorflow and mpi4py(optional).
 You need to install Tensorflow and mpi4py to use SIMPLE-NN
@@ -12,9 +19,11 @@ install mpi4py:
 pip install mpi4py
 ```
 
-### From pip
+### From github
 ```
-pip install simple-nn
+git clone https://github.com/MDIL-SNU/SIMPLE-NN.git
+cd SIMPLE-NN
+python setup.py install
 ```
 
 ### Install LAMMPS' module
@@ -22,7 +31,7 @@ Currently, we support the module for symmetry_function - Neural_network model.
 Copy the source code to LAMMPS src directory.
 ```
 cp /directory/of/simple-nn/features/symmetry_function/pair_nn.* /directory/of/lammps/src/
-cp /directory/of/simple-nn/features/symmetry_function/symmetry_function.* /directory/of/lammps/src/
+cp /directory/of/simple-nn/features/symmetry_function/symmetry_function.h /directory/of/lammps/src/
 ```
 And compile LAMMPS code.
 
@@ -30,7 +39,7 @@ And compile LAMMPS code.
 To use SIMPLE-NN, 3 types of files (input.yaml, params_XX, str_list) are required.
 
 ### input.yaml
-Parameter list to control SIMPLE-NN code is listed in input.yaml. Full parameter list can be found at our online manual(http://mtcg.snu.ac.kr/doc/index.html).
+Parameter list to control SIMPLE-NN code is listed in input.yaml. 
 The simplest form of input.yaml is described below:
 ```YAML
 # input.yaml

@@ -24,7 +24,7 @@ To generate NNP using symmetry function and neural network,
 you need three types of input file (input.yaml, str_list, params_XX) 
 as described in :doc:`/tutorials/tutorial` section.
 The example files except params_Si and params_O are introduced below.
-Detail of params_Si and params_O can be found in :doc:`/features/features` section.
+Detail of params_Si and params_O can be found in :doc:`/features/symmetry_function/symmetry_function` section.
 Input files introduced in this section can be found in 
 :code:`SIMPLE-NN/examples/SiO2/generate_NNP`.
 
@@ -115,7 +115,11 @@ Error check
 To check the error for test dataset, use the setting below.
 And for running test mode, you need to copy the :code:`train_list` 
 file generated in :ref:`gen_test_data` section
-to this folder and change filename to :code:`test_list`.
+to :code:`SIMPLE-NN/examples/SiO2/error_check` and change filename to :code:`test_list`.
+Edit the path to data directory in :code:`test_list` file accordingly.
+For example, it should be changed from :code:`./data/training_data_0000_to_0006.tfrecord` to :code:`../generate_test_data/data/training_data_0000_to_0006.tfrecord` in this example.
+Also, copy :code:`scale_factor` and :code:`params_*` to the current directory.
+These files contain information on data set, so you have to carry them with the data set.
 Input files introduced in this section can be found in 
 :code:`SIMPLE-NN/examples/SiO2/error_check`.
 
@@ -156,7 +160,9 @@ The file is pickle format and you can open this file with python code of below::
 
     with open('test_result') as fil:
         res = pickle.load(fil) # For Python 2
-        # res = pickle.load(fil, encoding='latin1') # For Python 3
+
+    with open('test_result', 'rb') as fil:
+        res = pickle.load(fil, encoding='latin1') # For Python 3
 
 In the file, DFT energies/forces, NNP energies/forces are included.
 

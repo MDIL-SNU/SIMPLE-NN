@@ -47,7 +47,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosectionlabel',
-    'rst2pdf.pdfbuilder'
 ]
 pdf_documents=[('index', u'SIMPLE-NN_manual', u'SIMPLE-NN Documentation', u'author')]
 
