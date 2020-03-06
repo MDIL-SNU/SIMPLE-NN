@@ -886,7 +886,7 @@ class Neural_network(object):
                                 result += '   S_RMSE(T)   S_RMSE(V)'
                             result += '\n'
                             for struct in sorted(full_str_set):
-                                label = str(struct).replace(' ', '_')
+                                label = str(struct.decode()).replace(' ', '_')
                                 if struct not in t_str_eloss:
                                     teloss = '          -'
                                     tfloss = '          -'
@@ -1080,7 +1080,7 @@ class Neural_network(object):
         total_count_struc = sum(str_tot_struc.values())
         total_count_atom = sum(str_tot_atom.values())
         for struct in sorted(str_tot_struc.keys()):
-            label = str(struct).replace(' ', '_')
+            label = str(struct.decode()).replace(' ', '_')
             count_struc = str_tot_struc[struct]
             count_atom = str_tot_atom[struct]
             result += '  {:<20.20} {:>13} {:>10.2f} {:>10} {:>10.2f} {:>11.4e}\n'.format(
