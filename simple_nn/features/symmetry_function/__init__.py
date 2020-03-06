@@ -7,6 +7,7 @@ import six
 from six.moves import cPickle as pickle
 from ase import io
 from ase import units
+import ase
 from ._libsymf import lib, ffi
 from ...utils import _gen_2Darray_for_ffi, compress_outcar, _generate_scale_file, \
                      _make_full_featurelist, _make_data_list, _make_str_data_list, pickle_load
@@ -541,12 +542,18 @@ class Symmetry_function(object):
                         tmp_name = None
                     tmp_name = comm.bcast(tmp_name, root=0)
                     comm.barrier()
-                    snapshots = io.read(tmp_name, index=index, format=self.inputs['refdata_format'], force_consistent=True)
+                    if ase.__version__ >= '3.18.0':
+                        snapshots = io.read(tmp_name, index=index, format=self.inputs['refdata_format'])
+                    else:
+                        snapshots = io.read(tmp_name, index=index, format=self.inputs['refdata_format'], force_consistent=True)
                     comm.barrier()
                     if comm.rank == 0:
                         os.remove(tmp_name)
                 else:    
-                    snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'], force_consistent=True)
+                    if ase.__version__ >= '3.18.0':
+                        snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'])
+                    else:
+                        snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'], force_consistent=True)
             else:
                 snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'])
 
@@ -578,25 +585,6 @@ class Symmetry_function(object):
                 res['N'] = type_num
                 res['tot_num'] = np.sum(list(type_num.values()))
                 res['partition'] = np.ones([res['tot_num']]).astype(np.int32)
-                res['E'] = atoms.get_total_energy()
-                try:
-                    res['F'] = atoms.get_forces()
-                except:
-                    if self.parent.inputs['neural_network']['use_force']:
-                        err = "There is not force information! Set 'use_force' = false"
-                        if comm.rank == 0:
-                            self.parent.logfile.write("\nError: {:}\n".format(err))
-                        raise NotImplementedError(err)
-                try:
-                    res['S'] = -atoms.get_stress()/units.GPa*10
-                    # ASE returns the stress tensor by voigt order xx yy zz yz zx xy
-                    res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
-                except:
-                    if self.parent.inputs['neural_network']['use_stress']:
-                        err = "There is not stress information! Set 'use_stress' = false"
-                        if comm.rank == 0:
-                            self.parent.logfile.write("\nError: {:}\n".format(err))
-                        raise NotImplementedError(err)
                 res['struct_type'] = structure_names[ind]
                 res['struct_weight'] = structure_weights[ind]
                 res['atom_idx'] = atom_i
@@ -666,6 +654,30 @@ class Symmetry_function(object):
                         res['da'][jtem] = np.zeros([0, params_set[jtem]['num'], 3, 6])
                         res['partition_'+jtem] = np.ones([0]).astype(np.int32)
                     res['params'][jtem] = params_set[jtem]['total']
+
+                if not (self.inputs['refdata_format']=='vasp' or self.inputs['refdata_format']=='vasp-xdatcar'):
+                    if ase.__version__ >= '3.18.0':
+                        res['E'] = atoms.get_potential_energy(force_consistent=True)
+                    else:
+                        res['E'] = atoms.get_total_energy()
+                    try:
+                        res['F'] = atoms.get_forces()
+                    except:
+                        if self.parent.inputs['neural_network']['use_force']:
+                            err = "There is not force information! Set 'use_force' = false"
+                            if comm.rank == 0:
+                                self.parent.logfile.write("\nError: {:}\n".format(err))
+                            raise NotImplementedError(err)
+                    try:
+                        res['S'] = -atoms.get_stress()/units.GPa*10
+                        # ASE returns the stress tensor by voigt order xx yy zz yz zx xy
+                        res['S'] = res['S'][[0, 1, 2, 5, 3, 4]]
+                    except:
+                        if self.parent.inputs['neural_network']['use_stress']:
+                            err = "There is not stress information! Set 'use_stress' = false"
+                            if comm.rank == 0:
+                                self.parent.logfile.write("\nError: {:}\n".format(err))
+                            raise NotImplementedError(err)
 
                 if comm.rank == 0:
                     data_dir = "./data/"

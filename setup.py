@@ -4,6 +4,7 @@ from codecs import open
 from os import path, listdir
 from pkg_resources import DistributionNotFound, get_distribution
 from subprocess import check_output
+import sys
 
 here = path.abspath(path.dirname(__file__))
 
@@ -30,7 +31,6 @@ install_requires = [
     'numpy<1.17.0',
     'scipy<1.3.0',
     'scikit-learn<0.21.0',
-    'ase>=3.10.0,<3.18.0',
     'pyyaml>=3.10',
     'cffi>=1.0.0',
     'psutil',
@@ -38,6 +38,11 @@ install_requires = [
     'braceexpand',
     'matplotlib<3.0',
 ]
+
+if sys.version_info >= (3,5):
+    install_requires.append('ase>=3.10.0')
+else:
+    install_requires.append('ase>=3.10.0,<3.18.0')
 
 # Check the differece
 setup_requires = [

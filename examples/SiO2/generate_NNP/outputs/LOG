@@ -1,4 +1,4 @@
-SIMPLE_NN v0.8.0 (2a2cae2)
+SIMPLE_NN v20.1 (945268c)
 ../ab_initio_output/OUTCAR_comp ::10: ~./data/data1000.pickle
 150 file saved in ./data/training_data_0000_to_0006.tfrecord
 150 file saved in ./data/training_data_0001_to_0006.tfrecord
@@ -12,653 +12,653 @@ validation set statistics:
   None                           100     100.00       6000     100.00  1.0000e+00
   TOTAL                          100     100.00       6000     100.00           -
 
-epoch     101 E RMSE(T V) = 4.2863e+00 4.2963e+00 learning_rate: 1.0000e-03 elapsed: 2.39e+00 s speed: 5.72e+01 it/s
-epoch     201 E RMSE(T V) = 2.3154e+00 2.3197e+00 learning_rate: 1.0000e-03 elapsed: 3.48e+00 s speed: 1.00e+02 it/s
-epoch     301 E RMSE(T V) = 1.2051e+00 1.2057e+00 learning_rate: 1.0000e-03 elapsed: 4.68e+00 s speed: 9.00e+01 it/s
-epoch     401 E RMSE(T V) = 5.6964e-01 5.6742e-01 learning_rate: 1.0000e-03 elapsed: 5.67e+00 s speed: 1.11e+02 it/s
-epoch     501 E RMSE(T V) = 2.2932e-01 2.3701e-01 learning_rate: 1.0000e-03 elapsed: 6.78e+00 s speed: 1.12e+02 it/s
-epoch     601 E RMSE(T V) = 9.2445e-02 8.7382e-02 learning_rate: 1.0000e-03 elapsed: 7.80e+00 s speed: 1.10e+02 it/s
-epoch     701 E RMSE(T V) = 5.5767e-02 3.8089e-02 learning_rate: 1.0000e-03 elapsed: 8.90e+00 s speed: 1.08e+02 it/s
-epoch     801 E RMSE(T V) = 4.6838e-02 3.0565e-02 learning_rate: 1.0000e-03 elapsed: 9.93e+00 s speed: 1.08e+02 it/s
-epoch     901 E RMSE(T V) = 2.5282e-02 3.0107e-02 learning_rate: 1.0000e-03 elapsed: 1.10e+01 s speed: 1.08e+02 it/s
-epoch    1001 E RMSE(T V) = 2.6603e-02 2.9946e-02 learning_rate: 1.0000e-03 elapsed: 1.20e+01 s speed: 1.06e+02 it/s
+iteration     101 E RMSE(T V) = 4.2863e+00 4.2963e+00 learning_rate: 1.0000e-03 elapsed: 2.39e+00 s speed: 5.72e+01 it/s
+iteration     201 E RMSE(T V) = 2.3154e+00 2.3197e+00 learning_rate: 1.0000e-03 elapsed: 3.48e+00 s speed: 1.00e+02 it/s
+iteration     301 E RMSE(T V) = 1.2051e+00 1.2057e+00 learning_rate: 1.0000e-03 elapsed: 4.68e+00 s speed: 9.00e+01 it/s
+iteration     401 E RMSE(T V) = 5.6964e-01 5.6742e-01 learning_rate: 1.0000e-03 elapsed: 5.67e+00 s speed: 1.11e+02 it/s
+iteration     501 E RMSE(T V) = 2.2932e-01 2.3701e-01 learning_rate: 1.0000e-03 elapsed: 6.78e+00 s speed: 1.12e+02 it/s
+iteration     601 E RMSE(T V) = 9.2445e-02 8.7382e-02 learning_rate: 1.0000e-03 elapsed: 7.80e+00 s speed: 1.10e+02 it/s
+iteration     701 E RMSE(T V) = 5.5767e-02 3.8089e-02 learning_rate: 1.0000e-03 elapsed: 8.90e+00 s speed: 1.08e+02 it/s
+iteration     801 E RMSE(T V) = 4.6838e-02 3.0565e-02 learning_rate: 1.0000e-03 elapsed: 9.93e+00 s speed: 1.08e+02 it/s
+iteration     901 E RMSE(T V) = 2.5282e-02 3.0107e-02 learning_rate: 1.0000e-03 elapsed: 1.10e+01 s speed: 1.08e+02 it/s
+iteration    1001 E RMSE(T V) = 2.6603e-02 2.9946e-02 learning_rate: 1.0000e-03 elapsed: 1.20e+01 s speed: 1.06e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    1101 E RMSE(T V) = 2.9275e-02 2.9768e-02 learning_rate: 1.0000e-03 elapsed: 1.48e+01 s speed: 1.10e+02 it/s
-epoch    1201 E RMSE(T V) = 3.7153e-02 2.9532e-02 learning_rate: 1.0000e-03 elapsed: 1.60e+01 s speed: 8.85e+01 it/s
-epoch    1301 E RMSE(T V) = 4.2674e-02 2.9319e-02 learning_rate: 1.0000e-03 elapsed: 1.72e+01 s speed: 9.77e+01 it/s
-epoch    1401 E RMSE(T V) = 2.3975e-02 2.9104e-02 learning_rate: 1.0000e-03 elapsed: 1.84e+01 s speed: 1.03e+02 it/s
-epoch    1501 E RMSE(T V) = 3.4223e-02 2.8890e-02 learning_rate: 1.0000e-03 elapsed: 1.93e+01 s speed: 1.16e+02 it/s
-epoch    1601 E RMSE(T V) = 2.7568e-02 2.8664e-02 learning_rate: 1.0000e-03 elapsed: 2.04e+01 s speed: 9.83e+01 it/s
-epoch    1701 E RMSE(T V) = 2.0199e-02 2.8481e-02 learning_rate: 1.0000e-03 elapsed: 2.15e+01 s speed: 1.01e+02 it/s
-epoch    1801 E RMSE(T V) = 2.9899e-02 2.8219e-02 learning_rate: 1.0000e-03 elapsed: 2.28e+01 s speed: 9.10e+01 it/s
-epoch    1901 E RMSE(T V) = 4.0745e-02 2.7938e-02 learning_rate: 1.0000e-03 elapsed: 2.38e+01 s speed: 1.11e+02 it/s
-epoch    2001 E RMSE(T V) = 3.4817e-02 2.7696e-02 learning_rate: 1.0000e-03 elapsed: 2.49e+01 s speed: 9.70e+01 it/s
+iteration    1101 E RMSE(T V) = 2.9275e-02 2.9768e-02 learning_rate: 1.0000e-03 elapsed: 1.48e+01 s speed: 1.10e+02 it/s
+iteration    1201 E RMSE(T V) = 3.7153e-02 2.9532e-02 learning_rate: 1.0000e-03 elapsed: 1.60e+01 s speed: 8.85e+01 it/s
+iteration    1301 E RMSE(T V) = 4.2674e-02 2.9319e-02 learning_rate: 1.0000e-03 elapsed: 1.72e+01 s speed: 9.77e+01 it/s
+iteration    1401 E RMSE(T V) = 2.3975e-02 2.9104e-02 learning_rate: 1.0000e-03 elapsed: 1.84e+01 s speed: 1.03e+02 it/s
+iteration    1501 E RMSE(T V) = 3.4223e-02 2.8890e-02 learning_rate: 1.0000e-03 elapsed: 1.93e+01 s speed: 1.16e+02 it/s
+iteration    1601 E RMSE(T V) = 2.7568e-02 2.8664e-02 learning_rate: 1.0000e-03 elapsed: 2.04e+01 s speed: 9.83e+01 it/s
+iteration    1701 E RMSE(T V) = 2.0199e-02 2.8481e-02 learning_rate: 1.0000e-03 elapsed: 2.15e+01 s speed: 1.01e+02 it/s
+iteration    1801 E RMSE(T V) = 2.9899e-02 2.8219e-02 learning_rate: 1.0000e-03 elapsed: 2.28e+01 s speed: 9.10e+01 it/s
+iteration    1901 E RMSE(T V) = 4.0745e-02 2.7938e-02 learning_rate: 1.0000e-03 elapsed: 2.38e+01 s speed: 1.11e+02 it/s
+iteration    2001 E RMSE(T V) = 3.4817e-02 2.7696e-02 learning_rate: 1.0000e-03 elapsed: 2.49e+01 s speed: 9.70e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    2101 E RMSE(T V) = 2.9306e-02 2.7439e-02 learning_rate: 1.0000e-03 elapsed: 2.72e+01 s speed: 9.87e+01 it/s
-epoch    2201 E RMSE(T V) = 2.9441e-02 2.7184e-02 learning_rate: 1.0000e-03 elapsed: 2.84e+01 s speed: 8.62e+01 it/s
-epoch    2301 E RMSE(T V) = 3.2119e-02 2.6940e-02 learning_rate: 1.0000e-03 elapsed: 2.94e+01 s speed: 1.16e+02 it/s
-epoch    2401 E RMSE(T V) = 2.5452e-02 2.6729e-02 learning_rate: 1.0000e-03 elapsed: 3.07e+01 s speed: 9.16e+01 it/s
-epoch    2501 E RMSE(T V) = 2.9759e-02 2.6471e-02 learning_rate: 1.0000e-03 elapsed: 3.18e+01 s speed: 1.14e+02 it/s
-epoch    2601 E RMSE(T V) = 1.5723e-02 2.6304e-02 learning_rate: 1.0000e-03 elapsed: 3.29e+01 s speed: 9.78e+01 it/s
-epoch    2701 E RMSE(T V) = 2.9972e-02 2.5915e-02 learning_rate: 1.0000e-03 elapsed: 3.40e+01 s speed: 1.02e+02 it/s
-epoch    2801 E RMSE(T V) = 2.3341e-02 2.5672e-02 learning_rate: 1.0000e-03 elapsed: 3.53e+01 s speed: 8.51e+01 it/s
-epoch    2901 E RMSE(T V) = 2.1420e-02 2.5399e-02 learning_rate: 1.0000e-03 elapsed: 3.64e+01 s speed: 1.05e+02 it/s
-epoch    3001 E RMSE(T V) = 2.4994e-02 2.5167e-02 learning_rate: 1.0000e-03 elapsed: 3.75e+01 s speed: 1.06e+02 it/s
+iteration    2101 E RMSE(T V) = 2.9306e-02 2.7439e-02 learning_rate: 1.0000e-03 elapsed: 2.72e+01 s speed: 9.87e+01 it/s
+iteration    2201 E RMSE(T V) = 2.9441e-02 2.7184e-02 learning_rate: 1.0000e-03 elapsed: 2.84e+01 s speed: 8.62e+01 it/s
+iteration    2301 E RMSE(T V) = 3.2119e-02 2.6940e-02 learning_rate: 1.0000e-03 elapsed: 2.94e+01 s speed: 1.16e+02 it/s
+iteration    2401 E RMSE(T V) = 2.5452e-02 2.6729e-02 learning_rate: 1.0000e-03 elapsed: 3.07e+01 s speed: 9.16e+01 it/s
+iteration    2501 E RMSE(T V) = 2.9759e-02 2.6471e-02 learning_rate: 1.0000e-03 elapsed: 3.18e+01 s speed: 1.14e+02 it/s
+iteration    2601 E RMSE(T V) = 1.5723e-02 2.6304e-02 learning_rate: 1.0000e-03 elapsed: 3.29e+01 s speed: 9.78e+01 it/s
+iteration    2701 E RMSE(T V) = 2.9972e-02 2.5915e-02 learning_rate: 1.0000e-03 elapsed: 3.40e+01 s speed: 1.02e+02 it/s
+iteration    2801 E RMSE(T V) = 2.3341e-02 2.5672e-02 learning_rate: 1.0000e-03 elapsed: 3.53e+01 s speed: 8.51e+01 it/s
+iteration    2901 E RMSE(T V) = 2.1420e-02 2.5399e-02 learning_rate: 1.0000e-03 elapsed: 3.64e+01 s speed: 1.05e+02 it/s
+iteration    3001 E RMSE(T V) = 2.4994e-02 2.5167e-02 learning_rate: 1.0000e-03 elapsed: 3.75e+01 s speed: 1.06e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    3101 E RMSE(T V) = 2.9642e-02 2.4946e-02 learning_rate: 1.0000e-03 elapsed: 4.00e+01 s speed: 8.87e+01 it/s
-epoch    3201 E RMSE(T V) = 2.9872e-02 2.4669e-02 learning_rate: 1.0000e-03 elapsed: 4.10e+01 s speed: 1.13e+02 it/s
-epoch    3301 E RMSE(T V) = 4.6031e-02 2.4448e-02 learning_rate: 1.0000e-03 elapsed: 4.23e+01 s speed: 9.18e+01 it/s
-epoch    3401 E RMSE(T V) = 2.2454e-02 2.4191e-02 learning_rate: 1.0000e-03 elapsed: 4.34e+01 s speed: 9.59e+01 it/s
-epoch    3501 E RMSE(T V) = 2.9036e-02 2.3886e-02 learning_rate: 1.0000e-03 elapsed: 4.44e+01 s speed: 1.17e+02 it/s
-epoch    3601 E RMSE(T V) = 3.1690e-02 2.3643e-02 learning_rate: 1.0000e-03 elapsed: 4.55e+01 s speed: 1.06e+02 it/s
-epoch    3701 E RMSE(T V) = 2.5760e-02 2.3731e-02 learning_rate: 1.0000e-03 elapsed: 4.66e+01 s speed: 1.04e+02 it/s
-epoch    3801 E RMSE(T V) = 2.6118e-02 2.3162e-02 learning_rate: 1.0000e-03 elapsed: 4.77e+01 s speed: 9.98e+01 it/s
-epoch    3901 E RMSE(T V) = 3.0388e-02 2.2895e-02 learning_rate: 1.0000e-03 elapsed: 4.87e+01 s speed: 1.18e+02 it/s
-epoch    4001 E RMSE(T V) = 1.8320e-02 2.2730e-02 learning_rate: 1.0000e-03 elapsed: 4.99e+01 s speed: 9.73e+01 it/s
+iteration    3101 E RMSE(T V) = 2.9642e-02 2.4946e-02 learning_rate: 1.0000e-03 elapsed: 4.00e+01 s speed: 8.87e+01 it/s
+iteration    3201 E RMSE(T V) = 2.9872e-02 2.4669e-02 learning_rate: 1.0000e-03 elapsed: 4.10e+01 s speed: 1.13e+02 it/s
+iteration    3301 E RMSE(T V) = 4.6031e-02 2.4448e-02 learning_rate: 1.0000e-03 elapsed: 4.23e+01 s speed: 9.18e+01 it/s
+iteration    3401 E RMSE(T V) = 2.2454e-02 2.4191e-02 learning_rate: 1.0000e-03 elapsed: 4.34e+01 s speed: 9.59e+01 it/s
+iteration    3501 E RMSE(T V) = 2.9036e-02 2.3886e-02 learning_rate: 1.0000e-03 elapsed: 4.44e+01 s speed: 1.17e+02 it/s
+iteration    3601 E RMSE(T V) = 3.1690e-02 2.3643e-02 learning_rate: 1.0000e-03 elapsed: 4.55e+01 s speed: 1.06e+02 it/s
+iteration    3701 E RMSE(T V) = 2.5760e-02 2.3731e-02 learning_rate: 1.0000e-03 elapsed: 4.66e+01 s speed: 1.04e+02 it/s
+iteration    3801 E RMSE(T V) = 2.6118e-02 2.3162e-02 learning_rate: 1.0000e-03 elapsed: 4.77e+01 s speed: 9.98e+01 it/s
+iteration    3901 E RMSE(T V) = 3.0388e-02 2.2895e-02 learning_rate: 1.0000e-03 elapsed: 4.87e+01 s speed: 1.18e+02 it/s
+iteration    4001 E RMSE(T V) = 1.8320e-02 2.2730e-02 learning_rate: 1.0000e-03 elapsed: 4.99e+01 s speed: 9.73e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    4101 E RMSE(T V) = 3.2189e-02 2.2464e-02 learning_rate: 1.0000e-03 elapsed: 5.22e+01 s speed: 9.05e+01 it/s
-epoch    4201 E RMSE(T V) = 1.3261e-02 2.2170e-02 learning_rate: 1.0000e-03 elapsed: 5.32e+01 s speed: 1.14e+02 it/s
-epoch    4301 E RMSE(T V) = 1.9262e-02 2.1939e-02 learning_rate: 1.0000e-03 elapsed: 5.45e+01 s speed: 8.38e+01 it/s
-epoch    4401 E RMSE(T V) = 1.2744e-02 2.1901e-02 learning_rate: 1.0000e-03 elapsed: 5.56e+01 s speed: 1.07e+02 it/s
-epoch    4501 E RMSE(T V) = 2.5641e-02 2.1457e-02 learning_rate: 1.0000e-03 elapsed: 5.69e+01 s speed: 9.44e+01 it/s
-epoch    4601 E RMSE(T V) = 2.0948e-02 2.1518e-02 learning_rate: 1.0000e-03 elapsed: 5.80e+01 s speed: 9.73e+01 it/s
-epoch    4701 E RMSE(T V) = 2.9466e-02 2.0989e-02 learning_rate: 1.0000e-03 elapsed: 5.92e+01 s speed: 8.67e+01 it/s
-epoch    4801 E RMSE(T V) = 2.1284e-02 2.0820e-02 learning_rate: 1.0000e-03 elapsed: 6.05e+01 s speed: 9.54e+01 it/s
-epoch    4901 E RMSE(T V) = 2.6116e-02 2.0576e-02 learning_rate: 1.0000e-03 elapsed: 6.16e+01 s speed: 9.53e+01 it/s
-epoch    5001 E RMSE(T V) = 1.9757e-02 2.0343e-02 learning_rate: 1.0000e-03 elapsed: 6.28e+01 s speed: 1.02e+02 it/s
+iteration    4101 E RMSE(T V) = 3.2189e-02 2.2464e-02 learning_rate: 1.0000e-03 elapsed: 5.22e+01 s speed: 9.05e+01 it/s
+iteration    4201 E RMSE(T V) = 1.3261e-02 2.2170e-02 learning_rate: 1.0000e-03 elapsed: 5.32e+01 s speed: 1.14e+02 it/s
+iteration    4301 E RMSE(T V) = 1.9262e-02 2.1939e-02 learning_rate: 1.0000e-03 elapsed: 5.45e+01 s speed: 8.38e+01 it/s
+iteration    4401 E RMSE(T V) = 1.2744e-02 2.1901e-02 learning_rate: 1.0000e-03 elapsed: 5.56e+01 s speed: 1.07e+02 it/s
+iteration    4501 E RMSE(T V) = 2.5641e-02 2.1457e-02 learning_rate: 1.0000e-03 elapsed: 5.69e+01 s speed: 9.44e+01 it/s
+iteration    4601 E RMSE(T V) = 2.0948e-02 2.1518e-02 learning_rate: 1.0000e-03 elapsed: 5.80e+01 s speed: 9.73e+01 it/s
+iteration    4701 E RMSE(T V) = 2.9466e-02 2.0989e-02 learning_rate: 1.0000e-03 elapsed: 5.92e+01 s speed: 8.67e+01 it/s
+iteration    4801 E RMSE(T V) = 2.1284e-02 2.0820e-02 learning_rate: 1.0000e-03 elapsed: 6.05e+01 s speed: 9.54e+01 it/s
+iteration    4901 E RMSE(T V) = 2.6116e-02 2.0576e-02 learning_rate: 1.0000e-03 elapsed: 6.16e+01 s speed: 9.53e+01 it/s
+iteration    5001 E RMSE(T V) = 1.9757e-02 2.0343e-02 learning_rate: 1.0000e-03 elapsed: 6.28e+01 s speed: 1.02e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    5101 E RMSE(T V) = 1.9274e-02 2.0362e-02 learning_rate: 1.0000e-03 elapsed: 6.53e+01 s speed: 9.33e+01 it/s
-epoch    5201 E RMSE(T V) = 1.8934e-02 1.9991e-02 learning_rate: 1.0000e-03 elapsed: 6.64e+01 s speed: 1.15e+02 it/s
-epoch    5301 E RMSE(T V) = 1.5679e-02 2.0524e-02 learning_rate: 1.0000e-03 elapsed: 6.75e+01 s speed: 1.01e+02 it/s
-epoch    5401 E RMSE(T V) = 2.6331e-02 1.9562e-02 learning_rate: 1.0000e-03 elapsed: 6.85e+01 s speed: 1.06e+02 it/s
-epoch    5501 E RMSE(T V) = 1.9965e-02 1.9656e-02 learning_rate: 1.0000e-03 elapsed: 6.97e+01 s speed: 9.35e+01 it/s
-epoch    5601 E RMSE(T V) = 2.6996e-02 1.9254e-02 learning_rate: 1.0000e-03 elapsed: 7.07e+01 s speed: 1.11e+02 it/s
-epoch    5701 E RMSE(T V) = 2.1458e-02 1.9109e-02 learning_rate: 1.0000e-03 elapsed: 7.19e+01 s speed: 9.70e+01 it/s
-epoch    5801 E RMSE(T V) = 2.2275e-02 1.9524e-02 learning_rate: 1.0000e-03 elapsed: 7.29e+01 s speed: 1.15e+02 it/s
-epoch    5901 E RMSE(T V) = 2.0680e-02 1.8898e-02 learning_rate: 1.0000e-03 elapsed: 7.41e+01 s speed: 9.27e+01 it/s
-epoch    6001 E RMSE(T V) = 2.3538e-02 1.9219e-02 learning_rate: 1.0000e-03 elapsed: 7.51e+01 s speed: 1.16e+02 it/s
+iteration    5101 E RMSE(T V) = 1.9274e-02 2.0362e-02 learning_rate: 1.0000e-03 elapsed: 6.53e+01 s speed: 9.33e+01 it/s
+iteration    5201 E RMSE(T V) = 1.8934e-02 1.9991e-02 learning_rate: 1.0000e-03 elapsed: 6.64e+01 s speed: 1.15e+02 it/s
+iteration    5301 E RMSE(T V) = 1.5679e-02 2.0524e-02 learning_rate: 1.0000e-03 elapsed: 6.75e+01 s speed: 1.01e+02 it/s
+iteration    5401 E RMSE(T V) = 2.6331e-02 1.9562e-02 learning_rate: 1.0000e-03 elapsed: 6.85e+01 s speed: 1.06e+02 it/s
+iteration    5501 E RMSE(T V) = 1.9965e-02 1.9656e-02 learning_rate: 1.0000e-03 elapsed: 6.97e+01 s speed: 9.35e+01 it/s
+iteration    5601 E RMSE(T V) = 2.6996e-02 1.9254e-02 learning_rate: 1.0000e-03 elapsed: 7.07e+01 s speed: 1.11e+02 it/s
+iteration    5701 E RMSE(T V) = 2.1458e-02 1.9109e-02 learning_rate: 1.0000e-03 elapsed: 7.19e+01 s speed: 9.70e+01 it/s
+iteration    5801 E RMSE(T V) = 2.2275e-02 1.9524e-02 learning_rate: 1.0000e-03 elapsed: 7.29e+01 s speed: 1.15e+02 it/s
+iteration    5901 E RMSE(T V) = 2.0680e-02 1.8898e-02 learning_rate: 1.0000e-03 elapsed: 7.41e+01 s speed: 9.27e+01 it/s
+iteration    6001 E RMSE(T V) = 2.3538e-02 1.9219e-02 learning_rate: 1.0000e-03 elapsed: 7.51e+01 s speed: 1.16e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    6101 E RMSE(T V) = 2.1714e-02 1.8755e-02 learning_rate: 1.0000e-03 elapsed: 7.74e+01 s speed: 1.06e+02 it/s
-epoch    6201 E RMSE(T V) = 1.3158e-02 1.8541e-02 learning_rate: 1.0000e-03 elapsed: 7.87e+01 s speed: 9.01e+01 it/s
-epoch    6301 E RMSE(T V) = 1.7151e-02 1.8458e-02 learning_rate: 1.0000e-03 elapsed: 7.98e+01 s speed: 9.64e+01 it/s
-epoch    6401 E RMSE(T V) = 1.9704e-02 1.8614e-02 learning_rate: 1.0000e-03 elapsed: 8.09e+01 s speed: 1.03e+02 it/s
-epoch    6501 E RMSE(T V) = 2.1361e-02 1.8344e-02 learning_rate: 1.0000e-03 elapsed: 8.19e+01 s speed: 1.11e+02 it/s
-epoch    6601 E RMSE(T V) = 1.6523e-02 1.8641e-02 learning_rate: 1.0000e-03 elapsed: 8.31e+01 s speed: 9.85e+01 it/s
-epoch    6701 E RMSE(T V) = 1.7305e-02 1.8701e-02 learning_rate: 1.0000e-03 elapsed: 8.41e+01 s speed: 1.05e+02 it/s
-epoch    6801 E RMSE(T V) = 2.1811e-02 1.8174e-02 learning_rate: 1.0000e-03 elapsed: 8.54e+01 s speed: 8.98e+01 it/s
-epoch    6901 E RMSE(T V) = 2.1012e-02 1.8144e-02 learning_rate: 1.0000e-03 elapsed: 8.65e+01 s speed: 1.01e+02 it/s
-epoch    7001 E RMSE(T V) = 1.5459e-02 1.8352e-02 learning_rate: 1.0000e-03 elapsed: 8.76e+01 s speed: 9.42e+01 it/s
+iteration    6101 E RMSE(T V) = 2.1714e-02 1.8755e-02 learning_rate: 1.0000e-03 elapsed: 7.74e+01 s speed: 1.06e+02 it/s
+iteration    6201 E RMSE(T V) = 1.3158e-02 1.8541e-02 learning_rate: 1.0000e-03 elapsed: 7.87e+01 s speed: 9.01e+01 it/s
+iteration    6301 E RMSE(T V) = 1.7151e-02 1.8458e-02 learning_rate: 1.0000e-03 elapsed: 7.98e+01 s speed: 9.64e+01 it/s
+iteration    6401 E RMSE(T V) = 1.9704e-02 1.8614e-02 learning_rate: 1.0000e-03 elapsed: 8.09e+01 s speed: 1.03e+02 it/s
+iteration    6501 E RMSE(T V) = 2.1361e-02 1.8344e-02 learning_rate: 1.0000e-03 elapsed: 8.19e+01 s speed: 1.11e+02 it/s
+iteration    6601 E RMSE(T V) = 1.6523e-02 1.8641e-02 learning_rate: 1.0000e-03 elapsed: 8.31e+01 s speed: 9.85e+01 it/s
+iteration    6701 E RMSE(T V) = 1.7305e-02 1.8701e-02 learning_rate: 1.0000e-03 elapsed: 8.41e+01 s speed: 1.05e+02 it/s
+iteration    6801 E RMSE(T V) = 2.1811e-02 1.8174e-02 learning_rate: 1.0000e-03 elapsed: 8.54e+01 s speed: 8.98e+01 it/s
+iteration    6901 E RMSE(T V) = 2.1012e-02 1.8144e-02 learning_rate: 1.0000e-03 elapsed: 8.65e+01 s speed: 1.01e+02 it/s
+iteration    7001 E RMSE(T V) = 1.5459e-02 1.8352e-02 learning_rate: 1.0000e-03 elapsed: 8.76e+01 s speed: 9.42e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    7101 E RMSE(T V) = 2.0153e-02 1.8603e-02 learning_rate: 1.0000e-03 elapsed: 8.99e+01 s speed: 9.59e+01 it/s
-epoch    7201 E RMSE(T V) = 7.2332e-03 1.9414e-02 learning_rate: 1.0000e-03 elapsed: 9.10e+01 s speed: 1.04e+02 it/s
-epoch    7301 E RMSE(T V) = 1.3704e-02 1.7992e-02 learning_rate: 1.0000e-03 elapsed: 9.22e+01 s speed: 9.31e+01 it/s
-epoch    7401 E RMSE(T V) = 2.2628e-02 1.8614e-02 learning_rate: 1.0000e-03 elapsed: 9.33e+01 s speed: 1.19e+02 it/s
-epoch    7501 E RMSE(T V) = 2.3123e-02 1.8263e-02 learning_rate: 1.0000e-03 elapsed: 9.44e+01 s speed: 1.04e+02 it/s
-epoch    7601 E RMSE(T V) = 1.9684e-02 1.7915e-02 learning_rate: 1.0000e-03 elapsed: 9.55e+01 s speed: 1.00e+02 it/s
-epoch    7701 E RMSE(T V) = 2.0278e-02 1.7887e-02 learning_rate: 1.0000e-03 elapsed: 9.67e+01 s speed: 9.76e+01 it/s
-epoch    7801 E RMSE(T V) = 1.4847e-02 1.8913e-02 learning_rate: 1.0000e-03 elapsed: 9.77e+01 s speed: 1.15e+02 it/s
-epoch    7901 E RMSE(T V) = 1.7467e-02 1.7637e-02 learning_rate: 1.0000e-03 elapsed: 9.88e+01 s speed: 9.27e+01 it/s
-epoch    8001 E RMSE(T V) = 2.3140e-02 1.7688e-02 learning_rate: 1.0000e-03 elapsed: 9.99e+01 s speed: 1.06e+02 it/s
+iteration    7101 E RMSE(T V) = 2.0153e-02 1.8603e-02 learning_rate: 1.0000e-03 elapsed: 8.99e+01 s speed: 9.59e+01 it/s
+iteration    7201 E RMSE(T V) = 7.2332e-03 1.9414e-02 learning_rate: 1.0000e-03 elapsed: 9.10e+01 s speed: 1.04e+02 it/s
+iteration    7301 E RMSE(T V) = 1.3704e-02 1.7992e-02 learning_rate: 1.0000e-03 elapsed: 9.22e+01 s speed: 9.31e+01 it/s
+iteration    7401 E RMSE(T V) = 2.2628e-02 1.8614e-02 learning_rate: 1.0000e-03 elapsed: 9.33e+01 s speed: 1.19e+02 it/s
+iteration    7501 E RMSE(T V) = 2.3123e-02 1.8263e-02 learning_rate: 1.0000e-03 elapsed: 9.44e+01 s speed: 1.04e+02 it/s
+iteration    7601 E RMSE(T V) = 1.9684e-02 1.7915e-02 learning_rate: 1.0000e-03 elapsed: 9.55e+01 s speed: 1.00e+02 it/s
+iteration    7701 E RMSE(T V) = 2.0278e-02 1.7887e-02 learning_rate: 1.0000e-03 elapsed: 9.67e+01 s speed: 9.76e+01 it/s
+iteration    7801 E RMSE(T V) = 1.4847e-02 1.8913e-02 learning_rate: 1.0000e-03 elapsed: 9.77e+01 s speed: 1.15e+02 it/s
+iteration    7901 E RMSE(T V) = 1.7467e-02 1.7637e-02 learning_rate: 1.0000e-03 elapsed: 9.88e+01 s speed: 9.27e+01 it/s
+iteration    8001 E RMSE(T V) = 2.3140e-02 1.7688e-02 learning_rate: 1.0000e-03 elapsed: 9.99e+01 s speed: 1.06e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    8101 E RMSE(T V) = 1.2367e-02 1.7484e-02 learning_rate: 1.0000e-03 elapsed: 1.02e+02 s speed: 1.19e+02 it/s
-epoch    8201 E RMSE(T V) = 2.3080e-02 1.8086e-02 learning_rate: 1.0000e-03 elapsed: 1.03e+02 s speed: 9.45e+01 it/s
-epoch    8301 E RMSE(T V) = 1.7610e-02 1.8924e-02 learning_rate: 1.0000e-03 elapsed: 1.04e+02 s speed: 1.16e+02 it/s
-epoch    8401 E RMSE(T V) = 1.3537e-02 1.7298e-02 learning_rate: 1.0000e-03 elapsed: 1.06e+02 s speed: 8.68e+01 it/s
-epoch    8501 E RMSE(T V) = 1.1806e-02 1.8166e-02 learning_rate: 1.0000e-03 elapsed: 1.07e+02 s speed: 1.01e+02 it/s
-epoch    8601 E RMSE(T V) = 1.0847e-02 1.7701e-02 learning_rate: 1.0000e-03 elapsed: 1.08e+02 s speed: 9.40e+01 it/s
-epoch    8701 E RMSE(T V) = 1.6995e-02 1.7601e-02 learning_rate: 1.0000e-03 elapsed: 1.09e+02 s speed: 1.07e+02 it/s
-epoch    8801 E RMSE(T V) = 1.5238e-02 1.7705e-02 learning_rate: 1.0000e-03 elapsed: 1.10e+02 s speed: 9.50e+01 it/s
-epoch    8901 E RMSE(T V) = 1.9424e-02 1.7134e-02 learning_rate: 1.0000e-03 elapsed: 1.11e+02 s speed: 1.16e+02 it/s
-epoch    9001 E RMSE(T V) = 2.3674e-02 1.6976e-02 learning_rate: 1.0000e-03 elapsed: 1.12e+02 s speed: 9.20e+01 it/s
+iteration    8101 E RMSE(T V) = 1.2367e-02 1.7484e-02 learning_rate: 1.0000e-03 elapsed: 1.02e+02 s speed: 1.19e+02 it/s
+iteration    8201 E RMSE(T V) = 2.3080e-02 1.8086e-02 learning_rate: 1.0000e-03 elapsed: 1.03e+02 s speed: 9.45e+01 it/s
+iteration    8301 E RMSE(T V) = 1.7610e-02 1.8924e-02 learning_rate: 1.0000e-03 elapsed: 1.04e+02 s speed: 1.16e+02 it/s
+iteration    8401 E RMSE(T V) = 1.3537e-02 1.7298e-02 learning_rate: 1.0000e-03 elapsed: 1.06e+02 s speed: 8.68e+01 it/s
+iteration    8501 E RMSE(T V) = 1.1806e-02 1.8166e-02 learning_rate: 1.0000e-03 elapsed: 1.07e+02 s speed: 1.01e+02 it/s
+iteration    8601 E RMSE(T V) = 1.0847e-02 1.7701e-02 learning_rate: 1.0000e-03 elapsed: 1.08e+02 s speed: 9.40e+01 it/s
+iteration    8701 E RMSE(T V) = 1.6995e-02 1.7601e-02 learning_rate: 1.0000e-03 elapsed: 1.09e+02 s speed: 1.07e+02 it/s
+iteration    8801 E RMSE(T V) = 1.5238e-02 1.7705e-02 learning_rate: 1.0000e-03 elapsed: 1.10e+02 s speed: 9.50e+01 it/s
+iteration    8901 E RMSE(T V) = 1.9424e-02 1.7134e-02 learning_rate: 1.0000e-03 elapsed: 1.11e+02 s speed: 1.16e+02 it/s
+iteration    9001 E RMSE(T V) = 2.3674e-02 1.6976e-02 learning_rate: 1.0000e-03 elapsed: 1.12e+02 s speed: 9.20e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch    9101 E RMSE(T V) = 1.7523e-02 1.7832e-02 learning_rate: 1.0000e-03 elapsed: 1.15e+02 s speed: 9.81e+01 it/s
-epoch    9201 E RMSE(T V) = 1.8131e-02 1.7347e-02 learning_rate: 1.0000e-03 elapsed: 1.16e+02 s speed: 1.06e+02 it/s
-epoch    9301 E RMSE(T V) = 1.6346e-02 1.7075e-02 learning_rate: 1.0000e-03 elapsed: 1.17e+02 s speed: 9.49e+01 it/s
-epoch    9401 E RMSE(T V) = 1.6835e-02 1.6626e-02 learning_rate: 1.0000e-03 elapsed: 1.18e+02 s speed: 9.21e+01 it/s
-epoch    9501 E RMSE(T V) = 2.3583e-02 1.7271e-02 learning_rate: 1.0000e-03 elapsed: 1.19e+02 s speed: 9.78e+01 it/s
-epoch    9601 E RMSE(T V) = 1.7609e-02 1.9668e-02 learning_rate: 1.0000e-03 elapsed: 1.21e+02 s speed: 9.27e+01 it/s
-epoch    9701 E RMSE(T V) = 1.4797e-02 1.6485e-02 learning_rate: 1.0000e-03 elapsed: 1.22e+02 s speed: 1.01e+02 it/s
-epoch    9801 E RMSE(T V) = 2.3893e-02 1.8013e-02 learning_rate: 1.0000e-03 elapsed: 1.23e+02 s speed: 9.24e+01 it/s
-epoch    9901 E RMSE(T V) = 1.4005e-02 1.6270e-02 learning_rate: 1.0000e-03 elapsed: 1.24e+02 s speed: 1.03e+02 it/s
-epoch   10001 E RMSE(T V) = 1.7415e-02 1.6721e-02 learning_rate: 1.0000e-03 elapsed: 1.25e+02 s speed: 9.76e+01 it/s
+iteration    9101 E RMSE(T V) = 1.7523e-02 1.7832e-02 learning_rate: 1.0000e-03 elapsed: 1.15e+02 s speed: 9.81e+01 it/s
+iteration    9201 E RMSE(T V) = 1.8131e-02 1.7347e-02 learning_rate: 1.0000e-03 elapsed: 1.16e+02 s speed: 1.06e+02 it/s
+iteration    9301 E RMSE(T V) = 1.6346e-02 1.7075e-02 learning_rate: 1.0000e-03 elapsed: 1.17e+02 s speed: 9.49e+01 it/s
+iteration    9401 E RMSE(T V) = 1.6835e-02 1.6626e-02 learning_rate: 1.0000e-03 elapsed: 1.18e+02 s speed: 9.21e+01 it/s
+iteration    9501 E RMSE(T V) = 2.3583e-02 1.7271e-02 learning_rate: 1.0000e-03 elapsed: 1.19e+02 s speed: 9.78e+01 it/s
+iteration    9601 E RMSE(T V) = 1.7609e-02 1.9668e-02 learning_rate: 1.0000e-03 elapsed: 1.21e+02 s speed: 9.27e+01 it/s
+iteration    9701 E RMSE(T V) = 1.4797e-02 1.6485e-02 learning_rate: 1.0000e-03 elapsed: 1.22e+02 s speed: 1.01e+02 it/s
+iteration    9801 E RMSE(T V) = 2.3893e-02 1.8013e-02 learning_rate: 1.0000e-03 elapsed: 1.23e+02 s speed: 9.24e+01 it/s
+iteration    9901 E RMSE(T V) = 1.4005e-02 1.6270e-02 learning_rate: 1.0000e-03 elapsed: 1.24e+02 s speed: 1.03e+02 it/s
+iteration   10001 E RMSE(T V) = 1.7415e-02 1.6721e-02 learning_rate: 1.0000e-03 elapsed: 1.25e+02 s speed: 9.76e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   10101 E RMSE(T V) = 1.8055e-02 1.6181e-02 learning_rate: 1.0000e-03 elapsed: 1.27e+02 s speed: 1.04e+02 it/s
-epoch   10201 E RMSE(T V) = 1.6173e-02 1.7177e-02 learning_rate: 1.0000e-03 elapsed: 1.28e+02 s speed: 1.09e+02 it/s
-epoch   10301 E RMSE(T V) = 2.0619e-02 1.6133e-02 learning_rate: 1.0000e-03 elapsed: 1.29e+02 s speed: 1.03e+02 it/s
-epoch   10401 E RMSE(T V) = 1.8279e-02 1.8449e-02 learning_rate: 1.0000e-03 elapsed: 1.30e+02 s speed: 1.12e+02 it/s
-epoch   10501 E RMSE(T V) = 1.2759e-02 1.6279e-02 learning_rate: 1.0000e-03 elapsed: 1.32e+02 s speed: 8.49e+01 it/s
-epoch   10601 E RMSE(T V) = 2.1890e-02 1.5823e-02 learning_rate: 1.0000e-03 elapsed: 1.33e+02 s speed: 1.06e+02 it/s
-epoch   10701 E RMSE(T V) = 2.3012e-02 1.5790e-02 learning_rate: 1.0000e-03 elapsed: 1.34e+02 s speed: 9.19e+01 it/s
-epoch   10801 E RMSE(T V) = 1.6722e-02 1.6622e-02 learning_rate: 1.0000e-03 elapsed: 1.35e+02 s speed: 8.53e+01 it/s
-epoch   10901 E RMSE(T V) = 2.5387e-02 1.5871e-02 learning_rate: 1.0000e-03 elapsed: 1.36e+02 s speed: 1.09e+02 it/s
-epoch   11001 E RMSE(T V) = 2.5814e-02 1.7749e-02 learning_rate: 1.0000e-03 elapsed: 1.38e+02 s speed: 1.04e+02 it/s
+iteration   10101 E RMSE(T V) = 1.8055e-02 1.6181e-02 learning_rate: 1.0000e-03 elapsed: 1.27e+02 s speed: 1.04e+02 it/s
+iteration   10201 E RMSE(T V) = 1.6173e-02 1.7177e-02 learning_rate: 1.0000e-03 elapsed: 1.28e+02 s speed: 1.09e+02 it/s
+iteration   10301 E RMSE(T V) = 2.0619e-02 1.6133e-02 learning_rate: 1.0000e-03 elapsed: 1.29e+02 s speed: 1.03e+02 it/s
+iteration   10401 E RMSE(T V) = 1.8279e-02 1.8449e-02 learning_rate: 1.0000e-03 elapsed: 1.30e+02 s speed: 1.12e+02 it/s
+iteration   10501 E RMSE(T V) = 1.2759e-02 1.6279e-02 learning_rate: 1.0000e-03 elapsed: 1.32e+02 s speed: 8.49e+01 it/s
+iteration   10601 E RMSE(T V) = 2.1890e-02 1.5823e-02 learning_rate: 1.0000e-03 elapsed: 1.33e+02 s speed: 1.06e+02 it/s
+iteration   10701 E RMSE(T V) = 2.3012e-02 1.5790e-02 learning_rate: 1.0000e-03 elapsed: 1.34e+02 s speed: 9.19e+01 it/s
+iteration   10801 E RMSE(T V) = 1.6722e-02 1.6622e-02 learning_rate: 1.0000e-03 elapsed: 1.35e+02 s speed: 8.53e+01 it/s
+iteration   10901 E RMSE(T V) = 2.5387e-02 1.5871e-02 learning_rate: 1.0000e-03 elapsed: 1.36e+02 s speed: 1.09e+02 it/s
+iteration   11001 E RMSE(T V) = 2.5814e-02 1.7749e-02 learning_rate: 1.0000e-03 elapsed: 1.38e+02 s speed: 1.04e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   11101 E RMSE(T V) = 1.2554e-02 1.5621e-02 learning_rate: 1.0000e-03 elapsed: 1.40e+02 s speed: 9.97e+01 it/s
-epoch   11201 E RMSE(T V) = 2.4777e-02 1.5651e-02 learning_rate: 1.0000e-03 elapsed: 1.41e+02 s speed: 1.04e+02 it/s
-epoch   11301 E RMSE(T V) = 1.8847e-02 1.6033e-02 learning_rate: 1.0000e-03 elapsed: 1.42e+02 s speed: 8.19e+01 it/s
-epoch   11401 E RMSE(T V) = 1.5247e-02 1.9334e-02 learning_rate: 1.0000e-03 elapsed: 1.44e+02 s speed: 1.09e+02 it/s
-epoch   11501 E RMSE(T V) = 2.2863e-02 1.7962e-02 learning_rate: 1.0000e-03 elapsed: 1.45e+02 s speed: 1.05e+02 it/s
-epoch   11601 E RMSE(T V) = 1.5744e-02 1.6702e-02 learning_rate: 1.0000e-03 elapsed: 1.46e+02 s speed: 9.67e+01 it/s
-epoch   11701 E RMSE(T V) = 1.7681e-02 1.6655e-02 learning_rate: 1.0000e-03 elapsed: 1.47e+02 s speed: 9.62e+01 it/s
-epoch   11801 E RMSE(T V) = 1.0242e-02 1.5425e-02 learning_rate: 1.0000e-03 elapsed: 1.48e+02 s speed: 8.79e+01 it/s
-epoch   11901 E RMSE(T V) = 1.2614e-02 1.5573e-02 learning_rate: 1.0000e-03 elapsed: 1.49e+02 s speed: 1.05e+02 it/s
-epoch   12001 E RMSE(T V) = 1.2244e-02 1.7517e-02 learning_rate: 1.0000e-03 elapsed: 1.50e+02 s speed: 9.33e+01 it/s
+iteration   11101 E RMSE(T V) = 1.2554e-02 1.5621e-02 learning_rate: 1.0000e-03 elapsed: 1.40e+02 s speed: 9.97e+01 it/s
+iteration   11201 E RMSE(T V) = 2.4777e-02 1.5651e-02 learning_rate: 1.0000e-03 elapsed: 1.41e+02 s speed: 1.04e+02 it/s
+iteration   11301 E RMSE(T V) = 1.8847e-02 1.6033e-02 learning_rate: 1.0000e-03 elapsed: 1.42e+02 s speed: 8.19e+01 it/s
+iteration   11401 E RMSE(T V) = 1.5247e-02 1.9334e-02 learning_rate: 1.0000e-03 elapsed: 1.44e+02 s speed: 1.09e+02 it/s
+iteration   11501 E RMSE(T V) = 2.2863e-02 1.7962e-02 learning_rate: 1.0000e-03 elapsed: 1.45e+02 s speed: 1.05e+02 it/s
+iteration   11601 E RMSE(T V) = 1.5744e-02 1.6702e-02 learning_rate: 1.0000e-03 elapsed: 1.46e+02 s speed: 9.67e+01 it/s
+iteration   11701 E RMSE(T V) = 1.7681e-02 1.6655e-02 learning_rate: 1.0000e-03 elapsed: 1.47e+02 s speed: 9.62e+01 it/s
+iteration   11801 E RMSE(T V) = 1.0242e-02 1.5425e-02 learning_rate: 1.0000e-03 elapsed: 1.48e+02 s speed: 8.79e+01 it/s
+iteration   11901 E RMSE(T V) = 1.2614e-02 1.5573e-02 learning_rate: 1.0000e-03 elapsed: 1.49e+02 s speed: 1.05e+02 it/s
+iteration   12001 E RMSE(T V) = 1.2244e-02 1.7517e-02 learning_rate: 1.0000e-03 elapsed: 1.50e+02 s speed: 9.33e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   12101 E RMSE(T V) = 1.6536e-02 1.6847e-02 learning_rate: 1.0000e-03 elapsed: 1.53e+02 s speed: 9.34e+01 it/s
-epoch   12201 E RMSE(T V) = 1.1513e-02 1.7587e-02 learning_rate: 1.0000e-03 elapsed: 1.54e+02 s speed: 1.07e+02 it/s
-epoch   12301 E RMSE(T V) = 1.4094e-02 1.6316e-02 learning_rate: 1.0000e-03 elapsed: 1.55e+02 s speed: 1.04e+02 it/s
-epoch   12401 E RMSE(T V) = 1.7191e-02 2.0314e-02 learning_rate: 1.0000e-03 elapsed: 1.56e+02 s speed: 1.16e+02 it/s
-epoch   12501 E RMSE(T V) = 1.5641e-02 1.5090e-02 learning_rate: 1.0000e-03 elapsed: 1.57e+02 s speed: 9.52e+01 it/s
-epoch   12601 E RMSE(T V) = 1.6183e-02 1.5814e-02 learning_rate: 1.0000e-03 elapsed: 1.58e+02 s speed: 1.15e+02 it/s
-epoch   12701 E RMSE(T V) = 1.7558e-02 1.5518e-02 learning_rate: 1.0000e-03 elapsed: 1.59e+02 s speed: 9.13e+01 it/s
-epoch   12801 E RMSE(T V) = 1.7336e-02 1.5320e-02 learning_rate: 1.0000e-03 elapsed: 1.60e+02 s speed: 1.05e+02 it/s
-epoch   12901 E RMSE(T V) = 1.4502e-02 1.4531e-02 learning_rate: 1.0000e-03 elapsed: 1.62e+02 s speed: 9.74e+01 it/s
-epoch   13001 E RMSE(T V) = 1.8225e-02 1.4592e-02 learning_rate: 1.0000e-03 elapsed: 1.63e+02 s speed: 1.08e+02 it/s
+iteration   12101 E RMSE(T V) = 1.6536e-02 1.6847e-02 learning_rate: 1.0000e-03 elapsed: 1.53e+02 s speed: 9.34e+01 it/s
+iteration   12201 E RMSE(T V) = 1.1513e-02 1.7587e-02 learning_rate: 1.0000e-03 elapsed: 1.54e+02 s speed: 1.07e+02 it/s
+iteration   12301 E RMSE(T V) = 1.4094e-02 1.6316e-02 learning_rate: 1.0000e-03 elapsed: 1.55e+02 s speed: 1.04e+02 it/s
+iteration   12401 E RMSE(T V) = 1.7191e-02 2.0314e-02 learning_rate: 1.0000e-03 elapsed: 1.56e+02 s speed: 1.16e+02 it/s
+iteration   12501 E RMSE(T V) = 1.5641e-02 1.5090e-02 learning_rate: 1.0000e-03 elapsed: 1.57e+02 s speed: 9.52e+01 it/s
+iteration   12601 E RMSE(T V) = 1.6183e-02 1.5814e-02 learning_rate: 1.0000e-03 elapsed: 1.58e+02 s speed: 1.15e+02 it/s
+iteration   12701 E RMSE(T V) = 1.7558e-02 1.5518e-02 learning_rate: 1.0000e-03 elapsed: 1.59e+02 s speed: 9.13e+01 it/s
+iteration   12801 E RMSE(T V) = 1.7336e-02 1.5320e-02 learning_rate: 1.0000e-03 elapsed: 1.60e+02 s speed: 1.05e+02 it/s
+iteration   12901 E RMSE(T V) = 1.4502e-02 1.4531e-02 learning_rate: 1.0000e-03 elapsed: 1.62e+02 s speed: 9.74e+01 it/s
+iteration   13001 E RMSE(T V) = 1.8225e-02 1.4592e-02 learning_rate: 1.0000e-03 elapsed: 1.63e+02 s speed: 1.08e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   13101 E RMSE(T V) = 1.4006e-02 1.4743e-02 learning_rate: 1.0000e-03 elapsed: 1.65e+02 s speed: 1.00e+02 it/s
-epoch   13201 E RMSE(T V) = 1.5551e-02 1.5268e-02 learning_rate: 1.0000e-03 elapsed: 1.66e+02 s speed: 1.06e+02 it/s
-epoch   13301 E RMSE(T V) = 8.7584e-03 1.9494e-02 learning_rate: 1.0000e-03 elapsed: 1.68e+02 s speed: 8.84e+01 it/s
-epoch   13401 E RMSE(T V) = 1.2279e-02 1.5988e-02 learning_rate: 1.0000e-03 elapsed: 1.69e+02 s speed: 1.06e+02 it/s
-epoch   13501 E RMSE(T V) = 1.6048e-02 1.7769e-02 learning_rate: 1.0000e-03 elapsed: 1.70e+02 s speed: 9.08e+01 it/s
-epoch   13601 E RMSE(T V) = 1.3275e-02 1.4057e-02 learning_rate: 1.0000e-03 elapsed: 1.71e+02 s speed: 9.84e+01 it/s
-epoch   13701 E RMSE(T V) = 1.9892e-02 1.6003e-02 learning_rate: 1.0000e-03 elapsed: 1.72e+02 s speed: 9.32e+01 it/s
-epoch   13801 E RMSE(T V) = 1.1805e-02 1.4193e-02 learning_rate: 1.0000e-03 elapsed: 1.73e+02 s speed: 1.01e+02 it/s
-epoch   13901 E RMSE(T V) = 2.0059e-02 1.3970e-02 learning_rate: 1.0000e-03 elapsed: 1.75e+02 s speed: 9.60e+01 it/s
-epoch   14001 E RMSE(T V) = 2.0048e-02 1.7584e-02 learning_rate: 1.0000e-03 elapsed: 1.76e+02 s speed: 1.06e+02 it/s
+iteration   13101 E RMSE(T V) = 1.4006e-02 1.4743e-02 learning_rate: 1.0000e-03 elapsed: 1.65e+02 s speed: 1.00e+02 it/s
+iteration   13201 E RMSE(T V) = 1.5551e-02 1.5268e-02 learning_rate: 1.0000e-03 elapsed: 1.66e+02 s speed: 1.06e+02 it/s
+iteration   13301 E RMSE(T V) = 8.7584e-03 1.9494e-02 learning_rate: 1.0000e-03 elapsed: 1.68e+02 s speed: 8.84e+01 it/s
+iteration   13401 E RMSE(T V) = 1.2279e-02 1.5988e-02 learning_rate: 1.0000e-03 elapsed: 1.69e+02 s speed: 1.06e+02 it/s
+iteration   13501 E RMSE(T V) = 1.6048e-02 1.7769e-02 learning_rate: 1.0000e-03 elapsed: 1.70e+02 s speed: 9.08e+01 it/s
+iteration   13601 E RMSE(T V) = 1.3275e-02 1.4057e-02 learning_rate: 1.0000e-03 elapsed: 1.71e+02 s speed: 9.84e+01 it/s
+iteration   13701 E RMSE(T V) = 1.9892e-02 1.6003e-02 learning_rate: 1.0000e-03 elapsed: 1.72e+02 s speed: 9.32e+01 it/s
+iteration   13801 E RMSE(T V) = 1.1805e-02 1.4193e-02 learning_rate: 1.0000e-03 elapsed: 1.73e+02 s speed: 1.01e+02 it/s
+iteration   13901 E RMSE(T V) = 2.0059e-02 1.3970e-02 learning_rate: 1.0000e-03 elapsed: 1.75e+02 s speed: 9.60e+01 it/s
+iteration   14001 E RMSE(T V) = 2.0048e-02 1.7584e-02 learning_rate: 1.0000e-03 elapsed: 1.76e+02 s speed: 1.06e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   14101 E RMSE(T V) = 1.6288e-02 1.4177e-02 learning_rate: 1.0000e-03 elapsed: 1.78e+02 s speed: 1.12e+02 it/s
-epoch   14201 E RMSE(T V) = 2.5023e-02 1.5006e-02 learning_rate: 1.0000e-03 elapsed: 1.79e+02 s speed: 8.86e+01 it/s
-epoch   14301 E RMSE(T V) = 1.5481e-02 1.5487e-02 learning_rate: 1.0000e-03 elapsed: 1.80e+02 s speed: 1.09e+02 it/s
-epoch   14401 E RMSE(T V) = 1.7316e-02 1.3929e-02 learning_rate: 1.0000e-03 elapsed: 1.81e+02 s speed: 9.29e+01 it/s
-epoch   14501 E RMSE(T V) = 2.4205e-02 1.5682e-02 learning_rate: 1.0000e-03 elapsed: 1.82e+02 s speed: 1.08e+02 it/s
-epoch   14601 E RMSE(T V) = 1.2158e-02 1.4019e-02 learning_rate: 1.0000e-03 elapsed: 1.84e+02 s speed: 8.46e+01 it/s
-epoch   14701 E RMSE(T V) = 1.4433e-02 1.3491e-02 learning_rate: 1.0000e-03 elapsed: 1.85e+02 s speed: 1.22e+02 it/s
-epoch   14801 E RMSE(T V) = 1.4457e-02 1.5074e-02 learning_rate: 1.0000e-03 elapsed: 1.86e+02 s speed: 9.24e+01 it/s
-epoch   14901 E RMSE(T V) = 8.8239e-03 1.3317e-02 learning_rate: 1.0000e-03 elapsed: 1.87e+02 s speed: 1.13e+02 it/s
-epoch   15001 E RMSE(T V) = 1.4133e-02 1.3209e-02 learning_rate: 1.0000e-03 elapsed: 1.88e+02 s speed: 9.29e+01 it/s
+iteration   14101 E RMSE(T V) = 1.6288e-02 1.4177e-02 learning_rate: 1.0000e-03 elapsed: 1.78e+02 s speed: 1.12e+02 it/s
+iteration   14201 E RMSE(T V) = 2.5023e-02 1.5006e-02 learning_rate: 1.0000e-03 elapsed: 1.79e+02 s speed: 8.86e+01 it/s
+iteration   14301 E RMSE(T V) = 1.5481e-02 1.5487e-02 learning_rate: 1.0000e-03 elapsed: 1.80e+02 s speed: 1.09e+02 it/s
+iteration   14401 E RMSE(T V) = 1.7316e-02 1.3929e-02 learning_rate: 1.0000e-03 elapsed: 1.81e+02 s speed: 9.29e+01 it/s
+iteration   14501 E RMSE(T V) = 2.4205e-02 1.5682e-02 learning_rate: 1.0000e-03 elapsed: 1.82e+02 s speed: 1.08e+02 it/s
+iteration   14601 E RMSE(T V) = 1.2158e-02 1.4019e-02 learning_rate: 1.0000e-03 elapsed: 1.84e+02 s speed: 8.46e+01 it/s
+iteration   14701 E RMSE(T V) = 1.4433e-02 1.3491e-02 learning_rate: 1.0000e-03 elapsed: 1.85e+02 s speed: 1.22e+02 it/s
+iteration   14801 E RMSE(T V) = 1.4457e-02 1.5074e-02 learning_rate: 1.0000e-03 elapsed: 1.86e+02 s speed: 9.24e+01 it/s
+iteration   14901 E RMSE(T V) = 8.8239e-03 1.3317e-02 learning_rate: 1.0000e-03 elapsed: 1.87e+02 s speed: 1.13e+02 it/s
+iteration   15001 E RMSE(T V) = 1.4133e-02 1.3209e-02 learning_rate: 1.0000e-03 elapsed: 1.88e+02 s speed: 9.29e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   15101 E RMSE(T V) = 2.1111e-02 1.3871e-02 learning_rate: 1.0000e-03 elapsed: 1.91e+02 s speed: 1.01e+02 it/s
-epoch   15201 E RMSE(T V) = 1.4784e-02 1.6297e-02 learning_rate: 1.0000e-03 elapsed: 1.92e+02 s speed: 8.45e+01 it/s
-epoch   15301 E RMSE(T V) = 1.3361e-02 1.5855e-02 learning_rate: 1.0000e-03 elapsed: 1.93e+02 s speed: 1.16e+02 it/s
-epoch   15401 E RMSE(T V) = 1.8914e-02 1.3833e-02 learning_rate: 1.0000e-03 elapsed: 1.94e+02 s speed: 9.45e+01 it/s
-epoch   15501 E RMSE(T V) = 1.2633e-02 1.2832e-02 learning_rate: 1.0000e-03 elapsed: 1.95e+02 s speed: 1.03e+02 it/s
-epoch   15601 E RMSE(T V) = 1.5432e-02 1.3310e-02 learning_rate: 1.0000e-03 elapsed: 1.96e+02 s speed: 8.96e+01 it/s
-epoch   15701 E RMSE(T V) = 1.7525e-02 1.3210e-02 learning_rate: 1.0000e-03 elapsed: 1.97e+02 s speed: 9.62e+01 it/s
-epoch   15801 E RMSE(T V) = 1.1500e-02 1.2603e-02 learning_rate: 1.0000e-03 elapsed: 1.99e+02 s speed: 9.08e+01 it/s
-epoch   15901 E RMSE(T V) = 1.2252e-02 1.4352e-02 learning_rate: 1.0000e-03 elapsed: 2.00e+02 s speed: 1.01e+02 it/s
-epoch   16001 E RMSE(T V) = 1.2308e-02 1.3571e-02 learning_rate: 1.0000e-03 elapsed: 2.01e+02 s speed: 9.23e+01 it/s
+iteration   15101 E RMSE(T V) = 2.1111e-02 1.3871e-02 learning_rate: 1.0000e-03 elapsed: 1.91e+02 s speed: 1.01e+02 it/s
+iteration   15201 E RMSE(T V) = 1.4784e-02 1.6297e-02 learning_rate: 1.0000e-03 elapsed: 1.92e+02 s speed: 8.45e+01 it/s
+iteration   15301 E RMSE(T V) = 1.3361e-02 1.5855e-02 learning_rate: 1.0000e-03 elapsed: 1.93e+02 s speed: 1.16e+02 it/s
+iteration   15401 E RMSE(T V) = 1.8914e-02 1.3833e-02 learning_rate: 1.0000e-03 elapsed: 1.94e+02 s speed: 9.45e+01 it/s
+iteration   15501 E RMSE(T V) = 1.2633e-02 1.2832e-02 learning_rate: 1.0000e-03 elapsed: 1.95e+02 s speed: 1.03e+02 it/s
+iteration   15601 E RMSE(T V) = 1.5432e-02 1.3310e-02 learning_rate: 1.0000e-03 elapsed: 1.96e+02 s speed: 8.96e+01 it/s
+iteration   15701 E RMSE(T V) = 1.7525e-02 1.3210e-02 learning_rate: 1.0000e-03 elapsed: 1.97e+02 s speed: 9.62e+01 it/s
+iteration   15801 E RMSE(T V) = 1.1500e-02 1.2603e-02 learning_rate: 1.0000e-03 elapsed: 1.99e+02 s speed: 9.08e+01 it/s
+iteration   15901 E RMSE(T V) = 1.2252e-02 1.4352e-02 learning_rate: 1.0000e-03 elapsed: 2.00e+02 s speed: 1.01e+02 it/s
+iteration   16001 E RMSE(T V) = 1.2308e-02 1.3571e-02 learning_rate: 1.0000e-03 elapsed: 2.01e+02 s speed: 9.23e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   16101 E RMSE(T V) = 1.0789e-02 1.2796e-02 learning_rate: 1.0000e-03 elapsed: 2.04e+02 s speed: 9.33e+01 it/s
-epoch   16201 E RMSE(T V) = 1.8793e-02 1.7277e-02 learning_rate: 1.0000e-03 elapsed: 2.05e+02 s speed: 9.89e+01 it/s
-epoch   16301 E RMSE(T V) = 1.6777e-02 1.4210e-02 learning_rate: 1.0000e-03 elapsed: 2.06e+02 s speed: 9.00e+01 it/s
-epoch   16401 E RMSE(T V) = 1.2213e-02 1.2166e-02 learning_rate: 1.0000e-03 elapsed: 2.07e+02 s speed: 9.51e+01 it/s
-epoch   16501 E RMSE(T V) = 1.9540e-02 1.6670e-02 learning_rate: 1.0000e-03 elapsed: 2.09e+02 s speed: 1.06e+02 it/s
-epoch   16601 E RMSE(T V) = 1.4035e-02 1.4079e-02 learning_rate: 1.0000e-03 elapsed: 2.10e+02 s speed: 8.92e+01 it/s
-epoch   16701 E RMSE(T V) = 1.7352e-02 1.2391e-02 learning_rate: 1.0000e-03 elapsed: 2.11e+02 s speed: 9.76e+01 it/s
-epoch   16801 E RMSE(T V) = 1.3869e-02 1.1753e-02 learning_rate: 1.0000e-03 elapsed: 2.12e+02 s speed: 9.17e+01 it/s
-epoch   16901 E RMSE(T V) = 1.2046e-02 1.2500e-02 learning_rate: 1.0000e-03 elapsed: 2.13e+02 s speed: 1.12e+02 it/s
-epoch   17001 E RMSE(T V) = 1.1976e-02 1.2498e-02 learning_rate: 1.0000e-03 elapsed: 2.14e+02 s speed: 9.22e+01 it/s
+iteration   16101 E RMSE(T V) = 1.0789e-02 1.2796e-02 learning_rate: 1.0000e-03 elapsed: 2.04e+02 s speed: 9.33e+01 it/s
+iteration   16201 E RMSE(T V) = 1.8793e-02 1.7277e-02 learning_rate: 1.0000e-03 elapsed: 2.05e+02 s speed: 9.89e+01 it/s
+iteration   16301 E RMSE(T V) = 1.6777e-02 1.4210e-02 learning_rate: 1.0000e-03 elapsed: 2.06e+02 s speed: 9.00e+01 it/s
+iteration   16401 E RMSE(T V) = 1.2213e-02 1.2166e-02 learning_rate: 1.0000e-03 elapsed: 2.07e+02 s speed: 9.51e+01 it/s
+iteration   16501 E RMSE(T V) = 1.9540e-02 1.6670e-02 learning_rate: 1.0000e-03 elapsed: 2.09e+02 s speed: 1.06e+02 it/s
+iteration   16601 E RMSE(T V) = 1.4035e-02 1.4079e-02 learning_rate: 1.0000e-03 elapsed: 2.10e+02 s speed: 8.92e+01 it/s
+iteration   16701 E RMSE(T V) = 1.7352e-02 1.2391e-02 learning_rate: 1.0000e-03 elapsed: 2.11e+02 s speed: 9.76e+01 it/s
+iteration   16801 E RMSE(T V) = 1.3869e-02 1.1753e-02 learning_rate: 1.0000e-03 elapsed: 2.12e+02 s speed: 9.17e+01 it/s
+iteration   16901 E RMSE(T V) = 1.2046e-02 1.2500e-02 learning_rate: 1.0000e-03 elapsed: 2.13e+02 s speed: 1.12e+02 it/s
+iteration   17001 E RMSE(T V) = 1.1976e-02 1.2498e-02 learning_rate: 1.0000e-03 elapsed: 2.14e+02 s speed: 9.22e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   17101 E RMSE(T V) = 1.8857e-02 1.2873e-02 learning_rate: 1.0000e-03 elapsed: 2.17e+02 s speed: 9.39e+01 it/s
-epoch   17201 E RMSE(T V) = 1.1624e-02 1.7361e-02 learning_rate: 1.0000e-03 elapsed: 2.18e+02 s speed: 1.04e+02 it/s
-epoch   17301 E RMSE(T V) = 1.7067e-02 1.1900e-02 learning_rate: 1.0000e-03 elapsed: 2.19e+02 s speed: 1.07e+02 it/s
-epoch   17401 E RMSE(T V) = 1.5190e-02 1.1319e-02 learning_rate: 1.0000e-03 elapsed: 2.20e+02 s speed: 1.03e+02 it/s
-epoch   17501 E RMSE(T V) = 1.0658e-02 1.1261e-02 learning_rate: 1.0000e-03 elapsed: 2.21e+02 s speed: 1.04e+02 it/s
-epoch   17601 E RMSE(T V) = 1.0732e-02 1.1308e-02 learning_rate: 1.0000e-03 elapsed: 2.22e+02 s speed: 1.10e+02 it/s
-epoch   17701 E RMSE(T V) = 1.8556e-02 1.6043e-02 learning_rate: 1.0000e-03 elapsed: 2.23e+02 s speed: 1.10e+02 it/s
-epoch   17801 E RMSE(T V) = 1.0536e-02 1.1277e-02 learning_rate: 1.0000e-03 elapsed: 2.24e+02 s speed: 1.14e+02 it/s
-epoch   17901 E RMSE(T V) = 1.2205e-02 1.1439e-02 learning_rate: 1.0000e-03 elapsed: 2.25e+02 s speed: 8.85e+01 it/s
-epoch   18001 E RMSE(T V) = 9.4799e-03 1.1133e-02 learning_rate: 1.0000e-03 elapsed: 2.27e+02 s speed: 8.76e+01 it/s
+iteration   17101 E RMSE(T V) = 1.8857e-02 1.2873e-02 learning_rate: 1.0000e-03 elapsed: 2.17e+02 s speed: 9.39e+01 it/s
+iteration   17201 E RMSE(T V) = 1.1624e-02 1.7361e-02 learning_rate: 1.0000e-03 elapsed: 2.18e+02 s speed: 1.04e+02 it/s
+iteration   17301 E RMSE(T V) = 1.7067e-02 1.1900e-02 learning_rate: 1.0000e-03 elapsed: 2.19e+02 s speed: 1.07e+02 it/s
+iteration   17401 E RMSE(T V) = 1.5190e-02 1.1319e-02 learning_rate: 1.0000e-03 elapsed: 2.20e+02 s speed: 1.03e+02 it/s
+iteration   17501 E RMSE(T V) = 1.0658e-02 1.1261e-02 learning_rate: 1.0000e-03 elapsed: 2.21e+02 s speed: 1.04e+02 it/s
+iteration   17601 E RMSE(T V) = 1.0732e-02 1.1308e-02 learning_rate: 1.0000e-03 elapsed: 2.22e+02 s speed: 1.10e+02 it/s
+iteration   17701 E RMSE(T V) = 1.8556e-02 1.6043e-02 learning_rate: 1.0000e-03 elapsed: 2.23e+02 s speed: 1.10e+02 it/s
+iteration   17801 E RMSE(T V) = 1.0536e-02 1.1277e-02 learning_rate: 1.0000e-03 elapsed: 2.24e+02 s speed: 1.14e+02 it/s
+iteration   17901 E RMSE(T V) = 1.2205e-02 1.1439e-02 learning_rate: 1.0000e-03 elapsed: 2.25e+02 s speed: 8.85e+01 it/s
+iteration   18001 E RMSE(T V) = 9.4799e-03 1.1133e-02 learning_rate: 1.0000e-03 elapsed: 2.27e+02 s speed: 8.76e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   18101 E RMSE(T V) = 1.0878e-02 1.2179e-02 learning_rate: 1.0000e-03 elapsed: 2.29e+02 s speed: 9.58e+01 it/s
-epoch   18201 E RMSE(T V) = 1.5614e-02 1.6389e-02 learning_rate: 1.0000e-03 elapsed: 2.30e+02 s speed: 1.11e+02 it/s
-epoch   18301 E RMSE(T V) = 1.8401e-02 1.1014e-02 learning_rate: 1.0000e-03 elapsed: 2.31e+02 s speed: 8.89e+01 it/s
-epoch   18401 E RMSE(T V) = 9.3608e-03 1.1894e-02 learning_rate: 1.0000e-03 elapsed: 2.33e+02 s speed: 1.01e+02 it/s
-epoch   18501 E RMSE(T V) = 1.5840e-02 1.2782e-02 learning_rate: 1.0000e-03 elapsed: 2.34e+02 s speed: 9.63e+01 it/s
-epoch   18601 E RMSE(T V) = 9.5759e-03 1.0509e-02 learning_rate: 1.0000e-03 elapsed: 2.35e+02 s speed: 1.07e+02 it/s
-epoch   18701 E RMSE(T V) = 8.6600e-03 1.0986e-02 learning_rate: 1.0000e-03 elapsed: 2.36e+02 s speed: 9.56e+01 it/s
-epoch   18801 E RMSE(T V) = 8.2304e-03 1.0498e-02 learning_rate: 1.0000e-03 elapsed: 2.37e+02 s speed: 1.05e+02 it/s
-epoch   18901 E RMSE(T V) = 1.3052e-02 1.0378e-02 learning_rate: 1.0000e-03 elapsed: 2.38e+02 s speed: 1.03e+02 it/s
-epoch   19001 E RMSE(T V) = 1.4755e-02 1.2299e-02 learning_rate: 1.0000e-03 elapsed: 2.39e+02 s speed: 1.09e+02 it/s
+iteration   18101 E RMSE(T V) = 1.0878e-02 1.2179e-02 learning_rate: 1.0000e-03 elapsed: 2.29e+02 s speed: 9.58e+01 it/s
+iteration   18201 E RMSE(T V) = 1.5614e-02 1.6389e-02 learning_rate: 1.0000e-03 elapsed: 2.30e+02 s speed: 1.11e+02 it/s
+iteration   18301 E RMSE(T V) = 1.8401e-02 1.1014e-02 learning_rate: 1.0000e-03 elapsed: 2.31e+02 s speed: 8.89e+01 it/s
+iteration   18401 E RMSE(T V) = 9.3608e-03 1.1894e-02 learning_rate: 1.0000e-03 elapsed: 2.33e+02 s speed: 1.01e+02 it/s
+iteration   18501 E RMSE(T V) = 1.5840e-02 1.2782e-02 learning_rate: 1.0000e-03 elapsed: 2.34e+02 s speed: 9.63e+01 it/s
+iteration   18601 E RMSE(T V) = 9.5759e-03 1.0509e-02 learning_rate: 1.0000e-03 elapsed: 2.35e+02 s speed: 1.07e+02 it/s
+iteration   18701 E RMSE(T V) = 8.6600e-03 1.0986e-02 learning_rate: 1.0000e-03 elapsed: 2.36e+02 s speed: 9.56e+01 it/s
+iteration   18801 E RMSE(T V) = 8.2304e-03 1.0498e-02 learning_rate: 1.0000e-03 elapsed: 2.37e+02 s speed: 1.05e+02 it/s
+iteration   18901 E RMSE(T V) = 1.3052e-02 1.0378e-02 learning_rate: 1.0000e-03 elapsed: 2.38e+02 s speed: 1.03e+02 it/s
+iteration   19001 E RMSE(T V) = 1.4755e-02 1.2299e-02 learning_rate: 1.0000e-03 elapsed: 2.39e+02 s speed: 1.09e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   19101 E RMSE(T V) = 1.1351e-02 1.0211e-02 learning_rate: 1.0000e-03 elapsed: 2.42e+02 s speed: 1.10e+02 it/s
-epoch   19201 E RMSE(T V) = 1.3978e-02 1.4992e-02 learning_rate: 1.0000e-03 elapsed: 2.43e+02 s speed: 9.67e+01 it/s
-epoch   19301 E RMSE(T V) = 1.1361e-02 1.2995e-02 learning_rate: 1.0000e-03 elapsed: 2.44e+02 s speed: 9.83e+01 it/s
-epoch   19401 E RMSE(T V) = 5.2896e-03 9.9899e-03 learning_rate: 1.0000e-03 elapsed: 2.45e+02 s speed: 8.88e+01 it/s
-epoch   19501 E RMSE(T V) = 7.6024e-03 1.0208e-02 learning_rate: 1.0000e-03 elapsed: 2.46e+02 s speed: 8.45e+01 it/s
-epoch   19601 E RMSE(T V) = 8.9370e-03 9.8688e-03 learning_rate: 1.0000e-03 elapsed: 2.47e+02 s speed: 1.02e+02 it/s
-epoch   19701 E RMSE(T V) = 9.3007e-03 9.9457e-03 learning_rate: 1.0000e-03 elapsed: 2.49e+02 s speed: 9.43e+01 it/s
-epoch   19801 E RMSE(T V) = 7.1627e-03 9.7590e-03 learning_rate: 1.0000e-03 elapsed: 2.50e+02 s speed: 1.10e+02 it/s
-epoch   19901 E RMSE(T V) = 1.1304e-02 1.0659e-02 learning_rate: 1.0000e-03 elapsed: 2.51e+02 s speed: 9.47e+01 it/s
-epoch   20001 E RMSE(T V) = 9.5947e-03 1.2733e-02 learning_rate: 1.0000e-03 elapsed: 2.52e+02 s speed: 9.71e+01 it/s
+iteration   19101 E RMSE(T V) = 1.1351e-02 1.0211e-02 learning_rate: 1.0000e-03 elapsed: 2.42e+02 s speed: 1.10e+02 it/s
+iteration   19201 E RMSE(T V) = 1.3978e-02 1.4992e-02 learning_rate: 1.0000e-03 elapsed: 2.43e+02 s speed: 9.67e+01 it/s
+iteration   19301 E RMSE(T V) = 1.1361e-02 1.2995e-02 learning_rate: 1.0000e-03 elapsed: 2.44e+02 s speed: 9.83e+01 it/s
+iteration   19401 E RMSE(T V) = 5.2896e-03 9.9899e-03 learning_rate: 1.0000e-03 elapsed: 2.45e+02 s speed: 8.88e+01 it/s
+iteration   19501 E RMSE(T V) = 7.6024e-03 1.0208e-02 learning_rate: 1.0000e-03 elapsed: 2.46e+02 s speed: 8.45e+01 it/s
+iteration   19601 E RMSE(T V) = 8.9370e-03 9.8688e-03 learning_rate: 1.0000e-03 elapsed: 2.47e+02 s speed: 1.02e+02 it/s
+iteration   19701 E RMSE(T V) = 9.3007e-03 9.9457e-03 learning_rate: 1.0000e-03 elapsed: 2.49e+02 s speed: 9.43e+01 it/s
+iteration   19801 E RMSE(T V) = 7.1627e-03 9.7590e-03 learning_rate: 1.0000e-03 elapsed: 2.50e+02 s speed: 1.10e+02 it/s
+iteration   19901 E RMSE(T V) = 1.1304e-02 1.0659e-02 learning_rate: 1.0000e-03 elapsed: 2.51e+02 s speed: 9.47e+01 it/s
+iteration   20001 E RMSE(T V) = 9.5947e-03 1.2733e-02 learning_rate: 1.0000e-03 elapsed: 2.52e+02 s speed: 9.71e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   20101 E RMSE(T V) = 9.3985e-03 1.0428e-02 learning_rate: 1.0000e-03 elapsed: 2.54e+02 s speed: 1.06e+02 it/s
-epoch   20201 E RMSE(T V) = 1.0444e-02 1.0990e-02 learning_rate: 1.0000e-03 elapsed: 2.56e+02 s speed: 9.21e+01 it/s
-epoch   20301 E RMSE(T V) = 1.3607e-02 1.3646e-02 learning_rate: 1.0000e-03 elapsed: 2.57e+02 s speed: 1.03e+02 it/s
-epoch   20401 E RMSE(T V) = 7.2354e-03 9.8078e-03 learning_rate: 1.0000e-03 elapsed: 2.58e+02 s speed: 9.82e+01 it/s
-epoch   20501 E RMSE(T V) = 1.1688e-02 9.6806e-03 learning_rate: 1.0000e-03 elapsed: 2.59e+02 s speed: 1.14e+02 it/s
-epoch   20601 E RMSE(T V) = 1.3340e-02 1.0934e-02 learning_rate: 1.0000e-03 elapsed: 2.60e+02 s speed: 8.23e+01 it/s
-epoch   20701 E RMSE(T V) = 8.7464e-03 9.3772e-03 learning_rate: 1.0000e-03 elapsed: 2.61e+02 s speed: 1.02e+02 it/s
-epoch   20801 E RMSE(T V) = 2.0230e-02 1.2202e-02 learning_rate: 1.0000e-03 elapsed: 2.63e+02 s speed: 9.28e+01 it/s
-epoch   20901 E RMSE(T V) = 2.1971e-02 1.9118e-02 learning_rate: 1.0000e-03 elapsed: 2.64e+02 s speed: 1.08e+02 it/s
-epoch   21001 E RMSE(T V) = 1.2457e-02 1.4633e-02 learning_rate: 1.0000e-03 elapsed: 2.65e+02 s speed: 8.99e+01 it/s
+iteration   20101 E RMSE(T V) = 9.3985e-03 1.0428e-02 learning_rate: 1.0000e-03 elapsed: 2.54e+02 s speed: 1.06e+02 it/s
+iteration   20201 E RMSE(T V) = 1.0444e-02 1.0990e-02 learning_rate: 1.0000e-03 elapsed: 2.56e+02 s speed: 9.21e+01 it/s
+iteration   20301 E RMSE(T V) = 1.3607e-02 1.3646e-02 learning_rate: 1.0000e-03 elapsed: 2.57e+02 s speed: 1.03e+02 it/s
+iteration   20401 E RMSE(T V) = 7.2354e-03 9.8078e-03 learning_rate: 1.0000e-03 elapsed: 2.58e+02 s speed: 9.82e+01 it/s
+iteration   20501 E RMSE(T V) = 1.1688e-02 9.6806e-03 learning_rate: 1.0000e-03 elapsed: 2.59e+02 s speed: 1.14e+02 it/s
+iteration   20601 E RMSE(T V) = 1.3340e-02 1.0934e-02 learning_rate: 1.0000e-03 elapsed: 2.60e+02 s speed: 8.23e+01 it/s
+iteration   20701 E RMSE(T V) = 8.7464e-03 9.3772e-03 learning_rate: 1.0000e-03 elapsed: 2.61e+02 s speed: 1.02e+02 it/s
+iteration   20801 E RMSE(T V) = 2.0230e-02 1.2202e-02 learning_rate: 1.0000e-03 elapsed: 2.63e+02 s speed: 9.28e+01 it/s
+iteration   20901 E RMSE(T V) = 2.1971e-02 1.9118e-02 learning_rate: 1.0000e-03 elapsed: 2.64e+02 s speed: 1.08e+02 it/s
+iteration   21001 E RMSE(T V) = 1.2457e-02 1.4633e-02 learning_rate: 1.0000e-03 elapsed: 2.65e+02 s speed: 8.99e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   21101 E RMSE(T V) = 7.6643e-03 9.9802e-03 learning_rate: 1.0000e-03 elapsed: 2.67e+02 s speed: 1.01e+02 it/s
-epoch   21201 E RMSE(T V) = 1.3042e-02 1.2389e-02 learning_rate: 1.0000e-03 elapsed: 2.68e+02 s speed: 8.86e+01 it/s
-epoch   21301 E RMSE(T V) = 8.8383e-03 1.0012e-02 learning_rate: 1.0000e-03 elapsed: 2.70e+02 s speed: 1.02e+02 it/s
-epoch   21401 E RMSE(T V) = 1.1995e-02 1.2325e-02 learning_rate: 1.0000e-03 elapsed: 2.71e+02 s speed: 9.39e+01 it/s
-epoch   21501 E RMSE(T V) = 1.3616e-02 1.0852e-02 learning_rate: 1.0000e-03 elapsed: 2.72e+02 s speed: 9.96e+01 it/s
-epoch   21601 E RMSE(T V) = 1.2809e-02 1.4120e-02 learning_rate: 1.0000e-03 elapsed: 2.73e+02 s speed: 9.55e+01 it/s
-epoch   21701 E RMSE(T V) = 8.2097e-03 9.1180e-03 learning_rate: 1.0000e-03 elapsed: 2.74e+02 s speed: 1.21e+02 it/s
-epoch   21801 E RMSE(T V) = 7.5517e-03 9.2369e-03 learning_rate: 1.0000e-03 elapsed: 2.75e+02 s speed: 9.46e+01 it/s
-epoch   21901 E RMSE(T V) = 1.4467e-02 1.0113e-02 learning_rate: 1.0000e-03 elapsed: 2.77e+02 s speed: 8.60e+01 it/s
-epoch   22001 E RMSE(T V) = 5.9231e-03 8.7594e-03 learning_rate: 1.0000e-03 elapsed: 2.78e+02 s speed: 1.04e+02 it/s
+iteration   21101 E RMSE(T V) = 7.6643e-03 9.9802e-03 learning_rate: 1.0000e-03 elapsed: 2.67e+02 s speed: 1.01e+02 it/s
+iteration   21201 E RMSE(T V) = 1.3042e-02 1.2389e-02 learning_rate: 1.0000e-03 elapsed: 2.68e+02 s speed: 8.86e+01 it/s
+iteration   21301 E RMSE(T V) = 8.8383e-03 1.0012e-02 learning_rate: 1.0000e-03 elapsed: 2.70e+02 s speed: 1.02e+02 it/s
+iteration   21401 E RMSE(T V) = 1.1995e-02 1.2325e-02 learning_rate: 1.0000e-03 elapsed: 2.71e+02 s speed: 9.39e+01 it/s
+iteration   21501 E RMSE(T V) = 1.3616e-02 1.0852e-02 learning_rate: 1.0000e-03 elapsed: 2.72e+02 s speed: 9.96e+01 it/s
+iteration   21601 E RMSE(T V) = 1.2809e-02 1.4120e-02 learning_rate: 1.0000e-03 elapsed: 2.73e+02 s speed: 9.55e+01 it/s
+iteration   21701 E RMSE(T V) = 8.2097e-03 9.1180e-03 learning_rate: 1.0000e-03 elapsed: 2.74e+02 s speed: 1.21e+02 it/s
+iteration   21801 E RMSE(T V) = 7.5517e-03 9.2369e-03 learning_rate: 1.0000e-03 elapsed: 2.75e+02 s speed: 9.46e+01 it/s
+iteration   21901 E RMSE(T V) = 1.4467e-02 1.0113e-02 learning_rate: 1.0000e-03 elapsed: 2.77e+02 s speed: 8.60e+01 it/s
+iteration   22001 E RMSE(T V) = 5.9231e-03 8.7594e-03 learning_rate: 1.0000e-03 elapsed: 2.78e+02 s speed: 1.04e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   22101 E RMSE(T V) = 1.2522e-02 9.7791e-03 learning_rate: 1.0000e-03 elapsed: 2.80e+02 s speed: 1.15e+02 it/s
-epoch   22201 E RMSE(T V) = 9.8284e-03 8.7127e-03 learning_rate: 1.0000e-03 elapsed: 2.81e+02 s speed: 9.88e+01 it/s
-epoch   22301 E RMSE(T V) = 1.4122e-02 1.1431e-02 learning_rate: 1.0000e-03 elapsed: 2.82e+02 s speed: 1.20e+02 it/s
-epoch   22401 E RMSE(T V) = 1.5652e-02 1.0879e-02 learning_rate: 1.0000e-03 elapsed: 2.83e+02 s speed: 9.68e+01 it/s
-epoch   22501 E RMSE(T V) = 8.4145e-03 1.0245e-02 learning_rate: 1.0000e-03 elapsed: 2.84e+02 s speed: 1.09e+02 it/s
-epoch   22601 E RMSE(T V) = 9.9048e-03 1.2703e-02 learning_rate: 1.0000e-03 elapsed: 2.86e+02 s speed: 9.17e+01 it/s
-epoch   22701 E RMSE(T V) = 1.0486e-02 8.7266e-03 learning_rate: 1.0000e-03 elapsed: 2.87e+02 s speed: 1.02e+02 it/s
-epoch   22801 E RMSE(T V) = 1.0384e-02 8.6101e-03 learning_rate: 1.0000e-03 elapsed: 2.88e+02 s speed: 9.13e+01 it/s
-epoch   22901 E RMSE(T V) = 7.0901e-03 9.3838e-03 learning_rate: 1.0000e-03 elapsed: 2.89e+02 s speed: 1.05e+02 it/s
-epoch   23001 E RMSE(T V) = 1.6877e-02 1.4779e-02 learning_rate: 1.0000e-03 elapsed: 2.90e+02 s speed: 9.25e+01 it/s
+iteration   22101 E RMSE(T V) = 1.2522e-02 9.7791e-03 learning_rate: 1.0000e-03 elapsed: 2.80e+02 s speed: 1.15e+02 it/s
+iteration   22201 E RMSE(T V) = 9.8284e-03 8.7127e-03 learning_rate: 1.0000e-03 elapsed: 2.81e+02 s speed: 9.88e+01 it/s
+iteration   22301 E RMSE(T V) = 1.4122e-02 1.1431e-02 learning_rate: 1.0000e-03 elapsed: 2.82e+02 s speed: 1.20e+02 it/s
+iteration   22401 E RMSE(T V) = 1.5652e-02 1.0879e-02 learning_rate: 1.0000e-03 elapsed: 2.83e+02 s speed: 9.68e+01 it/s
+iteration   22501 E RMSE(T V) = 8.4145e-03 1.0245e-02 learning_rate: 1.0000e-03 elapsed: 2.84e+02 s speed: 1.09e+02 it/s
+iteration   22601 E RMSE(T V) = 9.9048e-03 1.2703e-02 learning_rate: 1.0000e-03 elapsed: 2.86e+02 s speed: 9.17e+01 it/s
+iteration   22701 E RMSE(T V) = 1.0486e-02 8.7266e-03 learning_rate: 1.0000e-03 elapsed: 2.87e+02 s speed: 1.02e+02 it/s
+iteration   22801 E RMSE(T V) = 1.0384e-02 8.6101e-03 learning_rate: 1.0000e-03 elapsed: 2.88e+02 s speed: 9.13e+01 it/s
+iteration   22901 E RMSE(T V) = 7.0901e-03 9.3838e-03 learning_rate: 1.0000e-03 elapsed: 2.89e+02 s speed: 1.05e+02 it/s
+iteration   23001 E RMSE(T V) = 1.6877e-02 1.4779e-02 learning_rate: 1.0000e-03 elapsed: 2.90e+02 s speed: 9.25e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   23101 E RMSE(T V) = 1.0530e-02 8.8708e-03 learning_rate: 1.0000e-03 elapsed: 2.92e+02 s speed: 1.17e+02 it/s
-epoch   23201 E RMSE(T V) = 9.2890e-03 1.1884e-02 learning_rate: 1.0000e-03 elapsed: 2.94e+02 s speed: 9.57e+01 it/s
-epoch   23301 E RMSE(T V) = 1.2543e-02 1.0950e-02 learning_rate: 1.0000e-03 elapsed: 2.95e+02 s speed: 1.04e+02 it/s
-epoch   23401 E RMSE(T V) = 9.8694e-03 8.8599e-03 learning_rate: 1.0000e-03 elapsed: 2.96e+02 s speed: 9.29e+01 it/s
-epoch   23501 E RMSE(T V) = 6.2223e-03 9.2176e-03 learning_rate: 1.0000e-03 elapsed: 2.97e+02 s speed: 1.10e+02 it/s
-epoch   23601 E RMSE(T V) = 9.7331e-03 1.0191e-02 learning_rate: 1.0000e-03 elapsed: 2.98e+02 s speed: 9.30e+01 it/s
-epoch   23701 E RMSE(T V) = 7.9949e-03 8.3725e-03 learning_rate: 1.0000e-03 elapsed: 2.99e+02 s speed: 9.67e+01 it/s
-epoch   23801 E RMSE(T V) = 1.2342e-02 8.4404e-03 learning_rate: 1.0000e-03 elapsed: 3.00e+02 s speed: 9.99e+01 it/s
-epoch   23901 E RMSE(T V) = 1.4909e-02 8.8213e-03 learning_rate: 1.0000e-03 elapsed: 3.01e+02 s speed: 1.10e+02 it/s
-epoch   24001 E RMSE(T V) = 8.2000e-03 8.7963e-03 learning_rate: 1.0000e-03 elapsed: 3.02e+02 s speed: 9.72e+01 it/s
+iteration   23101 E RMSE(T V) = 1.0530e-02 8.8708e-03 learning_rate: 1.0000e-03 elapsed: 2.92e+02 s speed: 1.17e+02 it/s
+iteration   23201 E RMSE(T V) = 9.2890e-03 1.1884e-02 learning_rate: 1.0000e-03 elapsed: 2.94e+02 s speed: 9.57e+01 it/s
+iteration   23301 E RMSE(T V) = 1.2543e-02 1.0950e-02 learning_rate: 1.0000e-03 elapsed: 2.95e+02 s speed: 1.04e+02 it/s
+iteration   23401 E RMSE(T V) = 9.8694e-03 8.8599e-03 learning_rate: 1.0000e-03 elapsed: 2.96e+02 s speed: 9.29e+01 it/s
+iteration   23501 E RMSE(T V) = 6.2223e-03 9.2176e-03 learning_rate: 1.0000e-03 elapsed: 2.97e+02 s speed: 1.10e+02 it/s
+iteration   23601 E RMSE(T V) = 9.7331e-03 1.0191e-02 learning_rate: 1.0000e-03 elapsed: 2.98e+02 s speed: 9.30e+01 it/s
+iteration   23701 E RMSE(T V) = 7.9949e-03 8.3725e-03 learning_rate: 1.0000e-03 elapsed: 2.99e+02 s speed: 9.67e+01 it/s
+iteration   23801 E RMSE(T V) = 1.2342e-02 8.4404e-03 learning_rate: 1.0000e-03 elapsed: 3.00e+02 s speed: 9.99e+01 it/s
+iteration   23901 E RMSE(T V) = 1.4909e-02 8.8213e-03 learning_rate: 1.0000e-03 elapsed: 3.01e+02 s speed: 1.10e+02 it/s
+iteration   24001 E RMSE(T V) = 8.2000e-03 8.7963e-03 learning_rate: 1.0000e-03 elapsed: 3.02e+02 s speed: 9.72e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   24101 E RMSE(T V) = 5.2410e-03 8.3924e-03 learning_rate: 1.0000e-03 elapsed: 3.05e+02 s speed: 9.18e+01 it/s
-epoch   24201 E RMSE(T V) = 1.1515e-02 1.1140e-02 learning_rate: 1.0000e-03 elapsed: 3.06e+02 s speed: 1.07e+02 it/s
-epoch   24301 E RMSE(T V) = 9.6673e-03 8.5494e-03 learning_rate: 1.0000e-03 elapsed: 3.07e+02 s speed: 9.56e+01 it/s
-epoch   24401 E RMSE(T V) = 7.9630e-03 8.9920e-03 learning_rate: 1.0000e-03 elapsed: 3.08e+02 s speed: 1.05e+02 it/s
-epoch   24501 E RMSE(T V) = 8.7708e-03 8.3550e-03 learning_rate: 1.0000e-03 elapsed: 3.09e+02 s speed: 9.41e+01 it/s
-epoch   24601 E RMSE(T V) = 1.4003e-02 1.3932e-02 learning_rate: 1.0000e-03 elapsed: 3.10e+02 s speed: 9.63e+01 it/s
-epoch   24701 E RMSE(T V) = 5.2751e-03 8.1142e-03 learning_rate: 1.0000e-03 elapsed: 3.11e+02 s speed: 1.11e+02 it/s
-epoch   24801 E RMSE(T V) = 1.0315e-02 7.9845e-03 learning_rate: 1.0000e-03 elapsed: 3.13e+02 s speed: 9.36e+01 it/s
-epoch   24901 E RMSE(T V) = 8.7518e-03 8.9734e-03 learning_rate: 1.0000e-03 elapsed: 3.14e+02 s speed: 1.02e+02 it/s
-epoch   25001 E RMSE(T V) = 7.7540e-03 8.5415e-03 learning_rate: 1.0000e-03 elapsed: 3.15e+02 s speed: 8.77e+01 it/s
+iteration   24101 E RMSE(T V) = 5.2410e-03 8.3924e-03 learning_rate: 1.0000e-03 elapsed: 3.05e+02 s speed: 9.18e+01 it/s
+iteration   24201 E RMSE(T V) = 1.1515e-02 1.1140e-02 learning_rate: 1.0000e-03 elapsed: 3.06e+02 s speed: 1.07e+02 it/s
+iteration   24301 E RMSE(T V) = 9.6673e-03 8.5494e-03 learning_rate: 1.0000e-03 elapsed: 3.07e+02 s speed: 9.56e+01 it/s
+iteration   24401 E RMSE(T V) = 7.9630e-03 8.9920e-03 learning_rate: 1.0000e-03 elapsed: 3.08e+02 s speed: 1.05e+02 it/s
+iteration   24501 E RMSE(T V) = 8.7708e-03 8.3550e-03 learning_rate: 1.0000e-03 elapsed: 3.09e+02 s speed: 9.41e+01 it/s
+iteration   24601 E RMSE(T V) = 1.4003e-02 1.3932e-02 learning_rate: 1.0000e-03 elapsed: 3.10e+02 s speed: 9.63e+01 it/s
+iteration   24701 E RMSE(T V) = 5.2751e-03 8.1142e-03 learning_rate: 1.0000e-03 elapsed: 3.11e+02 s speed: 1.11e+02 it/s
+iteration   24801 E RMSE(T V) = 1.0315e-02 7.9845e-03 learning_rate: 1.0000e-03 elapsed: 3.13e+02 s speed: 9.36e+01 it/s
+iteration   24901 E RMSE(T V) = 8.7518e-03 8.9734e-03 learning_rate: 1.0000e-03 elapsed: 3.14e+02 s speed: 1.02e+02 it/s
+iteration   25001 E RMSE(T V) = 7.7540e-03 8.5415e-03 learning_rate: 1.0000e-03 elapsed: 3.15e+02 s speed: 8.77e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   25101 E RMSE(T V) = 1.2004e-02 1.3744e-02 learning_rate: 1.0000e-03 elapsed: 3.18e+02 s speed: 9.15e+01 it/s
-epoch   25201 E RMSE(T V) = 7.8656e-03 7.6443e-03 learning_rate: 1.0000e-03 elapsed: 3.19e+02 s speed: 1.02e+02 it/s
-epoch   25301 E RMSE(T V) = 1.0787e-02 8.6239e-03 learning_rate: 1.0000e-03 elapsed: 3.20e+02 s speed: 1.04e+02 it/s
-epoch   25401 E RMSE(T V) = 4.5474e-03 7.9441e-03 learning_rate: 1.0000e-03 elapsed: 3.21e+02 s speed: 1.09e+02 it/s
-epoch   25501 E RMSE(T V) = 8.8173e-03 7.6993e-03 learning_rate: 1.0000e-03 elapsed: 3.22e+02 s speed: 9.69e+01 it/s
-epoch   25601 E RMSE(T V) = 1.2163e-02 1.0253e-02 learning_rate: 1.0000e-03 elapsed: 3.23e+02 s speed: 1.05e+02 it/s
-epoch   25701 E RMSE(T V) = 9.0517e-03 7.7942e-03 learning_rate: 1.0000e-03 elapsed: 3.24e+02 s speed: 1.08e+02 it/s
-epoch   25801 E RMSE(T V) = 1.0485e-02 9.8724e-03 learning_rate: 1.0000e-03 elapsed: 3.25e+02 s speed: 1.04e+02 it/s
-epoch   25901 E RMSE(T V) = 7.2011e-03 7.8958e-03 learning_rate: 1.0000e-03 elapsed: 3.26e+02 s speed: 9.97e+01 it/s
-epoch   26001 E RMSE(T V) = 1.2276e-02 1.3017e-02 learning_rate: 1.0000e-03 elapsed: 3.27e+02 s speed: 1.07e+02 it/s
+iteration   25101 E RMSE(T V) = 1.2004e-02 1.3744e-02 learning_rate: 1.0000e-03 elapsed: 3.18e+02 s speed: 9.15e+01 it/s
+iteration   25201 E RMSE(T V) = 7.8656e-03 7.6443e-03 learning_rate: 1.0000e-03 elapsed: 3.19e+02 s speed: 1.02e+02 it/s
+iteration   25301 E RMSE(T V) = 1.0787e-02 8.6239e-03 learning_rate: 1.0000e-03 elapsed: 3.20e+02 s speed: 1.04e+02 it/s
+iteration   25401 E RMSE(T V) = 4.5474e-03 7.9441e-03 learning_rate: 1.0000e-03 elapsed: 3.21e+02 s speed: 1.09e+02 it/s
+iteration   25501 E RMSE(T V) = 8.8173e-03 7.6993e-03 learning_rate: 1.0000e-03 elapsed: 3.22e+02 s speed: 9.69e+01 it/s
+iteration   25601 E RMSE(T V) = 1.2163e-02 1.0253e-02 learning_rate: 1.0000e-03 elapsed: 3.23e+02 s speed: 1.05e+02 it/s
+iteration   25701 E RMSE(T V) = 9.0517e-03 7.7942e-03 learning_rate: 1.0000e-03 elapsed: 3.24e+02 s speed: 1.08e+02 it/s
+iteration   25801 E RMSE(T V) = 1.0485e-02 9.8724e-03 learning_rate: 1.0000e-03 elapsed: 3.25e+02 s speed: 1.04e+02 it/s
+iteration   25901 E RMSE(T V) = 7.2011e-03 7.8958e-03 learning_rate: 1.0000e-03 elapsed: 3.26e+02 s speed: 9.97e+01 it/s
+iteration   26001 E RMSE(T V) = 1.2276e-02 1.3017e-02 learning_rate: 1.0000e-03 elapsed: 3.27e+02 s speed: 1.07e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   26101 E RMSE(T V) = 8.2710e-03 7.3964e-03 learning_rate: 1.0000e-03 elapsed: 3.29e+02 s speed: 1.17e+02 it/s
-epoch   26201 E RMSE(T V) = 6.3725e-03 7.4429e-03 learning_rate: 1.0000e-03 elapsed: 3.31e+02 s speed: 1.03e+02 it/s
-epoch   26301 E RMSE(T V) = 7.8887e-03 8.5999e-03 learning_rate: 1.0000e-03 elapsed: 3.32e+02 s speed: 1.08e+02 it/s
-epoch   26401 E RMSE(T V) = 1.0442e-02 7.7250e-03 learning_rate: 1.0000e-03 elapsed: 3.33e+02 s speed: 1.08e+02 it/s
-epoch   26501 E RMSE(T V) = 9.9081e-03 7.2709e-03 learning_rate: 1.0000e-03 elapsed: 3.34e+02 s speed: 1.10e+02 it/s
-epoch   26601 E RMSE(T V) = 7.2043e-03 1.1308e-02 learning_rate: 1.0000e-03 elapsed: 3.35e+02 s speed: 1.15e+02 it/s
-epoch   26701 E RMSE(T V) = 1.1233e-02 8.4612e-03 learning_rate: 1.0000e-03 elapsed: 3.36e+02 s speed: 1.04e+02 it/s
-epoch   26801 E RMSE(T V) = 8.5706e-03 9.3922e-03 learning_rate: 1.0000e-03 elapsed: 3.37e+02 s speed: 1.09e+02 it/s
-epoch   26901 E RMSE(T V) = 6.6734e-03 8.3030e-03 learning_rate: 1.0000e-03 elapsed: 3.38e+02 s speed: 1.06e+02 it/s
-epoch   27001 E RMSE(T V) = 1.8832e-02 1.6743e-02 learning_rate: 1.0000e-03 elapsed: 3.39e+02 s speed: 1.09e+02 it/s
+iteration   26101 E RMSE(T V) = 8.2710e-03 7.3964e-03 learning_rate: 1.0000e-03 elapsed: 3.29e+02 s speed: 1.17e+02 it/s
+iteration   26201 E RMSE(T V) = 6.3725e-03 7.4429e-03 learning_rate: 1.0000e-03 elapsed: 3.31e+02 s speed: 1.03e+02 it/s
+iteration   26301 E RMSE(T V) = 7.8887e-03 8.5999e-03 learning_rate: 1.0000e-03 elapsed: 3.32e+02 s speed: 1.08e+02 it/s
+iteration   26401 E RMSE(T V) = 1.0442e-02 7.7250e-03 learning_rate: 1.0000e-03 elapsed: 3.33e+02 s speed: 1.08e+02 it/s
+iteration   26501 E RMSE(T V) = 9.9081e-03 7.2709e-03 learning_rate: 1.0000e-03 elapsed: 3.34e+02 s speed: 1.10e+02 it/s
+iteration   26601 E RMSE(T V) = 7.2043e-03 1.1308e-02 learning_rate: 1.0000e-03 elapsed: 3.35e+02 s speed: 1.15e+02 it/s
+iteration   26701 E RMSE(T V) = 1.1233e-02 8.4612e-03 learning_rate: 1.0000e-03 elapsed: 3.36e+02 s speed: 1.04e+02 it/s
+iteration   26801 E RMSE(T V) = 8.5706e-03 9.3922e-03 learning_rate: 1.0000e-03 elapsed: 3.37e+02 s speed: 1.09e+02 it/s
+iteration   26901 E RMSE(T V) = 6.6734e-03 8.3030e-03 learning_rate: 1.0000e-03 elapsed: 3.38e+02 s speed: 1.06e+02 it/s
+iteration   27001 E RMSE(T V) = 1.8832e-02 1.6743e-02 learning_rate: 1.0000e-03 elapsed: 3.39e+02 s speed: 1.09e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   27101 E RMSE(T V) = 1.2760e-02 7.1686e-03 learning_rate: 1.0000e-03 elapsed: 3.41e+02 s speed: 1.14e+02 it/s
-epoch   27201 E RMSE(T V) = 8.5218e-03 8.9366e-03 learning_rate: 1.0000e-03 elapsed: 3.42e+02 s speed: 1.22e+02 it/s
-epoch   27301 E RMSE(T V) = 9.9833e-03 9.3534e-03 learning_rate: 1.0000e-03 elapsed: 3.43e+02 s speed: 9.95e+01 it/s
-epoch   27401 E RMSE(T V) = 1.0855e-02 7.1241e-03 learning_rate: 1.0000e-03 elapsed: 3.44e+02 s speed: 1.05e+02 it/s
-epoch   27501 E RMSE(T V) = 5.6283e-03 8.8881e-03 learning_rate: 1.0000e-03 elapsed: 3.45e+02 s speed: 1.11e+02 it/s
-epoch   27601 E RMSE(T V) = 1.5237e-02 1.4700e-02 learning_rate: 1.0000e-03 elapsed: 3.46e+02 s speed: 1.08e+02 it/s
-epoch   27701 E RMSE(T V) = 4.7490e-03 7.6268e-03 learning_rate: 1.0000e-03 elapsed: 3.47e+02 s speed: 1.06e+02 it/s
-epoch   27801 E RMSE(T V) = 8.7296e-03 7.4773e-03 learning_rate: 1.0000e-03 elapsed: 3.48e+02 s speed: 1.04e+02 it/s
-epoch   27901 E RMSE(T V) = 9.9987e-03 8.7303e-03 learning_rate: 1.0000e-03 elapsed: 3.49e+02 s speed: 1.17e+02 it/s
-epoch   28001 E RMSE(T V) = 7.0777e-03 9.4974e-03 learning_rate: 1.0000e-03 elapsed: 3.50e+02 s speed: 9.31e+01 it/s
+iteration   27101 E RMSE(T V) = 1.2760e-02 7.1686e-03 learning_rate: 1.0000e-03 elapsed: 3.41e+02 s speed: 1.14e+02 it/s
+iteration   27201 E RMSE(T V) = 8.5218e-03 8.9366e-03 learning_rate: 1.0000e-03 elapsed: 3.42e+02 s speed: 1.22e+02 it/s
+iteration   27301 E RMSE(T V) = 9.9833e-03 9.3534e-03 learning_rate: 1.0000e-03 elapsed: 3.43e+02 s speed: 9.95e+01 it/s
+iteration   27401 E RMSE(T V) = 1.0855e-02 7.1241e-03 learning_rate: 1.0000e-03 elapsed: 3.44e+02 s speed: 1.05e+02 it/s
+iteration   27501 E RMSE(T V) = 5.6283e-03 8.8881e-03 learning_rate: 1.0000e-03 elapsed: 3.45e+02 s speed: 1.11e+02 it/s
+iteration   27601 E RMSE(T V) = 1.5237e-02 1.4700e-02 learning_rate: 1.0000e-03 elapsed: 3.46e+02 s speed: 1.08e+02 it/s
+iteration   27701 E RMSE(T V) = 4.7490e-03 7.6268e-03 learning_rate: 1.0000e-03 elapsed: 3.47e+02 s speed: 1.06e+02 it/s
+iteration   27801 E RMSE(T V) = 8.7296e-03 7.4773e-03 learning_rate: 1.0000e-03 elapsed: 3.48e+02 s speed: 1.04e+02 it/s
+iteration   27901 E RMSE(T V) = 9.9987e-03 8.7303e-03 learning_rate: 1.0000e-03 elapsed: 3.49e+02 s speed: 1.17e+02 it/s
+iteration   28001 E RMSE(T V) = 7.0777e-03 9.4974e-03 learning_rate: 1.0000e-03 elapsed: 3.50e+02 s speed: 9.31e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   28101 E RMSE(T V) = 5.2468e-03 7.9472e-03 learning_rate: 1.0000e-03 elapsed: 3.53e+02 s speed: 1.16e+02 it/s
-epoch   28201 E RMSE(T V) = 5.5333e-03 7.4542e-03 learning_rate: 1.0000e-03 elapsed: 3.54e+02 s speed: 1.01e+02 it/s
-epoch   28301 E RMSE(T V) = 7.0181e-03 6.9132e-03 learning_rate: 1.0000e-03 elapsed: 3.55e+02 s speed: 1.02e+02 it/s
-epoch   28401 E RMSE(T V) = 7.2596e-03 7.4331e-03 learning_rate: 1.0000e-03 elapsed: 3.56e+02 s speed: 1.06e+02 it/s
-epoch   28501 E RMSE(T V) = 6.0804e-03 6.8767e-03 learning_rate: 1.0000e-03 elapsed: 3.57e+02 s speed: 1.12e+02 it/s
-epoch   28601 E RMSE(T V) = 4.6036e-03 7.9464e-03 learning_rate: 1.0000e-03 elapsed: 3.58e+02 s speed: 1.09e+02 it/s
-epoch   28701 E RMSE(T V) = 9.3765e-03 1.0792e-02 learning_rate: 1.0000e-03 elapsed: 3.59e+02 s speed: 1.04e+02 it/s
-epoch   28801 E RMSE(T V) = 7.0912e-03 7.3309e-03 learning_rate: 1.0000e-03 elapsed: 3.60e+02 s speed: 1.02e+02 it/s
-epoch   28901 E RMSE(T V) = 5.8822e-03 8.9091e-03 learning_rate: 1.0000e-03 elapsed: 3.61e+02 s speed: 9.72e+01 it/s
-epoch   29001 E RMSE(T V) = 5.7757e-03 7.2450e-03 learning_rate: 1.0000e-03 elapsed: 3.62e+02 s speed: 1.07e+02 it/s
+iteration   28101 E RMSE(T V) = 5.2468e-03 7.9472e-03 learning_rate: 1.0000e-03 elapsed: 3.53e+02 s speed: 1.16e+02 it/s
+iteration   28201 E RMSE(T V) = 5.5333e-03 7.4542e-03 learning_rate: 1.0000e-03 elapsed: 3.54e+02 s speed: 1.01e+02 it/s
+iteration   28301 E RMSE(T V) = 7.0181e-03 6.9132e-03 learning_rate: 1.0000e-03 elapsed: 3.55e+02 s speed: 1.02e+02 it/s
+iteration   28401 E RMSE(T V) = 7.2596e-03 7.4331e-03 learning_rate: 1.0000e-03 elapsed: 3.56e+02 s speed: 1.06e+02 it/s
+iteration   28501 E RMSE(T V) = 6.0804e-03 6.8767e-03 learning_rate: 1.0000e-03 elapsed: 3.57e+02 s speed: 1.12e+02 it/s
+iteration   28601 E RMSE(T V) = 4.6036e-03 7.9464e-03 learning_rate: 1.0000e-03 elapsed: 3.58e+02 s speed: 1.09e+02 it/s
+iteration   28701 E RMSE(T V) = 9.3765e-03 1.0792e-02 learning_rate: 1.0000e-03 elapsed: 3.59e+02 s speed: 1.04e+02 it/s
+iteration   28801 E RMSE(T V) = 7.0912e-03 7.3309e-03 learning_rate: 1.0000e-03 elapsed: 3.60e+02 s speed: 1.02e+02 it/s
+iteration   28901 E RMSE(T V) = 5.8822e-03 8.9091e-03 learning_rate: 1.0000e-03 elapsed: 3.61e+02 s speed: 9.72e+01 it/s
+iteration   29001 E RMSE(T V) = 5.7757e-03 7.2450e-03 learning_rate: 1.0000e-03 elapsed: 3.62e+02 s speed: 1.07e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   29101 E RMSE(T V) = 1.0363e-02 7.8137e-03 learning_rate: 1.0000e-03 elapsed: 3.64e+02 s speed: 1.15e+02 it/s
-epoch   29201 E RMSE(T V) = 8.0645e-03 9.1688e-03 learning_rate: 1.0000e-03 elapsed: 3.65e+02 s speed: 1.16e+02 it/s
-epoch   29301 E RMSE(T V) = 8.2760e-03 1.1501e-02 learning_rate: 1.0000e-03 elapsed: 3.66e+02 s speed: 1.08e+02 it/s
-epoch   29401 E RMSE(T V) = 9.1507e-03 7.1653e-03 learning_rate: 1.0000e-03 elapsed: 3.67e+02 s speed: 1.15e+02 it/s
-epoch   29501 E RMSE(T V) = 6.8377e-03 8.3372e-03 learning_rate: 1.0000e-03 elapsed: 3.69e+02 s speed: 1.05e+02 it/s
-epoch   29601 E RMSE(T V) = 1.2915e-02 9.4999e-03 learning_rate: 1.0000e-03 elapsed: 3.69e+02 s speed: 1.23e+02 it/s
-epoch   29701 E RMSE(T V) = 4.1147e-03 8.4266e-03 learning_rate: 1.0000e-03 elapsed: 3.71e+02 s speed: 1.07e+02 it/s
-epoch   29801 E RMSE(T V) = 1.0720e-02 7.8341e-03 learning_rate: 1.0000e-03 elapsed: 3.72e+02 s speed: 1.07e+02 it/s
-epoch   29901 E RMSE(T V) = 7.6350e-03 7.3687e-03 learning_rate: 1.0000e-03 elapsed: 3.73e+02 s speed: 1.07e+02 it/s
-epoch   30001 E RMSE(T V) = 8.6645e-03 7.7668e-03 learning_rate: 1.0000e-03 elapsed: 3.74e+02 s speed: 1.20e+02 it/s
+iteration   29101 E RMSE(T V) = 1.0363e-02 7.8137e-03 learning_rate: 1.0000e-03 elapsed: 3.64e+02 s speed: 1.15e+02 it/s
+iteration   29201 E RMSE(T V) = 8.0645e-03 9.1688e-03 learning_rate: 1.0000e-03 elapsed: 3.65e+02 s speed: 1.16e+02 it/s
+iteration   29301 E RMSE(T V) = 8.2760e-03 1.1501e-02 learning_rate: 1.0000e-03 elapsed: 3.66e+02 s speed: 1.08e+02 it/s
+iteration   29401 E RMSE(T V) = 9.1507e-03 7.1653e-03 learning_rate: 1.0000e-03 elapsed: 3.67e+02 s speed: 1.15e+02 it/s
+iteration   29501 E RMSE(T V) = 6.8377e-03 8.3372e-03 learning_rate: 1.0000e-03 elapsed: 3.69e+02 s speed: 1.05e+02 it/s
+iteration   29601 E RMSE(T V) = 1.2915e-02 9.4999e-03 learning_rate: 1.0000e-03 elapsed: 3.69e+02 s speed: 1.23e+02 it/s
+iteration   29701 E RMSE(T V) = 4.1147e-03 8.4266e-03 learning_rate: 1.0000e-03 elapsed: 3.71e+02 s speed: 1.07e+02 it/s
+iteration   29801 E RMSE(T V) = 1.0720e-02 7.8341e-03 learning_rate: 1.0000e-03 elapsed: 3.72e+02 s speed: 1.07e+02 it/s
+iteration   29901 E RMSE(T V) = 7.6350e-03 7.3687e-03 learning_rate: 1.0000e-03 elapsed: 3.73e+02 s speed: 1.07e+02 it/s
+iteration   30001 E RMSE(T V) = 8.6645e-03 7.7668e-03 learning_rate: 1.0000e-03 elapsed: 3.74e+02 s speed: 1.20e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   30101 E RMSE(T V) = 6.5522e-03 7.4978e-03 learning_rate: 1.0000e-03 elapsed: 3.76e+02 s speed: 1.07e+02 it/s
-epoch   30201 E RMSE(T V) = 5.7585e-03 6.8195e-03 learning_rate: 1.0000e-03 elapsed: 3.77e+02 s speed: 1.05e+02 it/s
-epoch   30301 E RMSE(T V) = 8.3892e-03 9.8446e-03 learning_rate: 1.0000e-03 elapsed: 3.78e+02 s speed: 1.06e+02 it/s
-epoch   30401 E RMSE(T V) = 9.6531e-03 9.8256e-03 learning_rate: 1.0000e-03 elapsed: 3.79e+02 s speed: 1.10e+02 it/s
-epoch   30501 E RMSE(T V) = 1.2730e-02 1.1325e-02 learning_rate: 1.0000e-03 elapsed: 3.80e+02 s speed: 1.08e+02 it/s
-epoch   30601 E RMSE(T V) = 5.5935e-03 6.6581e-03 learning_rate: 1.0000e-03 elapsed: 3.81e+02 s speed: 1.03e+02 it/s
-epoch   30701 E RMSE(T V) = 1.0998e-02 1.2967e-02 learning_rate: 1.0000e-03 elapsed: 3.82e+02 s speed: 1.06e+02 it/s
-epoch   30801 E RMSE(T V) = 5.2394e-03 6.5658e-03 learning_rate: 1.0000e-03 elapsed: 3.83e+02 s speed: 1.00e+02 it/s
-epoch   30901 E RMSE(T V) = 9.1628e-03 8.9441e-03 learning_rate: 1.0000e-03 elapsed: 3.84e+02 s speed: 1.22e+02 it/s
-epoch   31001 E RMSE(T V) = 5.0254e-03 6.5667e-03 learning_rate: 1.0000e-03 elapsed: 3.85e+02 s speed: 1.06e+02 it/s
+iteration   30101 E RMSE(T V) = 6.5522e-03 7.4978e-03 learning_rate: 1.0000e-03 elapsed: 3.76e+02 s speed: 1.07e+02 it/s
+iteration   30201 E RMSE(T V) = 5.7585e-03 6.8195e-03 learning_rate: 1.0000e-03 elapsed: 3.77e+02 s speed: 1.05e+02 it/s
+iteration   30301 E RMSE(T V) = 8.3892e-03 9.8446e-03 learning_rate: 1.0000e-03 elapsed: 3.78e+02 s speed: 1.06e+02 it/s
+iteration   30401 E RMSE(T V) = 9.6531e-03 9.8256e-03 learning_rate: 1.0000e-03 elapsed: 3.79e+02 s speed: 1.10e+02 it/s
+iteration   30501 E RMSE(T V) = 1.2730e-02 1.1325e-02 learning_rate: 1.0000e-03 elapsed: 3.80e+02 s speed: 1.08e+02 it/s
+iteration   30601 E RMSE(T V) = 5.5935e-03 6.6581e-03 learning_rate: 1.0000e-03 elapsed: 3.81e+02 s speed: 1.03e+02 it/s
+iteration   30701 E RMSE(T V) = 1.0998e-02 1.2967e-02 learning_rate: 1.0000e-03 elapsed: 3.82e+02 s speed: 1.06e+02 it/s
+iteration   30801 E RMSE(T V) = 5.2394e-03 6.5658e-03 learning_rate: 1.0000e-03 elapsed: 3.83e+02 s speed: 1.00e+02 it/s
+iteration   30901 E RMSE(T V) = 9.1628e-03 8.9441e-03 learning_rate: 1.0000e-03 elapsed: 3.84e+02 s speed: 1.22e+02 it/s
+iteration   31001 E RMSE(T V) = 5.0254e-03 6.5667e-03 learning_rate: 1.0000e-03 elapsed: 3.85e+02 s speed: 1.06e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   31101 E RMSE(T V) = 8.9032e-03 8.1657e-03 learning_rate: 1.0000e-03 elapsed: 3.88e+02 s speed: 1.12e+02 it/s
-epoch   31201 E RMSE(T V) = 9.6308e-03 6.9302e-03 learning_rate: 1.0000e-03 elapsed: 3.89e+02 s speed: 1.05e+02 it/s
-epoch   31301 E RMSE(T V) = 5.2800e-03 6.5782e-03 learning_rate: 1.0000e-03 elapsed: 3.90e+02 s speed: 1.15e+02 it/s
-epoch   31401 E RMSE(T V) = 1.0264e-02 8.8554e-03 learning_rate: 1.0000e-03 elapsed: 3.91e+02 s speed: 1.06e+02 it/s
-epoch   31501 E RMSE(T V) = 1.1564e-02 1.1126e-02 learning_rate: 1.0000e-03 elapsed: 3.92e+02 s speed: 1.03e+02 it/s
-epoch   31601 E RMSE(T V) = 7.0502e-03 9.3249e-03 learning_rate: 1.0000e-03 elapsed: 3.93e+02 s speed: 1.11e+02 it/s
-epoch   31701 E RMSE(T V) = 6.0304e-03 7.4194e-03 learning_rate: 1.0000e-03 elapsed: 3.94e+02 s speed: 1.13e+02 it/s
-epoch   31801 E RMSE(T V) = 8.4385e-03 9.2067e-03 learning_rate: 1.0000e-03 elapsed: 3.95e+02 s speed: 1.08e+02 it/s
-epoch   31901 E RMSE(T V) = 9.6617e-03 9.3335e-03 learning_rate: 1.0000e-03 elapsed: 3.96e+02 s speed: 1.01e+02 it/s
-epoch   32001 E RMSE(T V) = 1.3251e-02 1.3779e-02 learning_rate: 1.0000e-03 elapsed: 3.97e+02 s speed: 9.16e+01 it/s
+iteration   31101 E RMSE(T V) = 8.9032e-03 8.1657e-03 learning_rate: 1.0000e-03 elapsed: 3.88e+02 s speed: 1.12e+02 it/s
+iteration   31201 E RMSE(T V) = 9.6308e-03 6.9302e-03 learning_rate: 1.0000e-03 elapsed: 3.89e+02 s speed: 1.05e+02 it/s
+iteration   31301 E RMSE(T V) = 5.2800e-03 6.5782e-03 learning_rate: 1.0000e-03 elapsed: 3.90e+02 s speed: 1.15e+02 it/s
+iteration   31401 E RMSE(T V) = 1.0264e-02 8.8554e-03 learning_rate: 1.0000e-03 elapsed: 3.91e+02 s speed: 1.06e+02 it/s
+iteration   31501 E RMSE(T V) = 1.1564e-02 1.1126e-02 learning_rate: 1.0000e-03 elapsed: 3.92e+02 s speed: 1.03e+02 it/s
+iteration   31601 E RMSE(T V) = 7.0502e-03 9.3249e-03 learning_rate: 1.0000e-03 elapsed: 3.93e+02 s speed: 1.11e+02 it/s
+iteration   31701 E RMSE(T V) = 6.0304e-03 7.4194e-03 learning_rate: 1.0000e-03 elapsed: 3.94e+02 s speed: 1.13e+02 it/s
+iteration   31801 E RMSE(T V) = 8.4385e-03 9.2067e-03 learning_rate: 1.0000e-03 elapsed: 3.95e+02 s speed: 1.08e+02 it/s
+iteration   31901 E RMSE(T V) = 9.6617e-03 9.3335e-03 learning_rate: 1.0000e-03 elapsed: 3.96e+02 s speed: 1.01e+02 it/s
+iteration   32001 E RMSE(T V) = 1.3251e-02 1.3779e-02 learning_rate: 1.0000e-03 elapsed: 3.97e+02 s speed: 9.16e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   32101 E RMSE(T V) = 6.9642e-03 6.4758e-03 learning_rate: 1.0000e-03 elapsed: 3.99e+02 s speed: 9.98e+01 it/s
-epoch   32201 E RMSE(T V) = 5.4826e-03 7.9226e-03 learning_rate: 1.0000e-03 elapsed: 4.00e+02 s speed: 1.22e+02 it/s
-epoch   32301 E RMSE(T V) = 7.1873e-03 6.7040e-03 learning_rate: 1.0000e-03 elapsed: 4.01e+02 s speed: 1.31e+02 it/s
-epoch   32401 E RMSE(T V) = 1.1013e-02 9.4661e-03 learning_rate: 1.0000e-03 elapsed: 4.02e+02 s speed: 1.18e+02 it/s
-epoch   32501 E RMSE(T V) = 6.8896e-03 6.5331e-03 learning_rate: 1.0000e-03 elapsed: 4.03e+02 s speed: 1.17e+02 it/s
-epoch   32601 E RMSE(T V) = 1.4968e-02 1.4313e-02 learning_rate: 1.0000e-03 elapsed: 4.04e+02 s speed: 1.15e+02 it/s
-epoch   32701 E RMSE(T V) = 6.6784e-03 7.2914e-03 learning_rate: 1.0000e-03 elapsed: 4.05e+02 s speed: 1.26e+02 it/s
-epoch   32801 E RMSE(T V) = 1.0212e-02 8.3754e-03 learning_rate: 1.0000e-03 elapsed: 4.06e+02 s speed: 1.16e+02 it/s
-epoch   32901 E RMSE(T V) = 1.9322e-02 1.8359e-02 learning_rate: 1.0000e-03 elapsed: 4.07e+02 s speed: 1.23e+02 it/s
-epoch   33001 E RMSE(T V) = 8.3017e-03 7.6882e-03 learning_rate: 1.0000e-03 elapsed: 4.08e+02 s speed: 1.20e+02 it/s
+iteration   32101 E RMSE(T V) = 6.9642e-03 6.4758e-03 learning_rate: 1.0000e-03 elapsed: 3.99e+02 s speed: 9.98e+01 it/s
+iteration   32201 E RMSE(T V) = 5.4826e-03 7.9226e-03 learning_rate: 1.0000e-03 elapsed: 4.00e+02 s speed: 1.22e+02 it/s
+iteration   32301 E RMSE(T V) = 7.1873e-03 6.7040e-03 learning_rate: 1.0000e-03 elapsed: 4.01e+02 s speed: 1.31e+02 it/s
+iteration   32401 E RMSE(T V) = 1.1013e-02 9.4661e-03 learning_rate: 1.0000e-03 elapsed: 4.02e+02 s speed: 1.18e+02 it/s
+iteration   32501 E RMSE(T V) = 6.8896e-03 6.5331e-03 learning_rate: 1.0000e-03 elapsed: 4.03e+02 s speed: 1.17e+02 it/s
+iteration   32601 E RMSE(T V) = 1.4968e-02 1.4313e-02 learning_rate: 1.0000e-03 elapsed: 4.04e+02 s speed: 1.15e+02 it/s
+iteration   32701 E RMSE(T V) = 6.6784e-03 7.2914e-03 learning_rate: 1.0000e-03 elapsed: 4.05e+02 s speed: 1.26e+02 it/s
+iteration   32801 E RMSE(T V) = 1.0212e-02 8.3754e-03 learning_rate: 1.0000e-03 elapsed: 4.06e+02 s speed: 1.16e+02 it/s
+iteration   32901 E RMSE(T V) = 1.9322e-02 1.8359e-02 learning_rate: 1.0000e-03 elapsed: 4.07e+02 s speed: 1.23e+02 it/s
+iteration   33001 E RMSE(T V) = 8.3017e-03 7.6882e-03 learning_rate: 1.0000e-03 elapsed: 4.08e+02 s speed: 1.20e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   33101 E RMSE(T V) = 4.4822e-03 7.4325e-03 learning_rate: 1.0000e-03 elapsed: 4.10e+02 s speed: 1.17e+02 it/s
-epoch   33201 E RMSE(T V) = 8.8329e-03 6.7508e-03 learning_rate: 1.0000e-03 elapsed: 4.11e+02 s speed: 1.23e+02 it/s
-epoch   33301 E RMSE(T V) = 5.7421e-03 7.1678e-03 learning_rate: 1.0000e-03 elapsed: 4.12e+02 s speed: 1.27e+02 it/s
-epoch   33401 E RMSE(T V) = 5.4232e-03 6.5387e-03 learning_rate: 1.0000e-03 elapsed: 4.13e+02 s speed: 1.25e+02 it/s
-epoch   33501 E RMSE(T V) = 7.4192e-03 7.0458e-03 learning_rate: 1.0000e-03 elapsed: 4.14e+02 s speed: 1.23e+02 it/s
-epoch   33601 E RMSE(T V) = 5.8543e-03 6.6039e-03 learning_rate: 1.0000e-03 elapsed: 4.14e+02 s speed: 1.24e+02 it/s
-epoch   33701 E RMSE(T V) = 1.2475e-02 1.1329e-02 learning_rate: 1.0000e-03 elapsed: 4.15e+02 s speed: 1.29e+02 it/s
-epoch   33801 E RMSE(T V) = 1.5655e-02 1.5451e-02 learning_rate: 1.0000e-03 elapsed: 4.16e+02 s speed: 1.22e+02 it/s
-epoch   33901 E RMSE(T V) = 8.2546e-03 7.5006e-03 learning_rate: 1.0000e-03 elapsed: 4.17e+02 s speed: 1.25e+02 it/s
-epoch   34001 E RMSE(T V) = 1.1672e-02 9.2871e-03 learning_rate: 1.0000e-03 elapsed: 4.18e+02 s speed: 1.29e+02 it/s
+iteration   33101 E RMSE(T V) = 4.4822e-03 7.4325e-03 learning_rate: 1.0000e-03 elapsed: 4.10e+02 s speed: 1.17e+02 it/s
+iteration   33201 E RMSE(T V) = 8.8329e-03 6.7508e-03 learning_rate: 1.0000e-03 elapsed: 4.11e+02 s speed: 1.23e+02 it/s
+iteration   33301 E RMSE(T V) = 5.7421e-03 7.1678e-03 learning_rate: 1.0000e-03 elapsed: 4.12e+02 s speed: 1.27e+02 it/s
+iteration   33401 E RMSE(T V) = 5.4232e-03 6.5387e-03 learning_rate: 1.0000e-03 elapsed: 4.13e+02 s speed: 1.25e+02 it/s
+iteration   33501 E RMSE(T V) = 7.4192e-03 7.0458e-03 learning_rate: 1.0000e-03 elapsed: 4.14e+02 s speed: 1.23e+02 it/s
+iteration   33601 E RMSE(T V) = 5.8543e-03 6.6039e-03 learning_rate: 1.0000e-03 elapsed: 4.14e+02 s speed: 1.24e+02 it/s
+iteration   33701 E RMSE(T V) = 1.2475e-02 1.1329e-02 learning_rate: 1.0000e-03 elapsed: 4.15e+02 s speed: 1.29e+02 it/s
+iteration   33801 E RMSE(T V) = 1.5655e-02 1.5451e-02 learning_rate: 1.0000e-03 elapsed: 4.16e+02 s speed: 1.22e+02 it/s
+iteration   33901 E RMSE(T V) = 8.2546e-03 7.5006e-03 learning_rate: 1.0000e-03 elapsed: 4.17e+02 s speed: 1.25e+02 it/s
+iteration   34001 E RMSE(T V) = 1.1672e-02 9.2871e-03 learning_rate: 1.0000e-03 elapsed: 4.18e+02 s speed: 1.29e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   34101 E RMSE(T V) = 7.4897e-03 8.2497e-03 learning_rate: 1.0000e-03 elapsed: 4.20e+02 s speed: 1.17e+02 it/s
-epoch   34201 E RMSE(T V) = 3.9244e-03 6.4972e-03 learning_rate: 1.0000e-03 elapsed: 4.21e+02 s speed: 1.28e+02 it/s
-epoch   34301 E RMSE(T V) = 5.9396e-03 6.7754e-03 learning_rate: 1.0000e-03 elapsed: 4.22e+02 s speed: 1.29e+02 it/s
-epoch   34401 E RMSE(T V) = 1.3230e-02 1.2225e-02 learning_rate: 1.0000e-03 elapsed: 4.23e+02 s speed: 1.30e+02 it/s
-epoch   34501 E RMSE(T V) = 6.9680e-03 7.9852e-03 learning_rate: 1.0000e-03 elapsed: 4.24e+02 s speed: 1.29e+02 it/s
-epoch   34601 E RMSE(T V) = 5.5823e-03 6.2862e-03 learning_rate: 1.0000e-03 elapsed: 4.25e+02 s speed: 1.27e+02 it/s
-epoch   34701 E RMSE(T V) = 1.1705e-02 1.0176e-02 learning_rate: 1.0000e-03 elapsed: 4.25e+02 s speed: 1.18e+02 it/s
-epoch   34801 E RMSE(T V) = 7.1556e-03 7.2561e-03 learning_rate: 1.0000e-03 elapsed: 4.26e+02 s speed: 1.24e+02 it/s
-epoch   34901 E RMSE(T V) = 6.6761e-03 6.6200e-03 learning_rate: 1.0000e-03 elapsed: 4.27e+02 s speed: 1.27e+02 it/s
-epoch   35001 E RMSE(T V) = 7.6641e-03 7.6773e-03 learning_rate: 1.0000e-03 elapsed: 4.28e+02 s speed: 1.25e+02 it/s
+iteration   34101 E RMSE(T V) = 7.4897e-03 8.2497e-03 learning_rate: 1.0000e-03 elapsed: 4.20e+02 s speed: 1.17e+02 it/s
+iteration   34201 E RMSE(T V) = 3.9244e-03 6.4972e-03 learning_rate: 1.0000e-03 elapsed: 4.21e+02 s speed: 1.28e+02 it/s
+iteration   34301 E RMSE(T V) = 5.9396e-03 6.7754e-03 learning_rate: 1.0000e-03 elapsed: 4.22e+02 s speed: 1.29e+02 it/s
+iteration   34401 E RMSE(T V) = 1.3230e-02 1.2225e-02 learning_rate: 1.0000e-03 elapsed: 4.23e+02 s speed: 1.30e+02 it/s
+iteration   34501 E RMSE(T V) = 6.9680e-03 7.9852e-03 learning_rate: 1.0000e-03 elapsed: 4.24e+02 s speed: 1.29e+02 it/s
+iteration   34601 E RMSE(T V) = 5.5823e-03 6.2862e-03 learning_rate: 1.0000e-03 elapsed: 4.25e+02 s speed: 1.27e+02 it/s
+iteration   34701 E RMSE(T V) = 1.1705e-02 1.0176e-02 learning_rate: 1.0000e-03 elapsed: 4.25e+02 s speed: 1.18e+02 it/s
+iteration   34801 E RMSE(T V) = 7.1556e-03 7.2561e-03 learning_rate: 1.0000e-03 elapsed: 4.26e+02 s speed: 1.24e+02 it/s
+iteration   34901 E RMSE(T V) = 6.6761e-03 6.6200e-03 learning_rate: 1.0000e-03 elapsed: 4.27e+02 s speed: 1.27e+02 it/s
+iteration   35001 E RMSE(T V) = 7.6641e-03 7.6773e-03 learning_rate: 1.0000e-03 elapsed: 4.28e+02 s speed: 1.25e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   35101 E RMSE(T V) = 1.1604e-02 1.0867e-02 learning_rate: 1.0000e-03 elapsed: 4.30e+02 s speed: 1.26e+02 it/s
-epoch   35201 E RMSE(T V) = 7.6379e-03 6.8372e-03 learning_rate: 1.0000e-03 elapsed: 4.31e+02 s speed: 1.31e+02 it/s
-epoch   35301 E RMSE(T V) = 1.0526e-02 7.1577e-03 learning_rate: 1.0000e-03 elapsed: 4.32e+02 s speed: 1.20e+02 it/s
-epoch   35401 E RMSE(T V) = 1.5586e-02 1.0536e-02 learning_rate: 1.0000e-03 elapsed: 4.33e+02 s speed: 1.24e+02 it/s
-epoch   35501 E RMSE(T V) = 1.2187e-02 8.5518e-03 learning_rate: 1.0000e-03 elapsed: 4.34e+02 s speed: 1.27e+02 it/s
-epoch   35601 E RMSE(T V) = 8.7096e-03 6.4561e-03 learning_rate: 1.0000e-03 elapsed: 4.35e+02 s speed: 1.18e+02 it/s
-epoch   35701 E RMSE(T V) = 8.2858e-03 8.2103e-03 learning_rate: 1.0000e-03 elapsed: 4.36e+02 s speed: 1.25e+02 it/s
-epoch   35801 E RMSE(T V) = 4.9957e-03 6.1911e-03 learning_rate: 1.0000e-03 elapsed: 4.37e+02 s speed: 1.16e+02 it/s
-epoch   35901 E RMSE(T V) = 6.0153e-03 7.5804e-03 learning_rate: 1.0000e-03 elapsed: 4.38e+02 s speed: 1.08e+02 it/s
-epoch   36001 E RMSE(T V) = 8.9908e-03 9.5024e-03 learning_rate: 1.0000e-03 elapsed: 4.39e+02 s speed: 1.04e+02 it/s
+iteration   35101 E RMSE(T V) = 1.1604e-02 1.0867e-02 learning_rate: 1.0000e-03 elapsed: 4.30e+02 s speed: 1.26e+02 it/s
+iteration   35201 E RMSE(T V) = 7.6379e-03 6.8372e-03 learning_rate: 1.0000e-03 elapsed: 4.31e+02 s speed: 1.31e+02 it/s
+iteration   35301 E RMSE(T V) = 1.0526e-02 7.1577e-03 learning_rate: 1.0000e-03 elapsed: 4.32e+02 s speed: 1.20e+02 it/s
+iteration   35401 E RMSE(T V) = 1.5586e-02 1.0536e-02 learning_rate: 1.0000e-03 elapsed: 4.33e+02 s speed: 1.24e+02 it/s
+iteration   35501 E RMSE(T V) = 1.2187e-02 8.5518e-03 learning_rate: 1.0000e-03 elapsed: 4.34e+02 s speed: 1.27e+02 it/s
+iteration   35601 E RMSE(T V) = 8.7096e-03 6.4561e-03 learning_rate: 1.0000e-03 elapsed: 4.35e+02 s speed: 1.18e+02 it/s
+iteration   35701 E RMSE(T V) = 8.2858e-03 8.2103e-03 learning_rate: 1.0000e-03 elapsed: 4.36e+02 s speed: 1.25e+02 it/s
+iteration   35801 E RMSE(T V) = 4.9957e-03 6.1911e-03 learning_rate: 1.0000e-03 elapsed: 4.37e+02 s speed: 1.16e+02 it/s
+iteration   35901 E RMSE(T V) = 6.0153e-03 7.5804e-03 learning_rate: 1.0000e-03 elapsed: 4.38e+02 s speed: 1.08e+02 it/s
+iteration   36001 E RMSE(T V) = 8.9908e-03 9.5024e-03 learning_rate: 1.0000e-03 elapsed: 4.39e+02 s speed: 1.04e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   36101 E RMSE(T V) = 6.8062e-03 6.4090e-03 learning_rate: 1.0000e-03 elapsed: 4.41e+02 s speed: 1.12e+02 it/s
-epoch   36201 E RMSE(T V) = 4.5740e-03 6.1774e-03 learning_rate: 1.0000e-03 elapsed: 4.42e+02 s speed: 1.18e+02 it/s
-epoch   36301 E RMSE(T V) = 1.2214e-02 9.5043e-03 learning_rate: 1.0000e-03 elapsed: 4.43e+02 s speed: 1.03e+02 it/s
-epoch   36401 E RMSE(T V) = 4.5029e-03 6.1015e-03 learning_rate: 1.0000e-03 elapsed: 4.44e+02 s speed: 1.01e+02 it/s
-epoch   36501 E RMSE(T V) = 7.1803e-03 6.4364e-03 learning_rate: 1.0000e-03 elapsed: 4.45e+02 s speed: 9.44e+01 it/s
-epoch   36601 E RMSE(T V) = 1.0483e-02 7.1905e-03 learning_rate: 1.0000e-03 elapsed: 4.46e+02 s speed: 9.89e+01 it/s
-epoch   36701 E RMSE(T V) = 6.1741e-03 6.2075e-03 learning_rate: 1.0000e-03 elapsed: 4.48e+02 s speed: 9.52e+01 it/s
-epoch   36801 E RMSE(T V) = 7.4194e-03 6.2443e-03 learning_rate: 1.0000e-03 elapsed: 4.49e+02 s speed: 1.13e+02 it/s
-epoch   36901 E RMSE(T V) = 5.9233e-03 6.4201e-03 learning_rate: 1.0000e-03 elapsed: 4.50e+02 s speed: 1.15e+02 it/s
-epoch   37001 E RMSE(T V) = 8.7717e-03 1.0004e-02 learning_rate: 1.0000e-03 elapsed: 4.51e+02 s speed: 1.14e+02 it/s
+iteration   36101 E RMSE(T V) = 6.8062e-03 6.4090e-03 learning_rate: 1.0000e-03 elapsed: 4.41e+02 s speed: 1.12e+02 it/s
+iteration   36201 E RMSE(T V) = 4.5740e-03 6.1774e-03 learning_rate: 1.0000e-03 elapsed: 4.42e+02 s speed: 1.18e+02 it/s
+iteration   36301 E RMSE(T V) = 1.2214e-02 9.5043e-03 learning_rate: 1.0000e-03 elapsed: 4.43e+02 s speed: 1.03e+02 it/s
+iteration   36401 E RMSE(T V) = 4.5029e-03 6.1015e-03 learning_rate: 1.0000e-03 elapsed: 4.44e+02 s speed: 1.01e+02 it/s
+iteration   36501 E RMSE(T V) = 7.1803e-03 6.4364e-03 learning_rate: 1.0000e-03 elapsed: 4.45e+02 s speed: 9.44e+01 it/s
+iteration   36601 E RMSE(T V) = 1.0483e-02 7.1905e-03 learning_rate: 1.0000e-03 elapsed: 4.46e+02 s speed: 9.89e+01 it/s
+iteration   36701 E RMSE(T V) = 6.1741e-03 6.2075e-03 learning_rate: 1.0000e-03 elapsed: 4.48e+02 s speed: 9.52e+01 it/s
+iteration   36801 E RMSE(T V) = 7.4194e-03 6.2443e-03 learning_rate: 1.0000e-03 elapsed: 4.49e+02 s speed: 1.13e+02 it/s
+iteration   36901 E RMSE(T V) = 5.9233e-03 6.4201e-03 learning_rate: 1.0000e-03 elapsed: 4.50e+02 s speed: 1.15e+02 it/s
+iteration   37001 E RMSE(T V) = 8.7717e-03 1.0004e-02 learning_rate: 1.0000e-03 elapsed: 4.51e+02 s speed: 1.14e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   37101 E RMSE(T V) = 5.4419e-03 6.9909e-03 learning_rate: 1.0000e-03 elapsed: 4.53e+02 s speed: 1.05e+02 it/s
-epoch   37201 E RMSE(T V) = 7.6461e-03 7.1784e-03 learning_rate: 1.0000e-03 elapsed: 4.54e+02 s speed: 9.17e+01 it/s
-epoch   37301 E RMSE(T V) = 9.1498e-03 8.4643e-03 learning_rate: 1.0000e-03 elapsed: 4.55e+02 s speed: 1.04e+02 it/s
-epoch   37401 E RMSE(T V) = 7.1168e-03 7.4063e-03 learning_rate: 1.0000e-03 elapsed: 4.56e+02 s speed: 9.91e+01 it/s
-epoch   37501 E RMSE(T V) = 5.5906e-03 6.7173e-03 learning_rate: 1.0000e-03 elapsed: 4.57e+02 s speed: 8.96e+01 it/s
-epoch   37601 E RMSE(T V) = 9.3959e-03 8.4831e-03 learning_rate: 1.0000e-03 elapsed: 4.59e+02 s speed: 1.11e+02 it/s
-epoch   37701 E RMSE(T V) = 4.4101e-03 6.2524e-03 learning_rate: 1.0000e-03 elapsed: 4.60e+02 s speed: 1.07e+02 it/s
-epoch   37801 E RMSE(T V) = 4.9867e-03 6.1720e-03 learning_rate: 1.0000e-03 elapsed: 4.61e+02 s speed: 1.03e+02 it/s
-epoch   37901 E RMSE(T V) = 6.8566e-03 8.5395e-03 learning_rate: 1.0000e-03 elapsed: 4.62e+02 s speed: 1.06e+02 it/s
-epoch   38001 E RMSE(T V) = 1.0426e-02 1.1419e-02 learning_rate: 1.0000e-03 elapsed: 4.63e+02 s speed: 1.03e+02 it/s
+iteration   37101 E RMSE(T V) = 5.4419e-03 6.9909e-03 learning_rate: 1.0000e-03 elapsed: 4.53e+02 s speed: 1.05e+02 it/s
+iteration   37201 E RMSE(T V) = 7.6461e-03 7.1784e-03 learning_rate: 1.0000e-03 elapsed: 4.54e+02 s speed: 9.17e+01 it/s
+iteration   37301 E RMSE(T V) = 9.1498e-03 8.4643e-03 learning_rate: 1.0000e-03 elapsed: 4.55e+02 s speed: 1.04e+02 it/s
+iteration   37401 E RMSE(T V) = 7.1168e-03 7.4063e-03 learning_rate: 1.0000e-03 elapsed: 4.56e+02 s speed: 9.91e+01 it/s
+iteration   37501 E RMSE(T V) = 5.5906e-03 6.7173e-03 learning_rate: 1.0000e-03 elapsed: 4.57e+02 s speed: 8.96e+01 it/s
+iteration   37601 E RMSE(T V) = 9.3959e-03 8.4831e-03 learning_rate: 1.0000e-03 elapsed: 4.59e+02 s speed: 1.11e+02 it/s
+iteration   37701 E RMSE(T V) = 4.4101e-03 6.2524e-03 learning_rate: 1.0000e-03 elapsed: 4.60e+02 s speed: 1.07e+02 it/s
+iteration   37801 E RMSE(T V) = 4.9867e-03 6.1720e-03 learning_rate: 1.0000e-03 elapsed: 4.61e+02 s speed: 1.03e+02 it/s
+iteration   37901 E RMSE(T V) = 6.8566e-03 8.5395e-03 learning_rate: 1.0000e-03 elapsed: 4.62e+02 s speed: 1.06e+02 it/s
+iteration   38001 E RMSE(T V) = 1.0426e-02 1.1419e-02 learning_rate: 1.0000e-03 elapsed: 4.63e+02 s speed: 1.03e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   38101 E RMSE(T V) = 8.8476e-03 9.2550e-03 learning_rate: 1.0000e-03 elapsed: 4.65e+02 s speed: 1.07e+02 it/s
-epoch   38201 E RMSE(T V) = 1.0637e-02 9.5397e-03 learning_rate: 1.0000e-03 elapsed: 4.67e+02 s speed: 1.01e+02 it/s
-epoch   38301 E RMSE(T V) = 4.8501e-03 6.0351e-03 learning_rate: 1.0000e-03 elapsed: 4.68e+02 s speed: 9.78e+01 it/s
-epoch   38401 E RMSE(T V) = 9.3173e-03 1.0755e-02 learning_rate: 1.0000e-03 elapsed: 4.69e+02 s speed: 1.04e+02 it/s
-epoch   38501 E RMSE(T V) = 7.4118e-03 8.0142e-03 learning_rate: 1.0000e-03 elapsed: 4.70e+02 s speed: 1.03e+02 it/s
-epoch   38601 E RMSE(T V) = 6.6324e-03 8.2427e-03 learning_rate: 1.0000e-03 elapsed: 4.71e+02 s speed: 1.03e+02 it/s
-epoch   38701 E RMSE(T V) = 8.2963e-03 7.1817e-03 learning_rate: 1.0000e-03 elapsed: 4.72e+02 s speed: 1.02e+02 it/s
-epoch   38801 E RMSE(T V) = 1.1605e-02 1.3888e-02 learning_rate: 1.0000e-03 elapsed: 4.73e+02 s speed: 1.15e+02 it/s
-epoch   38901 E RMSE(T V) = 8.8768e-03 8.7693e-03 learning_rate: 1.0000e-03 elapsed: 4.74e+02 s speed: 1.02e+02 it/s
-epoch   39001 E RMSE(T V) = 5.0197e-03 8.3282e-03 learning_rate: 1.0000e-03 elapsed: 4.75e+02 s speed: 1.02e+02 it/s
+iteration   38101 E RMSE(T V) = 8.8476e-03 9.2550e-03 learning_rate: 1.0000e-03 elapsed: 4.65e+02 s speed: 1.07e+02 it/s
+iteration   38201 E RMSE(T V) = 1.0637e-02 9.5397e-03 learning_rate: 1.0000e-03 elapsed: 4.67e+02 s speed: 1.01e+02 it/s
+iteration   38301 E RMSE(T V) = 4.8501e-03 6.0351e-03 learning_rate: 1.0000e-03 elapsed: 4.68e+02 s speed: 9.78e+01 it/s
+iteration   38401 E RMSE(T V) = 9.3173e-03 1.0755e-02 learning_rate: 1.0000e-03 elapsed: 4.69e+02 s speed: 1.04e+02 it/s
+iteration   38501 E RMSE(T V) = 7.4118e-03 8.0142e-03 learning_rate: 1.0000e-03 elapsed: 4.70e+02 s speed: 1.03e+02 it/s
+iteration   38601 E RMSE(T V) = 6.6324e-03 8.2427e-03 learning_rate: 1.0000e-03 elapsed: 4.71e+02 s speed: 1.03e+02 it/s
+iteration   38701 E RMSE(T V) = 8.2963e-03 7.1817e-03 learning_rate: 1.0000e-03 elapsed: 4.72e+02 s speed: 1.02e+02 it/s
+iteration   38801 E RMSE(T V) = 1.1605e-02 1.3888e-02 learning_rate: 1.0000e-03 elapsed: 4.73e+02 s speed: 1.15e+02 it/s
+iteration   38901 E RMSE(T V) = 8.8768e-03 8.7693e-03 learning_rate: 1.0000e-03 elapsed: 4.74e+02 s speed: 1.02e+02 it/s
+iteration   39001 E RMSE(T V) = 5.0197e-03 8.3282e-03 learning_rate: 1.0000e-03 elapsed: 4.75e+02 s speed: 1.02e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   39101 E RMSE(T V) = 4.8958e-03 7.6976e-03 learning_rate: 1.0000e-03 elapsed: 4.77e+02 s speed: 1.14e+02 it/s
-epoch   39201 E RMSE(T V) = 5.4841e-03 6.0830e-03 learning_rate: 1.0000e-03 elapsed: 4.78e+02 s speed: 1.06e+02 it/s
-epoch   39301 E RMSE(T V) = 6.0892e-03 5.9503e-03 learning_rate: 1.0000e-03 elapsed: 4.79e+02 s speed: 1.07e+02 it/s
-epoch   39401 E RMSE(T V) = 5.9583e-03 6.3013e-03 learning_rate: 1.0000e-03 elapsed: 4.81e+02 s speed: 1.05e+02 it/s
-epoch   39501 E RMSE(T V) = 1.0241e-02 8.0827e-03 learning_rate: 1.0000e-03 elapsed: 4.82e+02 s speed: 1.08e+02 it/s
-epoch   39601 E RMSE(T V) = 6.6126e-03 5.9926e-03 learning_rate: 1.0000e-03 elapsed: 4.83e+02 s speed: 1.11e+02 it/s
-epoch   39701 E RMSE(T V) = 6.9398e-03 7.1366e-03 learning_rate: 1.0000e-03 elapsed: 4.84e+02 s speed: 8.74e+01 it/s
-epoch   39801 E RMSE(T V) = 7.3230e-03 8.5260e-03 learning_rate: 1.0000e-03 elapsed: 4.85e+02 s speed: 1.08e+02 it/s
-epoch   39901 E RMSE(T V) = 8.9348e-03 7.5526e-03 learning_rate: 1.0000e-03 elapsed: 4.86e+02 s speed: 1.07e+02 it/s
-epoch   40001 E RMSE(T V) = 1.0658e-02 1.0385e-02 learning_rate: 1.0000e-03 elapsed: 4.87e+02 s speed: 9.68e+01 it/s
+iteration   39101 E RMSE(T V) = 4.8958e-03 7.6976e-03 learning_rate: 1.0000e-03 elapsed: 4.77e+02 s speed: 1.14e+02 it/s
+iteration   39201 E RMSE(T V) = 5.4841e-03 6.0830e-03 learning_rate: 1.0000e-03 elapsed: 4.78e+02 s speed: 1.06e+02 it/s
+iteration   39301 E RMSE(T V) = 6.0892e-03 5.9503e-03 learning_rate: 1.0000e-03 elapsed: 4.79e+02 s speed: 1.07e+02 it/s
+iteration   39401 E RMSE(T V) = 5.9583e-03 6.3013e-03 learning_rate: 1.0000e-03 elapsed: 4.81e+02 s speed: 1.05e+02 it/s
+iteration   39501 E RMSE(T V) = 1.0241e-02 8.0827e-03 learning_rate: 1.0000e-03 elapsed: 4.82e+02 s speed: 1.08e+02 it/s
+iteration   39601 E RMSE(T V) = 6.6126e-03 5.9926e-03 learning_rate: 1.0000e-03 elapsed: 4.83e+02 s speed: 1.11e+02 it/s
+iteration   39701 E RMSE(T V) = 6.9398e-03 7.1366e-03 learning_rate: 1.0000e-03 elapsed: 4.84e+02 s speed: 8.74e+01 it/s
+iteration   39801 E RMSE(T V) = 7.3230e-03 8.5260e-03 learning_rate: 1.0000e-03 elapsed: 4.85e+02 s speed: 1.08e+02 it/s
+iteration   39901 E RMSE(T V) = 8.9348e-03 7.5526e-03 learning_rate: 1.0000e-03 elapsed: 4.86e+02 s speed: 1.07e+02 it/s
+iteration   40001 E RMSE(T V) = 1.0658e-02 1.0385e-02 learning_rate: 1.0000e-03 elapsed: 4.87e+02 s speed: 9.68e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   40101 E RMSE(T V) = 6.0596e-03 5.9587e-03 learning_rate: 1.0000e-03 elapsed: 4.90e+02 s speed: 9.97e+01 it/s
-epoch   40201 E RMSE(T V) = 1.1877e-02 1.1217e-02 learning_rate: 1.0000e-03 elapsed: 4.91e+02 s speed: 1.07e+02 it/s
-epoch   40301 E RMSE(T V) = 7.9442e-03 5.9877e-03 learning_rate: 1.0000e-03 elapsed: 4.92e+02 s speed: 1.01e+02 it/s
-epoch   40401 E RMSE(T V) = 1.0086e-02 1.1368e-02 learning_rate: 1.0000e-03 elapsed: 4.93e+02 s speed: 9.98e+01 it/s
-epoch   40501 E RMSE(T V) = 6.1407e-03 5.9115e-03 learning_rate: 1.0000e-03 elapsed: 4.94e+02 s speed: 1.01e+02 it/s
-epoch   40601 E RMSE(T V) = 1.0147e-02 1.0011e-02 learning_rate: 1.0000e-03 elapsed: 4.95e+02 s speed: 1.07e+02 it/s
-epoch   40701 E RMSE(T V) = 4.7928e-03 7.4249e-03 learning_rate: 1.0000e-03 elapsed: 4.96e+02 s speed: 1.02e+02 it/s
-epoch   40801 E RMSE(T V) = 4.9120e-03 6.2911e-03 learning_rate: 1.0000e-03 elapsed: 4.98e+02 s speed: 1.03e+02 it/s
-epoch   40901 E RMSE(T V) = 4.4846e-03 6.7656e-03 learning_rate: 1.0000e-03 elapsed: 4.99e+02 s speed: 1.05e+02 it/s
-epoch   41001 E RMSE(T V) = 1.1620e-02 1.2694e-02 learning_rate: 1.0000e-03 elapsed: 5.00e+02 s speed: 1.05e+02 it/s
+iteration   40101 E RMSE(T V) = 6.0596e-03 5.9587e-03 learning_rate: 1.0000e-03 elapsed: 4.90e+02 s speed: 9.97e+01 it/s
+iteration   40201 E RMSE(T V) = 1.1877e-02 1.1217e-02 learning_rate: 1.0000e-03 elapsed: 4.91e+02 s speed: 1.07e+02 it/s
+iteration   40301 E RMSE(T V) = 7.9442e-03 5.9877e-03 learning_rate: 1.0000e-03 elapsed: 4.92e+02 s speed: 1.01e+02 it/s
+iteration   40401 E RMSE(T V) = 1.0086e-02 1.1368e-02 learning_rate: 1.0000e-03 elapsed: 4.93e+02 s speed: 9.98e+01 it/s
+iteration   40501 E RMSE(T V) = 6.1407e-03 5.9115e-03 learning_rate: 1.0000e-03 elapsed: 4.94e+02 s speed: 1.01e+02 it/s
+iteration   40601 E RMSE(T V) = 1.0147e-02 1.0011e-02 learning_rate: 1.0000e-03 elapsed: 4.95e+02 s speed: 1.07e+02 it/s
+iteration   40701 E RMSE(T V) = 4.7928e-03 7.4249e-03 learning_rate: 1.0000e-03 elapsed: 4.96e+02 s speed: 1.02e+02 it/s
+iteration   40801 E RMSE(T V) = 4.9120e-03 6.2911e-03 learning_rate: 1.0000e-03 elapsed: 4.98e+02 s speed: 1.03e+02 it/s
+iteration   40901 E RMSE(T V) = 4.4846e-03 6.7656e-03 learning_rate: 1.0000e-03 elapsed: 4.99e+02 s speed: 1.05e+02 it/s
+iteration   41001 E RMSE(T V) = 1.1620e-02 1.2694e-02 learning_rate: 1.0000e-03 elapsed: 5.00e+02 s speed: 1.05e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   41101 E RMSE(T V) = 8.9158e-03 9.4358e-03 learning_rate: 1.0000e-03 elapsed: 5.02e+02 s speed: 1.15e+02 it/s
-epoch   41201 E RMSE(T V) = 8.7764e-03 7.2555e-03 learning_rate: 1.0000e-03 elapsed: 5.03e+02 s speed: 9.20e+01 it/s
-epoch   41301 E RMSE(T V) = 1.2192e-02 1.0967e-02 learning_rate: 1.0000e-03 elapsed: 5.04e+02 s speed: 1.04e+02 it/s
-epoch   41401 E RMSE(T V) = 9.2366e-03 8.0502e-03 learning_rate: 1.0000e-03 elapsed: 5.05e+02 s speed: 9.69e+01 it/s
-epoch   41501 E RMSE(T V) = 4.0893e-03 5.9109e-03 learning_rate: 1.0000e-03 elapsed: 5.06e+02 s speed: 1.02e+02 it/s
-epoch   41601 E RMSE(T V) = 5.3780e-03 6.3891e-03 learning_rate: 1.0000e-03 elapsed: 5.07e+02 s speed: 1.07e+02 it/s
-epoch   41701 E RMSE(T V) = 6.6005e-03 6.2445e-03 learning_rate: 1.0000e-03 elapsed: 5.09e+02 s speed: 1.17e+02 it/s
-epoch   41801 E RMSE(T V) = 4.8176e-03 8.1044e-03 learning_rate: 1.0000e-03 elapsed: 5.10e+02 s speed: 9.63e+01 it/s
-epoch   41901 E RMSE(T V) = 6.6017e-03 7.4292e-03 learning_rate: 1.0000e-03 elapsed: 5.11e+02 s speed: 8.97e+01 it/s
-epoch   42001 E RMSE(T V) = 7.2517e-03 5.8310e-03 learning_rate: 1.0000e-03 elapsed: 5.12e+02 s speed: 1.01e+02 it/s
+iteration   41101 E RMSE(T V) = 8.9158e-03 9.4358e-03 learning_rate: 1.0000e-03 elapsed: 5.02e+02 s speed: 1.15e+02 it/s
+iteration   41201 E RMSE(T V) = 8.7764e-03 7.2555e-03 learning_rate: 1.0000e-03 elapsed: 5.03e+02 s speed: 9.20e+01 it/s
+iteration   41301 E RMSE(T V) = 1.2192e-02 1.0967e-02 learning_rate: 1.0000e-03 elapsed: 5.04e+02 s speed: 1.04e+02 it/s
+iteration   41401 E RMSE(T V) = 9.2366e-03 8.0502e-03 learning_rate: 1.0000e-03 elapsed: 5.05e+02 s speed: 9.69e+01 it/s
+iteration   41501 E RMSE(T V) = 4.0893e-03 5.9109e-03 learning_rate: 1.0000e-03 elapsed: 5.06e+02 s speed: 1.02e+02 it/s
+iteration   41601 E RMSE(T V) = 5.3780e-03 6.3891e-03 learning_rate: 1.0000e-03 elapsed: 5.07e+02 s speed: 1.07e+02 it/s
+iteration   41701 E RMSE(T V) = 6.6005e-03 6.2445e-03 learning_rate: 1.0000e-03 elapsed: 5.09e+02 s speed: 1.17e+02 it/s
+iteration   41801 E RMSE(T V) = 4.8176e-03 8.1044e-03 learning_rate: 1.0000e-03 elapsed: 5.10e+02 s speed: 9.63e+01 it/s
+iteration   41901 E RMSE(T V) = 6.6017e-03 7.4292e-03 learning_rate: 1.0000e-03 elapsed: 5.11e+02 s speed: 8.97e+01 it/s
+iteration   42001 E RMSE(T V) = 7.2517e-03 5.8310e-03 learning_rate: 1.0000e-03 elapsed: 5.12e+02 s speed: 1.01e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   42101 E RMSE(T V) = 7.4058e-03 6.0749e-03 learning_rate: 1.0000e-03 elapsed: 5.14e+02 s speed: 1.06e+02 it/s
-epoch   42201 E RMSE(T V) = 8.7317e-03 1.0050e-02 learning_rate: 1.0000e-03 elapsed: 5.16e+02 s speed: 9.73e+01 it/s
-epoch   42301 E RMSE(T V) = 6.9343e-03 5.9982e-03 learning_rate: 1.0000e-03 elapsed: 5.17e+02 s speed: 9.34e+01 it/s
-epoch   42401 E RMSE(T V) = 7.5955e-03 8.7527e-03 learning_rate: 1.0000e-03 elapsed: 5.18e+02 s speed: 1.12e+02 it/s
-epoch   42501 E RMSE(T V) = 7.7842e-03 7.2152e-03 learning_rate: 1.0000e-03 elapsed: 5.19e+02 s speed: 1.09e+02 it/s
-epoch   42601 E RMSE(T V) = 5.6951e-03 7.9114e-03 learning_rate: 1.0000e-03 elapsed: 5.20e+02 s speed: 9.82e+01 it/s
-epoch   42701 E RMSE(T V) = 4.4128e-03 5.7877e-03 learning_rate: 1.0000e-03 elapsed: 5.21e+02 s speed: 1.00e+02 it/s
-epoch   42801 E RMSE(T V) = 6.1160e-03 6.0889e-03 learning_rate: 1.0000e-03 elapsed: 5.22e+02 s speed: 1.08e+02 it/s
-epoch   42901 E RMSE(T V) = 5.9777e-03 6.3733e-03 learning_rate: 1.0000e-03 elapsed: 5.23e+02 s speed: 9.39e+01 it/s
-epoch   43001 E RMSE(T V) = 7.0454e-03 6.2095e-03 learning_rate: 1.0000e-03 elapsed: 5.24e+02 s speed: 1.01e+02 it/s
+iteration   42101 E RMSE(T V) = 7.4058e-03 6.0749e-03 learning_rate: 1.0000e-03 elapsed: 5.14e+02 s speed: 1.06e+02 it/s
+iteration   42201 E RMSE(T V) = 8.7317e-03 1.0050e-02 learning_rate: 1.0000e-03 elapsed: 5.16e+02 s speed: 9.73e+01 it/s
+iteration   42301 E RMSE(T V) = 6.9343e-03 5.9982e-03 learning_rate: 1.0000e-03 elapsed: 5.17e+02 s speed: 9.34e+01 it/s
+iteration   42401 E RMSE(T V) = 7.5955e-03 8.7527e-03 learning_rate: 1.0000e-03 elapsed: 5.18e+02 s speed: 1.12e+02 it/s
+iteration   42501 E RMSE(T V) = 7.7842e-03 7.2152e-03 learning_rate: 1.0000e-03 elapsed: 5.19e+02 s speed: 1.09e+02 it/s
+iteration   42601 E RMSE(T V) = 5.6951e-03 7.9114e-03 learning_rate: 1.0000e-03 elapsed: 5.20e+02 s speed: 9.82e+01 it/s
+iteration   42701 E RMSE(T V) = 4.4128e-03 5.7877e-03 learning_rate: 1.0000e-03 elapsed: 5.21e+02 s speed: 1.00e+02 it/s
+iteration   42801 E RMSE(T V) = 6.1160e-03 6.0889e-03 learning_rate: 1.0000e-03 elapsed: 5.22e+02 s speed: 1.08e+02 it/s
+iteration   42901 E RMSE(T V) = 5.9777e-03 6.3733e-03 learning_rate: 1.0000e-03 elapsed: 5.23e+02 s speed: 9.39e+01 it/s
+iteration   43001 E RMSE(T V) = 7.0454e-03 6.2095e-03 learning_rate: 1.0000e-03 elapsed: 5.24e+02 s speed: 1.01e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   43101 E RMSE(T V) = 5.7773e-03 5.8524e-03 learning_rate: 1.0000e-03 elapsed: 5.27e+02 s speed: 1.02e+02 it/s
-epoch   43201 E RMSE(T V) = 5.5323e-03 5.8428e-03 learning_rate: 1.0000e-03 elapsed: 5.28e+02 s speed: 1.01e+02 it/s
-epoch   43301 E RMSE(T V) = 4.2677e-03 5.8057e-03 learning_rate: 1.0000e-03 elapsed: 5.29e+02 s speed: 1.03e+02 it/s
-epoch   43401 E RMSE(T V) = 8.0425e-03 9.2512e-03 learning_rate: 1.0000e-03 elapsed: 5.30e+02 s speed: 9.57e+01 it/s
-epoch   43501 E RMSE(T V) = 7.2292e-03 5.7678e-03 learning_rate: 1.0000e-03 elapsed: 5.31e+02 s speed: 1.05e+02 it/s
-epoch   43601 E RMSE(T V) = 8.1641e-03 9.3612e-03 learning_rate: 1.0000e-03 elapsed: 5.32e+02 s speed: 1.13e+02 it/s
-epoch   43701 E RMSE(T V) = 5.2540e-03 6.7048e-03 learning_rate: 1.0000e-03 elapsed: 5.33e+02 s speed: 1.03e+02 it/s
-epoch   43801 E RMSE(T V) = 7.7793e-03 8.7225e-03 learning_rate: 1.0000e-03 elapsed: 5.35e+02 s speed: 9.73e+01 it/s
-epoch   43901 E RMSE(T V) = 4.9540e-03 6.2247e-03 learning_rate: 1.0000e-03 elapsed: 5.36e+02 s speed: 9.69e+01 it/s
-epoch   44001 E RMSE(T V) = 4.9240e-03 5.8498e-03 learning_rate: 1.0000e-03 elapsed: 5.37e+02 s speed: 1.05e+02 it/s
+iteration   43101 E RMSE(T V) = 5.7773e-03 5.8524e-03 learning_rate: 1.0000e-03 elapsed: 5.27e+02 s speed: 1.02e+02 it/s
+iteration   43201 E RMSE(T V) = 5.5323e-03 5.8428e-03 learning_rate: 1.0000e-03 elapsed: 5.28e+02 s speed: 1.01e+02 it/s
+iteration   43301 E RMSE(T V) = 4.2677e-03 5.8057e-03 learning_rate: 1.0000e-03 elapsed: 5.29e+02 s speed: 1.03e+02 it/s
+iteration   43401 E RMSE(T V) = 8.0425e-03 9.2512e-03 learning_rate: 1.0000e-03 elapsed: 5.30e+02 s speed: 9.57e+01 it/s
+iteration   43501 E RMSE(T V) = 7.2292e-03 5.7678e-03 learning_rate: 1.0000e-03 elapsed: 5.31e+02 s speed: 1.05e+02 it/s
+iteration   43601 E RMSE(T V) = 8.1641e-03 9.3612e-03 learning_rate: 1.0000e-03 elapsed: 5.32e+02 s speed: 1.13e+02 it/s
+iteration   43701 E RMSE(T V) = 5.2540e-03 6.7048e-03 learning_rate: 1.0000e-03 elapsed: 5.33e+02 s speed: 1.03e+02 it/s
+iteration   43801 E RMSE(T V) = 7.7793e-03 8.7225e-03 learning_rate: 1.0000e-03 elapsed: 5.35e+02 s speed: 9.73e+01 it/s
+iteration   43901 E RMSE(T V) = 4.9540e-03 6.2247e-03 learning_rate: 1.0000e-03 elapsed: 5.36e+02 s speed: 9.69e+01 it/s
+iteration   44001 E RMSE(T V) = 4.9240e-03 5.8498e-03 learning_rate: 1.0000e-03 elapsed: 5.37e+02 s speed: 1.05e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   44101 E RMSE(T V) = 4.8426e-03 5.7286e-03 learning_rate: 1.0000e-03 elapsed: 5.39e+02 s speed: 9.84e+01 it/s
-epoch   44201 E RMSE(T V) = 6.2139e-03 5.8734e-03 learning_rate: 1.0000e-03 elapsed: 5.40e+02 s speed: 9.43e+01 it/s
-epoch   44301 E RMSE(T V) = 7.6152e-03 5.9149e-03 learning_rate: 1.0000e-03 elapsed: 5.42e+02 s speed: 1.04e+02 it/s
-epoch   44401 E RMSE(T V) = 8.9380e-03 8.3607e-03 learning_rate: 1.0000e-03 elapsed: 5.43e+02 s speed: 9.20e+01 it/s
-epoch   44501 E RMSE(T V) = 5.0966e-03 6.3091e-03 learning_rate: 1.0000e-03 elapsed: 5.44e+02 s speed: 9.36e+01 it/s
-epoch   44601 E RMSE(T V) = 4.8920e-03 6.3181e-03 learning_rate: 1.0000e-03 elapsed: 5.45e+02 s speed: 1.04e+02 it/s
-epoch   44701 E RMSE(T V) = 7.5619e-03 6.4632e-03 learning_rate: 1.0000e-03 elapsed: 5.46e+02 s speed: 9.87e+01 it/s
-epoch   44801 E RMSE(T V) = 8.2659e-03 1.0264e-02 learning_rate: 1.0000e-03 elapsed: 5.47e+02 s speed: 1.09e+02 it/s
-epoch   44901 E RMSE(T V) = 5.2765e-03 5.8957e-03 learning_rate: 1.0000e-03 elapsed: 5.48e+02 s speed: 1.01e+02 it/s
-epoch   45001 E RMSE(T V) = 6.5041e-03 7.7510e-03 learning_rate: 1.0000e-03 elapsed: 5.50e+02 s speed: 9.28e+01 it/s
+iteration   44101 E RMSE(T V) = 4.8426e-03 5.7286e-03 learning_rate: 1.0000e-03 elapsed: 5.39e+02 s speed: 9.84e+01 it/s
+iteration   44201 E RMSE(T V) = 6.2139e-03 5.8734e-03 learning_rate: 1.0000e-03 elapsed: 5.40e+02 s speed: 9.43e+01 it/s
+iteration   44301 E RMSE(T V) = 7.6152e-03 5.9149e-03 learning_rate: 1.0000e-03 elapsed: 5.42e+02 s speed: 1.04e+02 it/s
+iteration   44401 E RMSE(T V) = 8.9380e-03 8.3607e-03 learning_rate: 1.0000e-03 elapsed: 5.43e+02 s speed: 9.20e+01 it/s
+iteration   44501 E RMSE(T V) = 5.0966e-03 6.3091e-03 learning_rate: 1.0000e-03 elapsed: 5.44e+02 s speed: 9.36e+01 it/s
+iteration   44601 E RMSE(T V) = 4.8920e-03 6.3181e-03 learning_rate: 1.0000e-03 elapsed: 5.45e+02 s speed: 1.04e+02 it/s
+iteration   44701 E RMSE(T V) = 7.5619e-03 6.4632e-03 learning_rate: 1.0000e-03 elapsed: 5.46e+02 s speed: 9.87e+01 it/s
+iteration   44801 E RMSE(T V) = 8.2659e-03 1.0264e-02 learning_rate: 1.0000e-03 elapsed: 5.47e+02 s speed: 1.09e+02 it/s
+iteration   44901 E RMSE(T V) = 5.2765e-03 5.8957e-03 learning_rate: 1.0000e-03 elapsed: 5.48e+02 s speed: 1.01e+02 it/s
+iteration   45001 E RMSE(T V) = 6.5041e-03 7.7510e-03 learning_rate: 1.0000e-03 elapsed: 5.50e+02 s speed: 9.28e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   45101 E RMSE(T V) = 9.1354e-03 6.0473e-03 learning_rate: 1.0000e-03 elapsed: 5.52e+02 s speed: 9.23e+01 it/s
-epoch   45201 E RMSE(T V) = 6.3221e-03 7.2148e-03 learning_rate: 1.0000e-03 elapsed: 5.53e+02 s speed: 1.04e+02 it/s
-epoch   45301 E RMSE(T V) = 3.3967e-03 5.7340e-03 learning_rate: 1.0000e-03 elapsed: 5.54e+02 s speed: 1.15e+02 it/s
-epoch   45401 E RMSE(T V) = 3.4827e-03 6.6000e-03 learning_rate: 1.0000e-03 elapsed: 5.55e+02 s speed: 1.09e+02 it/s
-epoch   45501 E RMSE(T V) = 6.9570e-03 8.3038e-03 learning_rate: 1.0000e-03 elapsed: 5.57e+02 s speed: 9.21e+01 it/s
-epoch   45601 E RMSE(T V) = 8.4672e-03 9.8571e-03 learning_rate: 1.0000e-03 elapsed: 5.58e+02 s speed: 1.14e+02 it/s
-epoch   45701 E RMSE(T V) = 5.4848e-03 5.8271e-03 learning_rate: 1.0000e-03 elapsed: 5.59e+02 s speed: 1.02e+02 it/s
-epoch   45801 E RMSE(T V) = 6.7828e-03 5.6808e-03 learning_rate: 1.0000e-03 elapsed: 5.60e+02 s speed: 9.84e+01 it/s
-epoch   45901 E RMSE(T V) = 4.8158e-03 5.7041e-03 learning_rate: 1.0000e-03 elapsed: 5.61e+02 s speed: 9.91e+01 it/s
-epoch   46001 E RMSE(T V) = 4.2068e-03 5.7078e-03 learning_rate: 1.0000e-03 elapsed: 5.62e+02 s speed: 1.07e+02 it/s
+iteration   45101 E RMSE(T V) = 9.1354e-03 6.0473e-03 learning_rate: 1.0000e-03 elapsed: 5.52e+02 s speed: 9.23e+01 it/s
+iteration   45201 E RMSE(T V) = 6.3221e-03 7.2148e-03 learning_rate: 1.0000e-03 elapsed: 5.53e+02 s speed: 1.04e+02 it/s
+iteration   45301 E RMSE(T V) = 3.3967e-03 5.7340e-03 learning_rate: 1.0000e-03 elapsed: 5.54e+02 s speed: 1.15e+02 it/s
+iteration   45401 E RMSE(T V) = 3.4827e-03 6.6000e-03 learning_rate: 1.0000e-03 elapsed: 5.55e+02 s speed: 1.09e+02 it/s
+iteration   45501 E RMSE(T V) = 6.9570e-03 8.3038e-03 learning_rate: 1.0000e-03 elapsed: 5.57e+02 s speed: 9.21e+01 it/s
+iteration   45601 E RMSE(T V) = 8.4672e-03 9.8571e-03 learning_rate: 1.0000e-03 elapsed: 5.58e+02 s speed: 1.14e+02 it/s
+iteration   45701 E RMSE(T V) = 5.4848e-03 5.8271e-03 learning_rate: 1.0000e-03 elapsed: 5.59e+02 s speed: 1.02e+02 it/s
+iteration   45801 E RMSE(T V) = 6.7828e-03 5.6808e-03 learning_rate: 1.0000e-03 elapsed: 5.60e+02 s speed: 9.84e+01 it/s
+iteration   45901 E RMSE(T V) = 4.8158e-03 5.7041e-03 learning_rate: 1.0000e-03 elapsed: 5.61e+02 s speed: 9.91e+01 it/s
+iteration   46001 E RMSE(T V) = 4.2068e-03 5.7078e-03 learning_rate: 1.0000e-03 elapsed: 5.62e+02 s speed: 1.07e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   46101 E RMSE(T V) = 6.6802e-03 7.1429e-03 learning_rate: 1.0000e-03 elapsed: 5.65e+02 s speed: 9.27e+01 it/s
-epoch   46201 E RMSE(T V) = 1.3351e-02 9.3870e-03 learning_rate: 1.0000e-03 elapsed: 5.66e+02 s speed: 1.03e+02 it/s
-epoch   46301 E RMSE(T V) = 5.8134e-03 5.6944e-03 learning_rate: 1.0000e-03 elapsed: 5.67e+02 s speed: 9.17e+01 it/s
-epoch   46401 E RMSE(T V) = 6.5121e-03 6.1500e-03 learning_rate: 1.0000e-03 elapsed: 5.68e+02 s speed: 9.99e+01 it/s
-epoch   46501 E RMSE(T V) = 8.0988e-03 7.9937e-03 learning_rate: 1.0000e-03 elapsed: 5.69e+02 s speed: 8.68e+01 it/s
-epoch   46601 E RMSE(T V) = 5.4791e-03 5.7600e-03 learning_rate: 1.0000e-03 elapsed: 5.70e+02 s speed: 9.90e+01 it/s
-epoch   46701 E RMSE(T V) = 1.0546e-02 9.8773e-03 learning_rate: 1.0000e-03 elapsed: 5.72e+02 s speed: 1.01e+02 it/s
-epoch   46801 E RMSE(T V) = 4.8374e-03 5.9323e-03 learning_rate: 1.0000e-03 elapsed: 5.73e+02 s speed: 9.70e+01 it/s
-epoch   46901 E RMSE(T V) = 7.1287e-03 6.9086e-03 learning_rate: 1.0000e-03 elapsed: 5.74e+02 s speed: 9.36e+01 it/s
-epoch   47001 E RMSE(T V) = 6.3054e-03 6.1196e-03 learning_rate: 1.0000e-03 elapsed: 5.75e+02 s speed: 9.81e+01 it/s
+iteration   46101 E RMSE(T V) = 6.6802e-03 7.1429e-03 learning_rate: 1.0000e-03 elapsed: 5.65e+02 s speed: 9.27e+01 it/s
+iteration   46201 E RMSE(T V) = 1.3351e-02 9.3870e-03 learning_rate: 1.0000e-03 elapsed: 5.66e+02 s speed: 1.03e+02 it/s
+iteration   46301 E RMSE(T V) = 5.8134e-03 5.6944e-03 learning_rate: 1.0000e-03 elapsed: 5.67e+02 s speed: 9.17e+01 it/s
+iteration   46401 E RMSE(T V) = 6.5121e-03 6.1500e-03 learning_rate: 1.0000e-03 elapsed: 5.68e+02 s speed: 9.99e+01 it/s
+iteration   46501 E RMSE(T V) = 8.0988e-03 7.9937e-03 learning_rate: 1.0000e-03 elapsed: 5.69e+02 s speed: 8.68e+01 it/s
+iteration   46601 E RMSE(T V) = 5.4791e-03 5.7600e-03 learning_rate: 1.0000e-03 elapsed: 5.70e+02 s speed: 9.90e+01 it/s
+iteration   46701 E RMSE(T V) = 1.0546e-02 9.8773e-03 learning_rate: 1.0000e-03 elapsed: 5.72e+02 s speed: 1.01e+02 it/s
+iteration   46801 E RMSE(T V) = 4.8374e-03 5.9323e-03 learning_rate: 1.0000e-03 elapsed: 5.73e+02 s speed: 9.70e+01 it/s
+iteration   46901 E RMSE(T V) = 7.1287e-03 6.9086e-03 learning_rate: 1.0000e-03 elapsed: 5.74e+02 s speed: 9.36e+01 it/s
+iteration   47001 E RMSE(T V) = 6.3054e-03 6.1196e-03 learning_rate: 1.0000e-03 elapsed: 5.75e+02 s speed: 9.81e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   47101 E RMSE(T V) = 1.0746e-02 9.6858e-03 learning_rate: 1.0000e-03 elapsed: 5.77e+02 s speed: 9.86e+01 it/s
-epoch   47201 E RMSE(T V) = 5.3064e-03 6.7214e-03 learning_rate: 1.0000e-03 elapsed: 5.78e+02 s speed: 9.74e+01 it/s
-epoch   47301 E RMSE(T V) = 8.6473e-03 7.6436e-03 learning_rate: 1.0000e-03 elapsed: 5.80e+02 s speed: 9.84e+01 it/s
-epoch   47401 E RMSE(T V) = 5.2187e-03 5.6154e-03 learning_rate: 1.0000e-03 elapsed: 5.81e+02 s speed: 1.04e+02 it/s
-epoch   47501 E RMSE(T V) = 6.2248e-03 5.8102e-03 learning_rate: 1.0000e-03 elapsed: 5.82e+02 s speed: 1.15e+02 it/s
-epoch   47601 E RMSE(T V) = 5.0843e-03 5.6340e-03 learning_rate: 1.0000e-03 elapsed: 5.83e+02 s speed: 9.80e+01 it/s
-epoch   47701 E RMSE(T V) = 7.2248e-03 7.3100e-03 learning_rate: 1.0000e-03 elapsed: 5.84e+02 s speed: 9.36e+01 it/s
-epoch   47801 E RMSE(T V) = 6.8987e-03 5.7632e-03 learning_rate: 1.0000e-03 elapsed: 5.85e+02 s speed: 1.10e+02 it/s
-epoch   47901 E RMSE(T V) = 7.7198e-03 7.2796e-03 learning_rate: 1.0000e-03 elapsed: 5.86e+02 s speed: 9.09e+01 it/s
-epoch   48001 E RMSE(T V) = 3.9488e-03 7.1402e-03 learning_rate: 1.0000e-03 elapsed: 5.87e+02 s speed: 9.95e+01 it/s
+iteration   47101 E RMSE(T V) = 1.0746e-02 9.6858e-03 learning_rate: 1.0000e-03 elapsed: 5.77e+02 s speed: 9.86e+01 it/s
+iteration   47201 E RMSE(T V) = 5.3064e-03 6.7214e-03 learning_rate: 1.0000e-03 elapsed: 5.78e+02 s speed: 9.74e+01 it/s
+iteration   47301 E RMSE(T V) = 8.6473e-03 7.6436e-03 learning_rate: 1.0000e-03 elapsed: 5.80e+02 s speed: 9.84e+01 it/s
+iteration   47401 E RMSE(T V) = 5.2187e-03 5.6154e-03 learning_rate: 1.0000e-03 elapsed: 5.81e+02 s speed: 1.04e+02 it/s
+iteration   47501 E RMSE(T V) = 6.2248e-03 5.8102e-03 learning_rate: 1.0000e-03 elapsed: 5.82e+02 s speed: 1.15e+02 it/s
+iteration   47601 E RMSE(T V) = 5.0843e-03 5.6340e-03 learning_rate: 1.0000e-03 elapsed: 5.83e+02 s speed: 9.80e+01 it/s
+iteration   47701 E RMSE(T V) = 7.2248e-03 7.3100e-03 learning_rate: 1.0000e-03 elapsed: 5.84e+02 s speed: 9.36e+01 it/s
+iteration   47801 E RMSE(T V) = 6.8987e-03 5.7632e-03 learning_rate: 1.0000e-03 elapsed: 5.85e+02 s speed: 1.10e+02 it/s
+iteration   47901 E RMSE(T V) = 7.7198e-03 7.2796e-03 learning_rate: 1.0000e-03 elapsed: 5.86e+02 s speed: 9.09e+01 it/s
+iteration   48001 E RMSE(T V) = 3.9488e-03 7.1402e-03 learning_rate: 1.0000e-03 elapsed: 5.87e+02 s speed: 9.95e+01 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   48101 E RMSE(T V) = 4.6185e-03 5.6396e-03 learning_rate: 1.0000e-03 elapsed: 5.90e+02 s speed: 1.03e+02 it/s
-epoch   48201 E RMSE(T V) = 8.5124e-03 6.1454e-03 learning_rate: 1.0000e-03 elapsed: 5.91e+02 s speed: 1.06e+02 it/s
-epoch   48301 E RMSE(T V) = 8.7325e-03 8.4408e-03 learning_rate: 1.0000e-03 elapsed: 5.92e+02 s speed: 1.05e+02 it/s
-epoch   48401 E RMSE(T V) = 1.4262e-02 1.1996e-02 learning_rate: 1.0000e-03 elapsed: 5.93e+02 s speed: 1.08e+02 it/s
-epoch   48501 E RMSE(T V) = 5.4707e-03 6.8020e-03 learning_rate: 1.0000e-03 elapsed: 5.94e+02 s speed: 1.06e+02 it/s
-epoch   48601 E RMSE(T V) = 5.3773e-03 5.9234e-03 learning_rate: 1.0000e-03 elapsed: 5.95e+02 s speed: 1.02e+02 it/s
-epoch   48701 E RMSE(T V) = 6.9239e-03 6.3855e-03 learning_rate: 1.0000e-03 elapsed: 5.96e+02 s speed: 1.12e+02 it/s
-epoch   48801 E RMSE(T V) = 8.3785e-03 9.4497e-03 learning_rate: 1.0000e-03 elapsed: 5.97e+02 s speed: 1.09e+02 it/s
-epoch   48901 E RMSE(T V) = 7.1632e-03 9.3897e-03 learning_rate: 1.0000e-03 elapsed: 5.98e+02 s speed: 1.06e+02 it/s
-epoch   49001 E RMSE(T V) = 6.7782e-03 6.9278e-03 learning_rate: 1.0000e-03 elapsed: 5.99e+02 s speed: 1.02e+02 it/s
+iteration   48101 E RMSE(T V) = 4.6185e-03 5.6396e-03 learning_rate: 1.0000e-03 elapsed: 5.90e+02 s speed: 1.03e+02 it/s
+iteration   48201 E RMSE(T V) = 8.5124e-03 6.1454e-03 learning_rate: 1.0000e-03 elapsed: 5.91e+02 s speed: 1.06e+02 it/s
+iteration   48301 E RMSE(T V) = 8.7325e-03 8.4408e-03 learning_rate: 1.0000e-03 elapsed: 5.92e+02 s speed: 1.05e+02 it/s
+iteration   48401 E RMSE(T V) = 1.4262e-02 1.1996e-02 learning_rate: 1.0000e-03 elapsed: 5.93e+02 s speed: 1.08e+02 it/s
+iteration   48501 E RMSE(T V) = 5.4707e-03 6.8020e-03 learning_rate: 1.0000e-03 elapsed: 5.94e+02 s speed: 1.06e+02 it/s
+iteration   48601 E RMSE(T V) = 5.3773e-03 5.9234e-03 learning_rate: 1.0000e-03 elapsed: 5.95e+02 s speed: 1.02e+02 it/s
+iteration   48701 E RMSE(T V) = 6.9239e-03 6.3855e-03 learning_rate: 1.0000e-03 elapsed: 5.96e+02 s speed: 1.12e+02 it/s
+iteration   48801 E RMSE(T V) = 8.3785e-03 9.4497e-03 learning_rate: 1.0000e-03 elapsed: 5.97e+02 s speed: 1.09e+02 it/s
+iteration   48901 E RMSE(T V) = 7.1632e-03 9.3897e-03 learning_rate: 1.0000e-03 elapsed: 5.98e+02 s speed: 1.06e+02 it/s
+iteration   49001 E RMSE(T V) = 6.7782e-03 6.9278e-03 learning_rate: 1.0000e-03 elapsed: 5.99e+02 s speed: 1.02e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------
-epoch   49101 E RMSE(T V) = 3.5858e-03 5.6323e-03 learning_rate: 1.0000e-03 elapsed: 6.02e+02 s speed: 1.10e+02 it/s
-epoch   49201 E RMSE(T V) = 4.4666e-03 5.5488e-03 learning_rate: 1.0000e-03 elapsed: 6.03e+02 s speed: 1.07e+02 it/s
-epoch   49301 E RMSE(T V) = 1.1825e-02 9.2213e-03 learning_rate: 1.0000e-03 elapsed: 6.04e+02 s speed: 1.10e+02 it/s
-epoch   49401 E RMSE(T V) = 1.0392e-02 1.1179e-02 learning_rate: 1.0000e-03 elapsed: 6.05e+02 s speed: 1.18e+02 it/s
-epoch   49501 E RMSE(T V) = 5.3272e-03 6.7182e-03 learning_rate: 1.0000e-03 elapsed: 6.06e+02 s speed: 1.05e+02 it/s
-epoch   49601 E RMSE(T V) = 5.5377e-03 8.0077e-03 learning_rate: 1.0000e-03 elapsed: 6.07e+02 s speed: 1.06e+02 it/s
-epoch   49701 E RMSE(T V) = 8.1643e-03 7.9095e-03 learning_rate: 1.0000e-03 elapsed: 6.08e+02 s speed: 1.07e+02 it/s
-epoch   49801 E RMSE(T V) = 3.1775e-03 5.5554e-03 learning_rate: 1.0000e-03 elapsed: 6.09e+02 s speed: 9.86e+01 it/s
-epoch   49901 E RMSE(T V) = 9.2525e-03 7.2662e-03 learning_rate: 1.0000e-03 elapsed: 6.10e+02 s speed: 1.04e+02 it/s
-epoch   50001 E RMSE(T V) = 5.2481e-03 5.5545e-03 learning_rate: 1.0000e-03 elapsed: 6.11e+02 s speed: 1.13e+02 it/s
+iteration   49101 E RMSE(T V) = 3.5858e-03 5.6323e-03 learning_rate: 1.0000e-03 elapsed: 6.02e+02 s speed: 1.10e+02 it/s
+iteration   49201 E RMSE(T V) = 4.4666e-03 5.5488e-03 learning_rate: 1.0000e-03 elapsed: 6.03e+02 s speed: 1.07e+02 it/s
+iteration   49301 E RMSE(T V) = 1.1825e-02 9.2213e-03 learning_rate: 1.0000e-03 elapsed: 6.04e+02 s speed: 1.10e+02 it/s
+iteration   49401 E RMSE(T V) = 1.0392e-02 1.1179e-02 learning_rate: 1.0000e-03 elapsed: 6.05e+02 s speed: 1.18e+02 it/s
+iteration   49501 E RMSE(T V) = 5.3272e-03 6.7182e-03 learning_rate: 1.0000e-03 elapsed: 6.06e+02 s speed: 1.05e+02 it/s
+iteration   49601 E RMSE(T V) = 5.5377e-03 8.0077e-03 learning_rate: 1.0000e-03 elapsed: 6.07e+02 s speed: 1.06e+02 it/s
+iteration   49701 E RMSE(T V) = 8.1643e-03 7.9095e-03 learning_rate: 1.0000e-03 elapsed: 6.08e+02 s speed: 1.07e+02 it/s
+iteration   49801 E RMSE(T V) = 3.1775e-03 5.5554e-03 learning_rate: 1.0000e-03 elapsed: 6.09e+02 s speed: 9.86e+01 it/s
+iteration   49901 E RMSE(T V) = 9.2525e-03 7.2662e-03 learning_rate: 1.0000e-03 elapsed: 6.10e+02 s speed: 1.04e+02 it/s
+iteration   50001 E RMSE(T V) = 5.2481e-03 5.5545e-03 learning_rate: 1.0000e-03 elapsed: 6.11e+02 s speed: 1.13e+02 it/s
 ----------------------------------------------
 Save the weights and write the LAMMPS potential..
 ----------------------------------------------

@@ -312,6 +312,8 @@ def compress_outcar(filename):
             elif 'FORCE on cell =-STRESS' in line:
                 res.write(line)
                 minus_tag = 15
+            elif 'Iteration' in line:
+                res.write(line)
             elif minus_tag > 0:
                 res.write(line)
                 minus_tag -= 1

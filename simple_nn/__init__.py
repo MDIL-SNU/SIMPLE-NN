@@ -90,7 +90,7 @@ class Simple_nn(object):
             self.inputs = deep_update(self.inputs, self.model.default_inputs)
 
         with open(inputs) as input_file:
-            self.inputs = deep_update(self.inputs, yaml.load(input_file), warn_new_key=True,
+            self.inputs = deep_update(self.inputs, yaml.safe_load(input_file), warn_new_key=True,
                                       logfile=self.logfile, comm=self.comm)
 
         if len(self.inputs['atom_types']) == 0:
