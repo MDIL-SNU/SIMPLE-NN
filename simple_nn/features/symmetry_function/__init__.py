@@ -551,9 +551,9 @@ class Symmetry_function(object):
                         os.remove(tmp_name)
                 else:    
                     if ase.__version__ >= '3.18.0':
-                        snapshots = io.read(tmp_name, index=index, format=self.inputs['refdata_format'])
+                        snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'])
                     else:
-                        snapshots = io.read(tmp_name, index=index, format=self.inputs['refdata_format'], force_consistent=True)
+                        snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'], force_consistent=True)
             else:
                 snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'])
 
@@ -656,7 +656,10 @@ class Symmetry_function(object):
                     res['params'][jtem] = params_set[jtem]['total']
 
                 if not (self.inputs['refdata_format']=='vasp' or self.inputs['refdata_format']=='vasp-xdatcar'):
-                    res['E'] = atoms.get_total_energy()
+                    if ase.__version__ >= '3.18.0':
+                        res['E'] = atoms.get_potential_energy(force_consistent=True)
+                    else:
+                        res['E'] = atoms.get_total_energy()
                     try:
                         res['F'] = atoms.get_forces()
                     except:
