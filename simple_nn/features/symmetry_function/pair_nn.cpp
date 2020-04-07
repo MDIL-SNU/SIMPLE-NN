@@ -187,9 +187,7 @@ void PairNN::compute(int eflag, int vflag)
       }
 
       // calc radial symfunc
-      jbeg = nets[ielem].ridx[jelem];
-      jend = jbeg + nets[ielem].rsym[jelem];
-      for (tt=jbeg; tt<jend; tt++) {
+      for (tt=0; tt<nsym; tt++) {
         sym = &nets[ielem].slists[tt];
         if (rRij > sym->coefs[0]) continue;
         if (sym->atype[0] != jelem) continue;
@@ -231,6 +229,7 @@ void PairNN::compute(int eflag, int vflag)
             tmps[tt*3*6 + 17] += tmpd[2]*lcoeff[2]*cell[2][0];
           }
         }
+        else continue;
       }
 
       if (rRij > max_rc_ang) continue;
@@ -290,9 +289,7 @@ void PairNN::compute(int eflag, int vflag)
         }
 
         // calc angular symfunc
-        kbeg = nets[ielem].aidx[jelem*nelements + kelem];
-        kend = kbeg + nets[ielem].asym[jelem*nelements + kelem];
-        for (tt=kbeg; tt<kend; tt++) {
+        for (tt=0; tt<nsym; tt++) {
           sym = &nets[ielem].slists[tt];
           if (rRik > sym->coefs[0]) continue;
           if (!((sym->atype[0] == jelem && sym->atype[1] == kelem) || \
@@ -703,20 +700,6 @@ void PairNN::read_file(char *fname) {
       if (isym == nsym) {
         stats = 4;
         iscale = 0;
-        int tmpidx = 0;
-        for (j=0; j<nelements; j++) {
-          nets[nnet].ridx[j] = tmpidx;
-          tmpidx += nets[nnet].rsym[j];
-        }
-        for (j=0; j<nelements; j++) {
-          for (k=j; k<nelements; k++) {
-            nets[nnet].aidx[j*nelements + k] = tmpidx;
-            if (j != k) {
-              nets[nnet].aidx[k*nelements + j] = tmpidx;
-            }
-            tmpidx += nets[nnet].asym[j*nelements + k];
-          }
-        }
       }
     } else if (stats == 4) { // scale
       tstr = strtok(line," \t\n\r\f");
@@ -791,6 +774,7 @@ void PairNN::read_file(char *fname) {
         t_wb = 0;
         inode++;
       }
+
       if (inode == nets[nnet].nnode[ilayer+1]) {
         ilayer++;
         stats = 6;
