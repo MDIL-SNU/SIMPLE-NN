@@ -615,10 +615,9 @@ void PairNN::read_file(char *fname) {
       char *t_elem = strtok(NULL," \t\n\r\f");
       double t_cut = atof(strtok(NULL," \t\n\r\f"));
       if (t_cut > cutmax) cutmax = t_cut;
-      int slen = strlen(t_elem);
       nnet = nelements;
       for (i=0; i<nelements; i++) {
-        if (strncmp(t_elem,elements[i],slen) == 0) {
+        if (strcmp(t_elem,elements[i]) == 0) {
           nnet = i;
           break;
         }
