@@ -44,6 +44,7 @@ class Symmetry_function(object):
                                       'data_per_tfrecord': 150,
                                       'valid_rate': 0.1,
                                       'shuffle':True,
+                                      'add_NNP_ref': False, # atom E to tfrecord
                                       'remain_pickle': False,
                                       'continue': False,
                                       'add_atom_idx': True, # For backward compatability
@@ -89,13 +90,13 @@ class Symmetry_function(object):
             'tot_num':_bytes_feature(res['tot_num'].astype(np.float64).tobytes()),
             'partition':_bytes_feature(res['partition'].tobytes()),
             'struct_type':_bytes_feature(six.b(res['struct_type'])),
-            'struct_weight':_bytes_feature(np.array([res['struct_weight']]).tobytes())
+            'struct_weight':_bytes_feature(np.array([res['struct_weight']]).tobytes()),
+            'pickle_name':_bytes_feature(six.b(res['pickle_name'])),
+            'atom_idx':_bytes_feature(res['atom_idx'].tobytes())
         }
     
         try:
             feature['F'] = _bytes_feature(res['F'].tobytes())
-            if self.inputs['add_atom_idx']:
-                feature['atom_idx'] = _bytes_feature(res['atom_idx'].tobytes())
         except:
             pass
 
@@ -122,6 +123,9 @@ class Symmetry_function(object):
             if atomic_weights:
                 feature['atomic_weights_'+item] = _bytes_feature(res['atomic_weights'][item].tobytes())
 
+            if self.inputs['add_NNP_ref']:
+                feature['NNP_E_'+item] = _bytes_feature(res['NNP_E'][item].tobytes())
+
         example = tf.train.Example(
             features=tf.train.Features(
                 feature=feature
@@ -137,7 +141,9 @@ class Symmetry_function(object):
             'tot_num': tf.FixedLenFeature([], dtype=tf.string),
             'partition': tf.FixedLenFeature([], dtype=tf.string),
             'struct_type': tf.FixedLenSequenceFeature([], dtype=tf.string, allow_missing=True),
-            'struct_weight': tf.FixedLenFeature([], dtype=tf.string, default_value=np.array([1.0]).tobytes())
+            'struct_weight': tf.FixedLenFeature([], dtype=tf.string, default_value=np.array([1.0]).tobytes()),
+            'pickle_name': tf.FixedLenSequenceFeature([], dtype=tf.string, allow_missing=True),
+            'atom_idx': tf.FixedLenFeature([], dtype=tf.string)
         }
  
         for item in self.parent.inputs['atom_types']:
@@ -154,10 +160,11 @@ class Symmetry_function(object):
             if atomic_weights:
                 features['atomic_weights_'+item] = tf.FixedLenFeature([], dtype=tf.string)
 
+            if self.inputs['add_NNP_ref']:
+                features['NNP_E_'+item] = tf.FixedLenFeature([], dtype=tf.string)
+
         if use_force:
             features['F'] = tf.FixedLenFeature([], dtype=tf.string)
-            if self.inputs['add_atom_idx']:
-                features['atom_idx'] = tf.FixedLenFeature([], dtype=tf.string)
 
         if use_stress:
             features['S'] = tf.FixedLenFeature([], dtype=tf.string)
@@ -172,10 +179,12 @@ class Symmetry_function(object):
         res['partition'] = tf.decode_raw(read_data['partition'], tf.int32)
         res['struct_type'] = read_data['struct_type']
         res['struct_weight'] = tf.decode_raw(read_data['struct_weight'], tf.float64)
+        res['pickle_name'] = read_data['pickle_name']
         # For backward compatibility...
         res['struct_type'] = tf.cond(tf.equal(tf.shape(res['struct_type'])[0], 0),
                                      lambda: tf.constant(['None']),
                                      lambda: res['struct_type'])
+        res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
 
         for item in self.parent.inputs['atom_types']:
             res['N_'+item] = tf.decode_raw(read_data['N_'+item], tf.int64)
@@ -183,6 +192,11 @@ class Symmetry_function(object):
             res['x_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
                                      lambda: tf.zeros([0, inp_size[item]], dtype=tf.float64),
                                      lambda: tf.reshape(tf.decode_raw(read_data['x_'+item], tf.float64), [-1, inp_size[item]]))
+
+            if self.inputs['add_NNP_ref']:
+                res['NNP_E_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
+                                         lambda: tf.zeros([0, 1], dtype=tf.float64),
+                                         lambda: tf.reshape(tf.decode_raw(read_data['NNP_E_'+item], tf.float64), [-1, 1]))
 
             if use_force:
                 res['dx_'+item] = tf.cond(tf.equal(res['N_'+item][0], 0),
@@ -206,8 +220,6 @@ class Symmetry_function(object):
 
         if use_force: 
             res['F'] = tf.reshape(tf.decode_raw(read_data['F'], tf.float64), [-1, 3])
-            if self.inputs['add_atom_idx']:
-                res['atom_idx'] = tf.reshape(tf.decode_raw(read_data['atom_idx'], tf.int32), [-1, 1])
  
         if use_stress:
             res['S'] = tf.decode_raw(read_data['S'], tf.float64)
@@ -229,11 +241,11 @@ class Symmetry_function(object):
         batch_dict['partition'] = [None]
         batch_dict['struct_type'] = [None]
         batch_dict['struct_weight'] = [None]
+        batch_dict['pickle_name'] = [None]
+        batch_dict['atom_idx'] = [None, 1]
 
         if use_force:
             batch_dict['F'] = [None, 3]
-            if self.inputs['add_atom_idx']:
-                batch_dict['atom_idx'] = [None, 1]
 
         if use_stress:
             batch_dict['S'] = [None]
@@ -241,6 +253,8 @@ class Symmetry_function(object):
         for item in self.parent.inputs['atom_types']:
             batch_dict['x_'+item] = [None, inp_size[item]]
             batch_dict['N_'+item] = [None]
+            if self.inputs['add_NNP_ref']:
+                batch_dict['NNP_E_'+item] = [None, 1]
             if use_force:
                 batch_dict['dx_'+item] = [None, inp_size[item], None, 3]
             if use_stress:
@@ -425,6 +439,7 @@ class Symmetry_function(object):
                     writer = tf.python_io.TFRecordWriter(record_name)
  
                 tmp_res = pickle_load(ptem)
+                tmp_res['pickle_name'] = ptem
                 if atomic_weights_train is not None:
                     tmp_aw = dict()
                     for jtem in self.parent.inputs['atom_types']:
@@ -468,6 +483,7 @@ class Symmetry_function(object):
                         writer = tf.python_io.TFRecordWriter(record_name)
  
                     tmp_res = pickle_load(ptem)
+                    tmp_res['pickle_name'] = ptem
                     if atomic_weights_valid == 'ones':
                         tmp_aw = dict()
                         for jtem in self.parent.inputs['atom_types']:

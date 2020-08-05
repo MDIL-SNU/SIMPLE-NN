@@ -281,3 +281,111 @@ In the script below, :code:`test_result_noscale` is the test result file from th
 .. [#f1] `W. Jeong, K. Lee, D. Yoo, D. Lee and S. Han, J. Phys. Chem. C 122 (2018) 22790`_
 
 .. _W. Jeong, K. Lee, D. Yoo, D. Lee and S. Han, J. Phys. Chem. C 122 (2018) 22790: https://pubs.acs.org/doi/abs/10.1021/acs.jpcc.8b08063
+
+Uncertainty Estimation
+======================
+
+Replica ensemble [#f2]_ is used to estimate the atomic-resolution uncertainty. 
+Please read above paper for details.
+We recommend you to make independent directories for each step
+
+.. Note::
+  Before following steps, you have prepared :code:`*.pickle` in :code:`path/data/`.
+  If not, please run with below options first.
+
+::
+
+    #input.yaml
+    generate_feature: true
+    preprocess: false
+    train_model: false
+
+    symmetry_function:
+      remain_pickle: true (default: false)
+
+
+Step 1. Extract the atomic energy
+---------------------------------
+Extract the atomic energy that will be used for reference of replicas.
+Make :code:`test_list` as described in `Potential test`_ and prepare the :code:`potential_saved`
+
+::
+
+    #input.yaml
+    generate_feature: false
+    preprocess: false
+    train_model: true
+
+    neural_network:
+      NNP_to_pickle: true
+      test: false
+      train: false
+      continue: true (or weights)
+
+Step 2. Write the data into tfrecord
+------------------------------------
+Convert :code:`*.pickles` into :code:`tfrecord` to feed input data during training
+
+::
+
+    #input.yaml
+    generate_feature: false
+    preprocess: true
+    train_model: false
+
+    symmetry_function:
+      add_NNP_ref: true
+      continue: true
+
+Step 3. Train with atomic energy
+--------------------------------
+Train model with atomic energy only to speed up (:code:`use_force` and :code:`use_stress` are :code:`false`). Choose a suitable the number of nodes and standard deviation of initial weight. Repeat this step several times by changing the number of nodes.
+
+::
+
+    #input.yaml
+    generate_feature: false
+    preprocess: false
+    train_model: true
+
+    neural_network:
+      NNP_to_pickle: false
+      use_force: false
+      use_stress: false
+      nodes: (user's choice)
+      test: false
+      train: true
+      continue: false
+      E_loss: 3
+      weight_initializer:
+        params:
+          stddev: (user's choice)
+
+    symmetry_function:
+      add_NNP_ref: true
+      continue: true
+
+Step 4. Molecular dynamics
+--------------------------
+
+.. Note::
+  Before this step, you have to compile your LAMMPS with :code:`pair_nn_replica.cpp` and :code:`pair_nn_replica.h`.
+
+LAMMPS can calculate the atomic uncertainty through standard deviation of atomic energies.
+Because our NNP do not deal with charged system, atomic uncertainty can be written as atomic charge.
+Prepare your data file as charge format and please modify your LAMMPS input as below example.
+
+::
+
+    atom_style  charge
+    pair_style  nn/r (# of replica potentials)
+    pair_coeff  * * (reference potential) (element1) (element2) ... &
+                (replica potential_#1) &
+                (replica_potential_#2) &
+                ...
+    compute     (ID) (group-ID) property/atom q
+
+.. [#f2] `W. Jeong, D. Yoo, K. Lee, J. Jung and S. Han, J. Phys. Chem. Lett. 2020, 11, 6090-6096`_
+
+.. _W. Jeong, D. Yoo, K. Lee, J. Jung and S. Han, J. Phys. Chem. Lett. 2020, 11, 6090-6096: https://pubs.acs.org/doi/10.1021/acs.jpclett.0c01614
+
