@@ -5,7 +5,7 @@ Version history
 
 v20.2
 --------
-- Replica ensemble: you can estimate the standard deviation of atomic energy to detect the atom out of training set. Please read the (paper)
+- Replica ensemble: you can estimate the standard deviation of atomic energy to detect the atom out of training set.
 - Bug fix: LAMMPS atom type matching error, memory allocation
 
 v20.1
