@@ -385,7 +385,7 @@ Prepare your data file as charge format and please modify your LAMMPS input as b
                 ...
     compute     (ID) (group-ID) property/atom q
 
-.. [#f2] `W. Jeong, D. Yoo, K. Lee, J. Jung and S. Han, J. Phys. Chem. Lett ???`_
+.. [#f2] `W. Jeong, D. Yoo, K. Lee, J. Jung and S. Han, J. Phys. Chem. Lett, accepted`_
 
-.. _W. Jeong, D. Yoo, K. Lee, J. Jung and S. Han, J. Phys. Chem. Lett ???: https://pubs.acs.org/doi/abs/10.1021/acs.jpcc.8b08063
+.. _W. Jeong, D. Yoo, K. Lee, J. Jung and S. Han, J. Phys. Chem. Lett, accepted: https://pubs.acs.org/doi/abs/10.1021/acs.jpcc.8b08063
 
