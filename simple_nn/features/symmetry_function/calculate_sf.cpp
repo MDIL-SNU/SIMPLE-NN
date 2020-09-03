@@ -27,7 +27,7 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
     int bin_range[3], nbins[3], cell_shift[3], max_bin[3], min_bin[3], pbc_bin[3];
     //int bin_i[natoms][4];
     double vol, tmp, cutoff, dradtmp, rRij, rRik, rRjk;
-    double plane_d[3], total_shift[3], precal[12], tmpd[9], dangtmp[3];
+    double plane_d[3], total_shift[3], precal[12], tmpd[9], dangtmp[3], lcoeff[9];
     double vecij[3], vecik[3], vecjk[3], deljk[3];
     double cross[3][3], reci[3][3], inv[3][3];//, powtwo[nsyms];
     double max_rc_ang = 0.0;
@@ -196,7 +196,6 @@ extern "C" int calculate_sf(double** cell, double** cart, double** scale,
 
         for (int j=0; j < nneigh; ++j) {
             // calculate radial symmetry function
-            double* lcoeff = new double[9]();
             // coeffcient of each directional vector (order : ij, ik)
             rRij = nei_list_d[j*4 + 3];
 

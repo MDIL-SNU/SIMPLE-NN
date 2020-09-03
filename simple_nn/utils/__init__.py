@@ -142,16 +142,37 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
             elif scale_type == 'uniform gas':
                 assert params is not None and scale_rho is not None
                 scale[item][0,:] = np.mean(feature_list[item], axis=0)
-                scale[item][1,:] = 1.0
-                for p in range(scale[item][0,:].size):
+
+                # theta and phi is independent variable
+                def G2(r):
+                    return 4 * np.pi * r**2 * np.exp(-eta * (r - rs)**2) * 0.5 * (np.cos(np.pi * r / rc) + 1)
+
+                # fix r_ij along z axis and use symmetry
+                def G4(r1, r2, th2):
+                    r3 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*np.cos(th2))
+                    fc3 = 0.5 * (np.cos(np.pi * r3 / rc) + 1) if r3 < rc else 0.0
+                    return r1**2 * r2**2 * np.sin(th2) * 2 * np.pi *\
+                            2**(1-zeta) * (1 + lamb * np.cos(th2))**zeta * np.exp(-eta * (r1**2 + r2**2 + r3**2)) *\
+                            0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1) * fc3
+
+                def G5(r1, r2, th2):
+                    return r1**2 * r2**2 * np.sin(th2) * 2 * np.pi *\
+                             2**(1-zeta) * (1 + lamb * np.cos(th2))**zeta * np.exp(-eta * (r1**2 + r2**2)) *\
+                             0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1)
+
+                # subtract G4 when j==k (r1==r2)
+                def singular(r1):
+                    # r3 = 0, fc3 = 1
+                    return r1**4 * 2**(1-zeta) * (1 + lamb)**zeta * np.exp(-eta * 2 * r1**2) *\
+                            (0.5 * (np.cos(np.pi * r1 / rc) + 1))**2
+
+                for p in range(inp_size):
                     if params[item]['i'][p,0] == 2:
                         ti = atom_types[params[item]['i'][p,1] - 1]
                         eta = params[item]['d'][p,1]
                         rc = params[item]['d'][p,0]
                         rs = params[item]['d'][p,2]
-                        def G2(r):
-                            return r**2 * np.exp(-eta * (r - rs)**2) * 0.5 * (np.cos(np.pi * r / rc) + 1)
-                        scale[item][1,p] = 4 * np.pi * scale_rho[ti] * nquad(G2, [[0, rc]])[0]
+                        scale[item][1,p] = scale_rho[ti] * nquad(G2, [[0, rc]])[0]
                     elif params[item]['i'][p,0] == 4:
                         ti = atom_types[params[item]['i'][p,1] - 1]
                         tj = atom_types[params[item]['i'][p,2] - 1]
@@ -159,11 +180,9 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
                         rc = params[item]['d'][p,0]
                         zeta = params[item]['d'][p,2]
                         lamb = params[item]['d'][p,3]
-                        def G4(r1, r2, t):
-                            r3 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*np.cos(t))
-                            fc3 = 0.5 * (np.cos(np.pi * r3 / rc) + 1) if r3 < rc else 0.0
-                            return r1**2 * r2**2 * np.sin(t) * 2**(1-zeta) * (1 + lamb * np.cos(t))**zeta * np.exp(-eta * (r1**2 + r2**2 + r3**2)) * 0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1) * fc3
-                        scale[item][1,p] = 8 * np.pi**2 * scale_rho[ti] * scale_rho[tj] * nquad(G4, [[0, rc], [0, rc], [0, np.pi]])[0]
+                        scale[item][1,p] = scale_rho[ti] * scale_rho[tj] * 4 * np.pi *\
+                                            (nquad(G4, [[0, rc], [0, rc], [0, np.pi]])[0] -\
+                                            (nquad(singular, [[0, rc]])[0] if lamb == 1 else 0))
                     elif params[item]['i'][p,0] == 5:
                         ti = atom_types[params[item]['i'][p,1] - 1]
                         tj = atom_types[params[item]['i'][p,2] - 1]
@@ -171,9 +190,9 @@ def _generate_scale_file(feature_list, atom_types, filename='scale_factor', scal
                         rc = params[item]['d'][p,0]
                         zeta = params[item]['d'][p,2]
                         lamb = params[item]['d'][p,3]
-                        def G5(r1, r2, t):
-                            return r1**2 * r2**2 * np.sin(t) * 2**(1-zeta) * (1 + lamb * np.cos(t))**zeta * np.exp(-eta * (r1**2 + r2**2)) * 0.5 * (np.cos(np.pi * r1 / rc) + 1) * 0.5 * (np.cos(np.pi * r2 / rc) + 1)
-                        scale[item][1,p] = 8 * np.pi**2 * scale_rho[ti] * scale_rho[tj] * nquad(G5, [[0, rc], [0, rc], [0, np.pi]])[0]
+                        scale[item][1,p] = scale_rho[ti] * scale_rho[tj] * 4 * np.pi *\
+                                            (nquad(G5, [[0, rc], [0, rc], [0, np.pi]])[0] -\
+                                            (nquad(singular, [[0, rc]])[0] if lamb == 1 else 0))
                     else:
                         assert False
 
