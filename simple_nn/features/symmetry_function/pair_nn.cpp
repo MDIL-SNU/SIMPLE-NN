@@ -450,6 +450,7 @@ void PairNN::compute(int eflag, int vflag)
     delete [] tmpf;
     delete [] tmps;
     delete [] scale1;
+    delete [] lcoeff;
   }
 
   if (vflag_fdotr) virial_fdotr_compute();
