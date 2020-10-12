@@ -34,6 +34,7 @@ cp /directory/of/simple-nn/features/symmetry_function/pair_nn.* /directory/of/la
 cp /directory/of/simple-nn/features/symmetry_function/symmetry_function.h /directory/of/lammps/src/
 ```
 And compile LAMMPS code.
+We do not support LAMMPS whose version is later than `3Mar2020`.
 
 ## Usage
 To use SIMPLE-NN, 3 types of files (input.yaml, params_XX, str_list) are required.

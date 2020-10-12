@@ -176,7 +176,9 @@ def plot_error_vs_gdfinv(atom_types, ref_data, target_data=None, save_data=False
                                     np.expand_dims(ref_res['atomic_weights'], 1)], axis=1)
     ref_pack = dict()
     if target_data != None:
-        target_pack_full = np.concatenate([target_res['DFT_F'], target_res['NN_F'], np.expand_dims(target_res['atom_idx'], 1), target_res['atomic_weights']], axis=1)
+        target_pack_full = np.concatenate([target_res['DFT_F'], target_res['NN_F'], 
+                                           np.expand_dims(target_res['atom_idx'], 1),
+                                           np.expand_dims(target_res['atomic_weights'], 1)], axis=1)
         target_pack = dict()
 
     for i,item in enumerate(atom_types):
@@ -323,9 +325,9 @@ def plot_correlation_graph(test_result='test_result', atom_types=None):
                 target_NN_F = res['NN_F'][res['atom_idx']==i+1]
                 target_DFT_F = res['DFT_F'][res['atom_idx']==i+1]
 
-                _correlation(target_NN_F[:,0], target_DFT_F[:,0], 200+10*num_atom_types+i+1,
-                             xlabel='$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
-                             ylabel='$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
+                _correlation(target_DFT_F[:,0], target_NN_F[:,0], 200+10*num_atom_types+i+1,
+                             xlabel='$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
+                             ylabel='$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
                              title=item)
 
                 _error_hist(np.sqrt(np.sum((target_NN_F - target_DFT_F)**2, axis=1)), 200+11*num_atom_types+i+1,
@@ -338,9 +340,9 @@ def plot_correlation_graph(test_result='test_result', atom_types=None):
 
         fig = plt.figure(figsize=(10,8))
 
-        _correlation(res['NN_F'][:,0], res['DFT_F'][:,0], 222,
-                     xlabel='$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
-                     ylabel='$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
+        _correlation(res['DFT_F'][:,0], res['NN_F'][:,0], 222,
+                     xlabel='$F_x^\mathrm{\mathsf{DFT}}$ (eV/$\mathrm{\mathsf{\AA}}$)',
+                     ylabel='$F_x^\mathrm{\mathsf{NNP}}$ (eV/$\mathrm{\mathsf{\AA}}$)')
 
         _error_hist(np.sqrt(np.sum((res['NN_F'] - res['DFT_F'])**2, axis=1)), 224,
                     xlabel='|$\mathrm{\mathsf{\mathbf{F}^{NNP}}} - \mathrm{\mathsf{\mathbf{F}^{DFT}}}$| (eV/$\mathrm{\mathsf{\AA}}$)',
@@ -349,9 +351,9 @@ def plot_correlation_graph(test_result='test_result', atom_types=None):
     else:
         fig = plt.figure(figsize=(10,4))
 
-    _correlation(res['NN_E']/res['N'], res['DFT_E']/res['N'], 221 if force_tag else 121,
-                 xlabel='$E^\mathrm{\mathsf{NNP}}$ (eV/atom)',
-                 ylabel='$E^\mathrm{\mathsf{DFT}}$ (eV/atom)')
+    _correlation(res['DFT_E']/res['N'], res['NN_E']/res['N'], 221 if force_tag else 121,
+                 xlabel='$E^\mathrm{\mathsf{DFT}}$ (eV/atom)',
+                 ylabel='$E^\mathrm{\mathsf{NNP}}$ (eV/atom)')
 
     _error_hist(np.abs(res['NN_E']/res['N'] - res['DFT_E']/res['N'])*1000., 223 if force_tag else 122,
                 xlabel='|$E^\mathrm{\mathsf{NNP}} - E^\mathrm{\mathsf{DFT}}$| (meV/atom)',
