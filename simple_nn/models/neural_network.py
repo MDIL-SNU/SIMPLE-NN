@@ -281,7 +281,7 @@ class Neural_network(object):
                               lambda: tf.sparse_segment_sum(self.ys[item], self.next_elem['sparse_indices_'+item], self.next_elem['seg_id_'+item],
                                             num_segments=self.next_elem['num_seg'])[1:])
 
-            if self.inputs['E_loss'] == 3:
+            if self.inputs['E_loss'] == 3 or self.inputs['NNP_to_pickle']:
                 self.atom_E[item] += tf.cond(zero_cond,
                                   lambda: tf.cast(0., tf.float64),
                                   lambda: self.ys[item])
