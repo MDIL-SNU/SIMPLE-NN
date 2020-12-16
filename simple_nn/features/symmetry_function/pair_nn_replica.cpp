@@ -81,7 +81,7 @@ void PairREPLICA::compute(int eflag, int vflag)
   double precal[12];
   // precal: cfij, dcfij, cfik, dcfik, cfjk, dcfjk, dist_square_sum,
   //         cosval, dcosval/dij, dcosval/dik, dcosval/djk
-  double delij[3],delik[3],deljk[3],vecij[3],vecik[3],vecjk[3];
+  double delij[3],delik[3],deljk[3],vecij[3],vecik[3],vecjk[3],lcoeff[9];
   double cell[3][3], cross[3][3], inv[3][3];
   double vol,Rij,Rik,Rjk,rRij,rRik,rRjk,cutij,cutik,cutjk;
   int *ilist,*jlist,*numneigh,**firstneigh;
@@ -161,7 +161,6 @@ void PairREPLICA::compute(int eflag, int vflag)
     double *dsymvec = new double[nsym]();
     double *tmpf = new double[nsym*(jnum+1)*3]();
     double *tmps = new double[nsym*3*6]();
-    double *lcoeff = new double[9]();
 
     for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];

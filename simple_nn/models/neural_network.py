@@ -532,6 +532,10 @@ class Neural_network(object):
                     tf.reshape(self.next_elem['F'], [-1, 3]),
                     self.next_elem['partition'], 2
                 )[1]
+            self.next_elem['atom_idx'] = tf.dynamic_partition(\
+                                             tf.reshape(self.next_elem['atom_idx'], [-1, 1]),
+                                             self.next_elem['partition'], 2
+                                         )[1]
 
         if self.inputs['E_loss'] == 3:
             self.next_elem['partition'] = tf.reshape(self.next_elem['partition'], [-1])
