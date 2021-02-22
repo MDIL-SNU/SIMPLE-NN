@@ -38,7 +38,7 @@ using namespace LAMMPS_NS;
 using namespace MathConst;
 using namespace MathSpecial;
 
-#define MAXLINE 5000
+#define MAXLINE 50000
 
 /* ---------------------------------------------------------------------- */
 // Constructor
