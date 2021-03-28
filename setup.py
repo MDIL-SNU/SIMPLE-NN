@@ -40,7 +40,7 @@ install_requires = [
 ]
 
 if sys.version_info >= (3,5):
-    install_requires.append('ase>=3.10.0')
+    install_requires.append('ase>=3.10.0,<=3.19.0')
 else:
     install_requires.append('ase>=3.10.0,<3.18.0')
 
