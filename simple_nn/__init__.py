@@ -183,7 +183,7 @@ class Simple_nn(object):
 
         if self.inputs['generate_features']:
             self.descriptor.generate()
-        elif self.inputs['preprocess']:
+        if self.inputs['preprocess']:
             self.descriptor.preprocess(use_force=self.inputs['neural_network']['use_force'], 
                                        use_stress=self.inputs['neural_network']['use_stress'],
                                        get_atomic_weights=get_atomic_weights, 
