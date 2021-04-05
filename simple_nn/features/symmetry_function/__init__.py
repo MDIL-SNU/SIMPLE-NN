@@ -574,9 +574,10 @@ class Symmetry_function(object):
                 snapshots = io.read(item[0], index=index, format=self.inputs['refdata_format'])
 
             for atoms in snapshots:
-                cart = np.copy(atoms.get_positions(wrap=True), order='C')
-                scale = np.copy(atoms.get_scaled_positions(), order='C')
+                # consistency for cart <-> scale
                 cell = np.copy(atoms.cell, order='C')
+                scale = np.copy(atoms.get_scaled_positions(), order='C')
+                cart = np.copy(np.dot(atoms.get_scaled_positions(), atoms.cell), order='C') 
 
                 symbols = np.array(atoms.get_chemical_symbols())
                 atom_num = len(symbols)
