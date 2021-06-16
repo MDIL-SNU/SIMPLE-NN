@@ -508,7 +508,7 @@ void PairREPLICA::allocate()
 
 void PairREPLICA::settings(int narg, char **arg)
 {
-  npot = utils::inumeric(FLERR, arg[0]);
+  npot = utils::inumeric(FLERR, arg[0], false, lmp);
 
   if (narg != 1) error->all(FLERR,"Illegal pair_style command");
 }
