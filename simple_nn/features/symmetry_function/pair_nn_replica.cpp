@@ -33,6 +33,7 @@
 #include "memory.h"
 #include "error.h"
 #include "pointers.h"
+#include "utils.h"
 
 using namespace LAMMPS_NS;
 using namespace MathConst;
@@ -507,7 +508,7 @@ void PairREPLICA::allocate()
 
 void PairREPLICA::settings(int narg, char **arg)
 {
-  npot = force->inumeric(FLERR, arg[0]);
+  npot = force->utils::inumeric(FLERR, arg[0]);
 
   if (narg != 1) error->all(FLERR,"Illegal pair_style command");
 }
@@ -632,7 +633,7 @@ void PairREPLICA::read_file(char *fname, int potidx) {
 
     // strip comment, skip line if blank
     if ((ptr = strchr(line,'#'))) *ptr = '\0';
-    nwords = atom->count_words(line);
+    nwords = atom->utils::count_words(line);
     if (nwords == 0) continue;
 
     // get all potential parameters
