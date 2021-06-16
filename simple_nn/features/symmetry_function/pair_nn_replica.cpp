@@ -508,7 +508,7 @@ void PairREPLICA::allocate()
 
 void PairREPLICA::settings(int narg, char **arg)
 {
-  npot = force->utils::inumeric(FLERR, arg[0]);
+  npot = utils::inumeric(FLERR, arg[0]);
 
   if (narg != 1) error->all(FLERR,"Illegal pair_style command");
 }
@@ -633,7 +633,7 @@ void PairREPLICA::read_file(char *fname, int potidx) {
 
     // strip comment, skip line if blank
     if ((ptr = strchr(line,'#'))) *ptr = '\0';
-    nwords = atom->utils::count_words(line);
+    nwords = utils::count_words(line);
     if (nwords == 0) continue;
 
     // get all potential parameters
