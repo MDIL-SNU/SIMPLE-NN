@@ -679,7 +679,7 @@ void PairREPLICA::read_file(char *fname, int potidx) {
       if (strncmp(tstr,"SYM",3) != 0)
         error->one(FLERR,"potential file error: missing info(# of symfunc)");
       nsym = atoi(strtok(NULL," \t\n\r\f"));
-      nets[nnet].slists = new Symc[nsym];
+      nets[nnet].slists = new Symc[nsym]();
       nets[nnet].powtwo = new double[nsym];
       nets[nnet].scale = new double*[2];
       for (i=0; i<2; ++i) {
@@ -751,12 +751,11 @@ void PairREPLICA::read_file(char *fname, int potidx) {
     } else if (stats == 5) { // network number setting
       //nets[nnet].nnode.push_back(nsym);
       tstr = strtok(line," \t\n\r\f");
-      // TODO: potential file change: NET [nlayer-2] [nnode] [nnode] ...
       nlayer = atoi(strtok(NULL," \t\n\r\f"));
       nlayer += 1;
       nets[nnet].nlayer = nlayer + 1;
 
-      nets[nnet].nnode = new int[nlayer];
+      nets[nnet].nnode = new int[nets[nnet].nlayer];
       nets[nnet].nnode[0] = nsym;
       ilayer = 1;
 
@@ -764,8 +763,6 @@ void PairREPLICA::read_file(char *fname, int potidx) {
         nets[nnet].nnode[ilayer] = atoi(tstr);
         ilayer++;
       }
-      nets[nnet].nnode[nlayer] = 1;
-      // TODO: fix the array size
       nets[nnet].nodes = new double*[nlayer];
       nets[nnet].dnodes = new double*[nlayer];
       nets[nnet].bnodes = new double*[nlayer];
