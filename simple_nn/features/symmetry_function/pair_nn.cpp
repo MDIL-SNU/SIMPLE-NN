@@ -643,7 +643,6 @@ void PairNN::read_file(char *fname) {
         error->one(FLERR,"potential file error: missing info(# of symfunc)");
       nsym = atoi(strtok(NULL," \t\n\r\f"));
       nets[nnet].slists = new Symc[nsym]();
-      nets[nnet].powtwo = new double[nsym];
       nets[nnet].scale = new double*[2];
       for (i=0; i<2; ++i) {
         nets[nnet].scale[i] = new double[nsym];
@@ -683,17 +682,17 @@ void PairNN::read_file(char *fname) {
       // Check for not implemented symfunc type.
       bool implemented = false;
       for (i=0; i < sizeof(IMPLEMENTED_TYPE) / sizeof(IMPLEMENTED_TYPE[0]); i++) {
-          if ((nets[nnet].slists[isym].stype) == IMPLEMENTED_TYPE[i]) {
-              implemented = true;
-              break;
-          }
+        if ((nets[nnet].slists[isym].stype) == IMPLEMENTED_TYPE[i]) {
+          implemented = true;
+          break;
+        }
       }
       if (!implemented) error->all(FLERR, "Not implemented symmetry function type!");
 
       if (nets[nnet].slists[isym].stype == 4 || nets[nnet].slists[isym].stype == 5) {
-        if (nets[nnet].slists[isym].coefs[2] < 1.0)
-            error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
-        nets[nnet].powtwo[isym] = pow(2, 1-nets[nnet].slists[isym].coefs[2]);
+        if (nets[nnet].slists[isym].coefs[2] < 1.0) {
+          error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
+        }
       }
     
       isym++;
@@ -797,8 +796,9 @@ void PairNN::read_file(char *fname) {
 
       if (nets[i].slists[tt].stype == 4 || \
           nets[i].slists[tt].stype == 5) {
-        if (nets[i].slists[tt].coefs[2] < 1.0)
-            error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
+        if (nets[i].slists[tt].coefs[2] < 1.0) {
+          error->all(FLERR, "Zeta in G4/G5 must be greater or equal to 1.0!");
+        }
         nets[i].powtwo[tt] = pow(2, 1-nets[i].slists[tt].coefs[2]);
         // powint indicates whether zeta is (almost) integer so that we can treat it as integer and use pow_int.
         // This is used because pow_int is much faster than pow.
