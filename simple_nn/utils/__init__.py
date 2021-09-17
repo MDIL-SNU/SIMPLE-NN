@@ -12,8 +12,6 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops, control_flow_ops, tensor_array_ops
 from .mpiclass import DummyMPI, MPI4PY
 from scipy.integrate import nquad
-import ase
-from ase.geometry import get_distances
 
 def _gen_2Darray_for_ffi(arr, ffi, cdata="double"):
     # Function to generate 2D pointer for cffi  
