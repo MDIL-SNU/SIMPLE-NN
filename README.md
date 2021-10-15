@@ -1,4 +1,7 @@
 # SIMPLE-NN
+<p align="center">
+<img src="./docs/logo.png"/>
+</p>
 SIMPLE-NN(SNU Interatomic Machine-learning PotentiaL packagE – version Neural Network)
 
 If you use SIMPLE-NN, please cite this article: 
