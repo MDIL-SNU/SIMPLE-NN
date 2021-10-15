@@ -3,6 +3,12 @@
 Version history
 =================
 
+v21.1
+--------
+- Separate function: generate / preprocess works only if each tag turns on in input.yaml.
+- Bug fix: Inconsistent position from ASE.
+- Memory issue fix: pair_nn.cpp for more atom type without memory leak.
+
 v20.2
 --------
 - Replica ensemble: you can estimate the standard deviation of atomic energy to detect the atom out of training set.
