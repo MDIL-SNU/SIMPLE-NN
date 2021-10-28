@@ -36,12 +36,13 @@ install_requires = [
     'psutil',
     'tqdm',
     'braceexpand',
-    'matplotlib<3.0',
 ]
 
-if sys.version_info >= (3,5):
-    install_requires.append('ase>=3.10.0,<3.18.0,>=3.19.0')
+if sys.version_info >= (3,6):
+    install_requires.append('matplotlib>=3.1.0,<3.4.0')
+    install_requires.append('ase>=3.22.0')
 else:
+    install_requires.append('matplotlib<3.1.0')
     install_requires.append('ase>=3.10.0,<3.18.0')
 
 # Check the differece
