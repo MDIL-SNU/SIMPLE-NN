@@ -1,6 +1,6 @@
 # SIMPLE-NN
 <p align="center">
-<img src="./docs/logo.png", width="600"/>
+<img src="./docs/logo.png", width="500"/>
 </p>
 SIMPLE-NN(SNU Interatomic Machine-learning PotentiaL packagE – version Neural Network)
 
@@ -11,6 +11,14 @@ K. Lee, D. Yoo, W. Jeong, S. Han, SIMPLE-NN: An efficient package for training a
 Here do we describe minimal instruction to run the example of SIMPLE-NN
 If you want more information such as tuning parameters, please visit our online manual(https://simple-nn.readthedocs.io)
 
+## New release
+A new version of SIMPLE-NN has been released.
+
+It provides faster training speed and more convenient usage with Pytorch.
+
+You can download and enjoy the new SIMPLE-NN from https://github.com/MDIL-SNU/SIMPLE-NN_v2.git
+
+SIMPLE-NN on this page will be deprecated soon.
 ## Installation
 SIMPLE-NN use Tensorflow and mpi4py(optional).
 You need to install Tensorflow and mpi4py to use SIMPLE-NN
