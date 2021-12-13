@@ -1,6 +1,15 @@
+# New version release!
+A new version of SIMPLE-NN has been released.
+
+It provides faster training speed and more convenient usage with Pytorch.
+
+You can download and enjoy the new SIMPLE-NN from https://github.com/MDIL-SNU/SIMPLE-NN_v2.git
+
+SIMPLE-NN on this page will be deprecated soon.
+
 # SIMPLE-NN
 <p align="center">
-<img src="./docs/logo.png", width="600"/>
+<img src="./docs/logo.png", width="500"/>
 </p>
 SIMPLE-NN(SNU Interatomic Machine-learning PotentiaL packagE – version Neural Network)
 
