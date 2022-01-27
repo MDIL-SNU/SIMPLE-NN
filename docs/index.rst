@@ -3,12 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to SIMPLE-NN's documentation!
-=====================================
+New version release!
+====================
 
-New version released!
-This documentation is not updated anymore.
 Please download new SIMPLE-NN from `here`_.
+
+This documentation is not updated anymore.
 
 .. _here: https://github.com/MDIL-SNU/SIMPLE-NN_v2
 
