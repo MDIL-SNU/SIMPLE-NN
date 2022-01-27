@@ -6,6 +6,12 @@
 Welcome to SIMPLE-NN's documentation!
 =====================================
 
+New version released!
+This documentation is not updated anymore.
+Please download new SIMPLE-NN from `here`_.
+
+.. _here: https://github.com/MDIL-SNU/SIMPLE-NN_v2
+
 .. toctree::
    :maxdepth: 4
    :caption: Contents
